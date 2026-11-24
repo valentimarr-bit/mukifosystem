@@ -7,6 +7,9 @@
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },
 
+  // Todo minuto: busca pedidos do iFood/99Food (só faz algo se o canal estiver ligado em /canais.html).
+  "triggers": { "crons": ["* * * * *"] },
+
   // Páginas estáticas (painel, app de pedidos, tela da fila) ficam em /public.
   // Tudo que não for arquivo estático (ex.: /api/...) cai no Worker.
   "assets": {

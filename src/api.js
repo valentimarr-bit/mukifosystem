@@ -14,6 +14,7 @@ import { rotearCarteira } from './carteira.js';
 import { rotearCampeonato } from './campeonato.js';
 import { rotearSinuca } from './sinuca.js';
 import { rotearFiscal } from './fiscal.js';
+import { rotearCanais } from './canais.js';
 import { rotearPagamentos } from './pagamentos/aviso.js';
 import { rotearAuditoria } from './auditoria.js';
 import { rotearProducao } from './producao.js';
@@ -460,6 +461,7 @@ export async function rotearApi(request, env, url) {
   if (p.startsWith('/api/cliente/')) return rotearCliente(request, env, url);
   if (p.startsWith('/api/financeiro/')) return rotearFinanceiro(request, env, url);
   if (p.startsWith('/api/pagamentos/')) { const r = await rotearPagamentos(request, env, url); if (r) return r; }
+  if (p.startsWith('/api/canais')) { const r = await rotearCanais(request, env, url); if (r) return r; }
   if (p.startsWith('/api/fiscal')) { const r = await rotearFiscal(request, env, url); if (r) return r; }
   if (p.startsWith('/api/sinuca')) { const r = await rotearSinuca(request, env, url); if (r) return r; }
   if (p === '/api/campeonato' || p.startsWith('/api/campeonato/')) { const r = await rotearCampeonato(request, env, url); if (r) return r; }

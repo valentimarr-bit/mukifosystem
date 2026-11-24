@@ -254,3 +254,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Botão "📖 Manual"** no topo da gestão abre `/manual.html`: manual com índice, busca e seção "Novidades e alterações". Imprime limpo (sem busca nem menu).
 - **Fonte:** `docs/manual.md` (texto) + `docs/alteracoes.md` (uma linha datada por mudança). `npm run manual` gera `public/manual.html` (`scripts/gerar_manual.mjs`, conversor em `scripts/manual_lib.mjs`, sem dependências).
 - **Não fica velho:** `test/manual.test.js` falha se `manual.html` não bate com a fonte, se uma tela de `public/` não é citada no manual ou se uma linha de `alteracoes.md` foge do formato. A regra também está no `CLAUDE.md`.
+
+## iFood e 99Food (canais de venda)
+- Pronto: pedidos das plataformas entram na Produção (origem "celular", cliente "iFood · Nome"), dão baixa no estoque pela ficha técnica, são aceitos na plataforma, avisam preparo/pronto/saiu e cancelam com estorno. Busca por cron a cada minuto e a cada 30 s na Produção. Tela `/canais.html`.
+- Falta: validar nomes de campos com credenciais reais (iFood: loja de teste; 99Food: acesso Open Delivery de parceiro), comissão nos relatórios do financeiro, cardápio/preço/abrir-fechar loja pelo sistema.

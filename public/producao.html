@@ -62,5 +62,7 @@ $('#fila').onclick = async (e) => { const bi = e.target.closest('[data-item]');
 $('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
 function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) atualizar(); });
+const puxarCanais = () => { if (token && !document.hidden) fetch('/api/canais/sincronizar', { method: 'POST', headers: { authorization: 'Bearer ' + token } }).catch(() => {}); };
+setInterval(puxarCanais, 30000);
 iniciar();
 </script></body></html>

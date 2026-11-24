@@ -6,6 +6,7 @@ import { expirarPendentes } from './cliente.js';
 import { diaDoTurno } from './venda.js';
 import { avisarPedido, pushLigado } from './push.js';
 import { textosPedido } from './textos.js';
+import { avisarCanal } from './canais.js';
 import { itensComPronta } from './cliente.js';
 
 const erro = (m, s = 400) => json({ erro: m }, s);
@@ -80,6 +81,7 @@ export async function rotearProducao(request, env, url) {
     const r = await db.prepare(`UPDATE pedido SET status = ?, ${col} = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ${de}`).bind(acao, k[1]).run();
     if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa (talvez já tenha sido retirado).', 409);
     if (acao === 'pronto') await db.prepare("UPDATE item_pedido SET pronto_em = COALESCE(pronto_em, datetime('now')) WHERE pedido_id = ?").bind(k[1]).run();
+    await avisarCanal(db, env, k[1], acao);   // iFood/99Food: avisa a plataforma (não faz nada em pedido do app)
     const ped = await db.prepare('SELECT numero FROM pedido WHERE id = ?').bind(k[1]).first();
     const a = AVISOS[acao], tx = textosPedido(await itensComPronta(db, k[1]), ped.numero)[acao];
     const push = await avisarPedido(env, k[1], { titulo: tx.titulo, corpo: tx.corpo, vibrar: a.vibrar, numero: ped.numero, etapa: acao });
@@ -109,6 +111,7 @@ async function itemPronto(env, db, pedidoId, itemId, request) {
     todos = true;
     const col = ped.origem === 'celular' ? "UPDATE pedido SET status = 'pronto', pronto_em = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ('recebido', 'preparando')" : "UPDATE pedido SET pronto_em = datetime('now') WHERE id = ? AND origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL";
     const r = await db.prepare(col).bind(pedidoId).run();
+    if (r?.meta?.changes) await avisarCanal(db, env, pedidoId, 'pronto');
     if (r?.meta?.changes && ped.origem === 'celular') {
       const a = AVISOS.pronto, tx = textosPedido(await itensComPronta(db, pedidoId), ped.numero).pronto;
       avisos = (await avisarPedido(env, pedidoId, { titulo: tx.titulo, corpo: tx.corpo, vibrar: a.vibrar, numero: ped.numero, etapa: 'pronto' })).enviados ?? 0;

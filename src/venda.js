@@ -40,7 +40,7 @@ async function recalcular(db, pedidoId) {
 }
 
 /** Baixa do estoque pela ficha técnica dos itens da comanda (sem arredondar para cima: é uma venda só). */
-async function darBaixa(db, pedidoId) {
+export async function darBaixa(db, pedidoId) {
   if (await db.prepare("SELECT 1 AS ok FROM movimento_estoque WHERE tipo = 'venda' AND referencia = ?").bind(pedidoId).first()) return;
   // Produto comum baixa pela própria ficha; combo baixa pela ficha de cada produto que o compõe.
   const { results } = await db.prepare(

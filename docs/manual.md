@@ -29,6 +29,7 @@ Este manual é para quem opera o bar: balcão, cozinha, gerência e dono. Ele é
 | Pagamentos | `/pagamentos.html` | financeiro |
 | Monitor de Pix | `/pix.html` | financeiro |
 | Notas fiscais | `/fiscal.html` | financeiro |
+| iFood e 99Food | `/canais.html` | gerência |
 | Manual | `/manual.html` | todos |
 
 ## 2. Gestão
@@ -162,6 +163,17 @@ Para Pix que cai **direto na chave**, sem gateway.
 - **Cancelar** pede justificativa de 15 letras ou mais e depende do prazo da SEFAZ.
 - Ainda não existe: emissão automática ao pagar, modo offline (contingência), impressão do DANFE no balcão, NF-e (modelo 55) e NFS-e.
 
+## 10.1. iFood e 99Food
+- Em `/canais.html` ("iFood/99 →" na gestão). Cada canal vem **desligado**; o superadmin liga depois de guardar as credenciais no Cloudflare.
+- **Como funciona:** o sistema busca os pedidos da plataforma todo minuto (e a cada 30 segundos enquanto a Produção está aberta). O pedido entra na **Produção** como os do app, marcado como "iFood · Nome" ou "99Food · Nome", e **dá baixa no estoque** pela ficha técnica.
+- **Aceite:** por padrão o pedido é aceito na plataforma assim que chega (as plataformas cancelam sozinhas o que ninguém aceita a tempo). O superadmin pode desligar isso.
+- **Andamento:** ao marcar **Preparando** e **Pronto** na Produção, a plataforma é avisada. Em `/canais.html`, "Entregador levou" ou "Cliente retirou" encerra o pedido e avisa a plataforma.
+- **Cancelamento:** pedido cancelado pelo cliente ou pela plataforma é cancelado aqui e o estoque volta.
+- **Vínculo dos produtos:** no cadastro do produto na plataforma, use como código externo o **número do produto no Mukifo**. Sem código, o sistema tenta o nome igual. Item sem vínculo entra no pedido, mas **não baixa estoque**: a tela mostra o aviso.
+- **iFood:** precisa de cadastro de desenvolvedor no portal do iFood (a loja de teste serve para ensaiar). **99Food:** usa o padrão Open Delivery e o acesso é liberado pela 99Food a softwares parceiros.
+- **Se a plataforma ficar fora do ar:** a Produção continua; o erro aparece no pedido e o sistema tenta aceitar de novo.
+- **Ainda não faz:** pedidos agendados com tratamento especial, edição de cardápio e preços nas plataformas, abrir e fechar a loja pelo sistema, comissão no resultado do mês.
+
 ## 11. Excel
 Aba **Excel**: exporta e importa planilhas (fornecedores, insumos, produtos, fichas, combos, contagem, taxas, despesas, compras e vendas). Importar com o código preenchido atualiza o registro; em branco cria um novo.
 
@@ -175,4 +187,4 @@ Aba **Excel**: exporta e importa planilhas (fornecedores, insumos, produtos, fic
 ## 13. Para quem mantém o sistema
 - **Regra de ouro:** toda alteração no sistema entra em dois lugares: uma linha em `docs/alteracoes.md` (o que mudou e quando) e o texto correspondente neste manual (`docs/manual.md`).
 - Depois de editar, rode `npm run manual` para gerar a tela `/manual.html`. O teste automático falha se o manual gerado estiver desatualizado ou se uma tela nova não for citada aqui.
-- Segredos da Cloudflare (nunca no código): `CODIGO_PRIMEIRO_ACESSO`, `ADMIN_TOKEN`, `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `EMAIL_REMETENTE`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `FOCUSNFE_TOKEN`, `PIX_MONITOR_SECRET`.
+- Segredos da Cloudflare (nunca no código): `CODIGO_PRIMEIRO_ACESSO`, `ADMIN_TOKEN`, `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `EMAIL_REMETENTE`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `FOCUSNFE_TOKEN`, `PIX_MONITOR_SECRET`, `IFOOD_CLIENT_ID`, `IFOOD_CLIENT_SECRET`, `IFOOD_MERCHANT_ID`, `OD_99FOOD_BASE_URL`, `OD_99FOOD_CLIENT_ID`, `OD_99FOOD_CLIENT_SECRET`, `OD_99FOOD_TOKEN_URL`.

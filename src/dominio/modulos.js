@@ -30,7 +30,8 @@ export function modulosDe(u) {
 export function moduloDaRota(p) {
   if (p === '/api/venda/cardapio') return null;
   if (p.startsWith('/api/venda/')) return 'venda';
-  if (p.startsWith('/api/producao')) return 'producao';
+  if (p.startsWith('/api/producao') || p === '/api/canais/sincronizar') return 'producao';
+  if (p.startsWith('/api/canais')) return 'venda';
   if (p.startsWith('/api/fiscal')) return 'financeiro';
   if (p.startsWith('/api/pagamentos/') && !p.startsWith('/api/pagamentos/aviso/')) return 'financeiro';
   if (p.startsWith('/api/campeonato/gestao') || p.startsWith('/api/sinuca/gestao')) return 'campeonato';
