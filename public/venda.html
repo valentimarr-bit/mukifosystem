@@ -91,7 +91,8 @@ function depois(r) { recarregarCardapio(); if (r.comanda) { atual = r.comanda; i
 
 $('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenharCardapio(); } };
 $('#grade').onclick = tentar(async (e) => { const b = e.target.closest('.prod'); if (!b || b.disabled) return; b.style.outline = '3px solid var(--acc)'; setTimeout(() => (b.style.outline = ''), 160); if (navigator.vibrate) navigator.vibrate(15);
-  if (!atual) await novaComanda();   // tocou, entrou: o pedido abre sozinho, sem perguntar nada depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
+  if (!atual) await novaComanda();   // tocou, entrou: o pedido abre sozinho, sem perguntar nada
+  depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
 async function novaComanda() { const r = await api('/api/venda/comandas', 'POST', { mesa: '' }); atual = r.comanda; await lerComandas(); }
 $('#cmd').onclick = tentar(async (e) => { const b = e.target.closest('button'); if (!b) return; if (b.id === 'nova') return novaComanda(); await abrir(b.dataset.id); });
 $('#itens').onclick = tentar(async (e) => { const b = e.target.closest('button[data-p]'); if (b) depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.p, delta: +b.dataset.d })); });
