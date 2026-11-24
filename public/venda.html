@@ -48,9 +48,8 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
 <main id="telaR" hidden style="grid-template-columns:1fr">
   <section><div class="painel" style="position:static"><b>Conferir QR do cliente</b>
     <video id="cam" playsinline style="width:100%;border-radius:12px;margin:8px 0;display:none"></video>
-    <button class="grande" id="bCam">📷 Abrir câmera e ler QR</button>
-    <p class="mut">Ou cole/digite o código do QR:</p><input id="codigo" placeholder="MKF1...." autocomplete="off">
-    <button class="grande sec" id="bConferir">Conferir código</button><div id="confRes"></div></div>
+    <button class="grande" id="bCam">📷 Ler QR do cliente</button>
+    <div id="confRes"></div></div>
     <h3>Pix do app esperando conferência</h3><p class="mut">Só toque em “Pix recebido” depois de ver o dinheiro na conta do banco.</p><div id="listaAg"></div>
     <h3>Pedidos do app pagos, esperando retirada</h3><div id="listaRet"></div></section>
 </main>
@@ -192,7 +191,7 @@ $('#aH').onclick = () => { abas('H'); lerHistorico().catch((e) => msg(e.message,
 $('#hDia').onchange = () => lerHistorico().catch((e) => msg(e.message, true));
 $('#hHoje').onclick = () => { $('#hDia').value = ''; lerHistorico().catch((e) => msg(e.message, true)); };
 $('#aV').onclick = () => abas('V');
-$('#aR').onclick = () => { abas('R'); lerRetiradas(); setTimeout(() => $('#codigo').focus(), 50); };
+$('#aR').onclick = () => { abas('R'); lerRetiradas(); if (!stream) $('#bCam').click(); };
 $('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
 async function lerRetiradas() { const r = await api('/api/venda/retiradas'); aguardandoRecargas(r.recargas ?? []); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
   $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
@@ -212,22 +211,20 @@ function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="
 // QR lido: pedido simples (uma linha, uma unidade) já dá a baixa; pedido com vários itens abre a lista para marcar o que está saindo (entrega parcial)
 const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { const v = await conferir(codigo, false), its = v.pedido.itens.filter((i) => i.falta > 0);
     if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
-const checar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, false), codigo); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; } });
-$('#bConferir').onclick = () => checar($('#codigo').value.trim());
 let stream = null;
 let carregouJsQR = null;
 const carregarJsQR = () => carregouJsQR ??= new Promise((ok, no) => { if (window.jsQR) return ok(); const t = document.createElement('script'); t.src = '/vendor/jsqr.min.js'; t.onload = ok; t.onerror = () => no(new Error('Não consegui carregar o leitor de QR.')); document.head.appendChild(t); });
-function fecharCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('#cam').style.display = 'none'; $('#bCam').textContent = '📷 Abrir câmera e ler QR'; }
+function fecharCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('#cam').style.display = 'none'; $('#bCam').textContent = '📷 Ler QR do cliente'; }
 $('#bCam').onclick = tentar(async () => {
   if (stream) return fecharCamera();   // segundo toque fecha
-  if (!navigator.mediaDevices?.getUserMedia) throw new Error('A câmera só abre em endereço seguro (https). Use o código digitado.');
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('A câmera só abre em endereço seguro (https). Abra o app por https.');
   stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); const v = $('#cam'); v.srcObject = stream; v.style.display = 'block'; await v.play();
   $('#bCam').textContent = '✖ Fechar câmera';
   // leitor nativo quando existe (Chrome/Android); senão a biblioteca jsQR (iPhone, Safari, computador)
   const nativo = 'BarcodeDetector' in window ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
   if (!nativo) await carregarJsQR();
   const tela = document.createElement('canvas'), ctx = tela.getContext('2d', { willReadFrequently: true });
-  const achou = (valor) => { fecharCamera(); $('#codigo').value = valor; navigator.vibrate?.(60); return baixar(valor); };
+  const achou = (valor) => { fecharCamera(); navigator.vibrate?.(60); return baixar(valor); };
   const laco = async () => {
     if (!stream) return;
     try {
@@ -240,8 +237,6 @@ $('#bCam').onclick = tentar(async () => {
     setTimeout(laco, nativo ? 250 : 200);
   };
   laco(); });
-// leitor de código de barras USB/Bluetooth digita o código e dá Enter: confere sozinho
-$('#codigo').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); baixar($('#codigo').value.trim()); } });
 
 async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); });
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();

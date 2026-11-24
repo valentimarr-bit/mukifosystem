@@ -176,3 +176,5 @@ Atualize no fim de cada sessão. Mais recente em cima.
 ## Pronto por item (produção)
 - Migração `0021_item_pronto`: `item_pedido.pronto_em`. Cada item do cartão tem "✔ Item pronto" (e "desfazer"). Marcar um item já inicia o preparo; ao marcar o último item de produção, o pedido vira PRONTO e o cliente é avisado. Itens "pronta entrega" não têm botão (entregues no balcão). Enquanto faltam itens, o cliente recebe o aviso "Seu <item> está pronto". O botão "Pronto" do pedido inteiro continua e marca todos os itens.
 - Rota: `POST /api/producao/:pedido/item/:item/pronto` `{pronto: true|false}`.
+
+- Retirada na venda: removidos o campo de digitar código e o botão "Conferir código". A aba abre a câmera sozinha; o QR (`MKF1.id.chave.remessa`) é lido pela câmera (leitor nativo ou jsQR) e confere/dá baixa. Verificado: o QR gerado pelo app é decodificado pelo jsQR.
