@@ -137,3 +137,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Visual da casa**: `GET/PUT /api/visual` (leitura pública, gravação só superadmin; valores inválidos viram padrão). Painel de personalização em `tema.js`.
 - **Modo teste** (Gestão → Conta, só superadmin; `GET/PUT /api/teste`): pagamento do balcão e do app entra na hora (cobrança com operador `teste`), trava de estoque, limite de pedidos pendentes e bloqueio de login do cliente desligados; faixa laranja "MODO TESTE" em todas as telas. ⚠ As vendas de teste entram nos relatórios — desligue antes de abrir ao público.
 - **Otimização** (medido localmente com 30 mil movimentos de estoque; produção/D1 não medida): migração `0014` — `WHERE tipo='venda' AND referencia=?` (a cada venda) fazia SCAN da tabela inteira, agora usa índice; saldo por insumo lido só no índice (covering). Sondagem do app/produção/venda pausa com a aba escondida; `tema.js` duplicado removido do venda; cache de scripts/ícones/vendor.
+
+## 24/11 (tarde) — Troco, histórico, gerar lista
+- **Cobrança em dinheiro** (`venda.html`): campo "Valor recebido", atalhos de notas (exato/10/20/50/100/200) e troco na hora ("Falta R$…" se for menos). Cálculo só na tela; o sistema continua registrando o valor cobrado. Após cobrar, o troco fica 15 s na tela.
+- **Histórico de pedidos**: aba "Histórico" na Venda (`GET /api/venda/historico?dia=`): todos os pedidos do dia (balcão e app) com hora, status, itens, forma de pagamento, total e cancelados; seletor de data.
+- **App de compras**: botão fixo "🛒 Gerar" — compara estoque recomendado × estoque atual, manda comprar a diferença por fornecedor (segunda ou quinta); avisa que substitui a lista atual.

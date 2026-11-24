@@ -74,6 +74,7 @@
 <div id="mensagem"></div>
 <main id="conteudo"></main>
 <div class="rodape" id="rodape" hidden>
+  <button class="btn peq" id="btnGerar" aria-label="Gerar nova lista de compras">🛒 Gerar</button>
   <button class="btn peq" id="btnLimpar" aria-label="Limpar a lista">🗑 Limpar</button>
   <button class="btn peq" id="btnAdicionar" aria-label="Adicionar item">＋ Item</button>
   <button class="btn prim" id="btnFinalizar">Finalizar compra</button>
@@ -102,6 +103,17 @@
   <label for="adQtd">Quantidade</label>
   <input id="adQtd" inputmode="decimal" value="1">
   <div class="acoes"><button class="btn" data-fechar>Cancelar</button><button class="btn prim" id="adSalvar">Adicionar</button></div>
+</dialog>
+
+<dialog id="dlgGerar">
+  <h3>Gerar lista de compras</h3>
+  <p>O sistema compara o <b>estoque recomendado</b> com o que você <b>tem agora</b> e manda comprar a diferença, agrupado por fornecedor.</p>
+  <p id="geraAviso" style="color:var(--bad)"></p>
+  <div class="acoes" style="flex-direction:column">
+    <button class="btn" data-gerar="segunda">Lista de SEGUNDA<br><small>cobre terça e quarta</small></button>
+    <button class="btn" data-gerar="quinta">Lista de QUINTA<br><small>cobre quinta a domingo</small></button>
+    <button class="btn" data-fechar>Voltar</button>
+  </div>
 </dialog>
 
 <dialog id="dlgLimpar">
@@ -239,12 +251,21 @@ function mudarItem(id, dados) {
   desenhar(); enviarFila();
 }
 
+$('#btnGerar').addEventListener('click', () => {
+  const abertos = lista ? itensDe(lista).length : 0, feitos = lista ? itensDe(lista).filter((i) => i.comprado).length : 0;
+  $('#geraAviso').textContent = lista ? `Isso SUBSTITUI a lista atual (${abertos} item(ns)${feitos ? `, ${feitos} já marcado(s)` : ''}).` : '';
+  $('#dlgGerar').showModal();
+});
+$('#dlgGerar').addEventListener('click', (e) => { const g = e.target.closest('[data-gerar]'); if (g) gerarLista(g); });
+async function gerarLista(gerar) {
+  gerar.disabled = true; gerar.textContent = 'Montando a lista…';
+  try { lista = (await api('/api/listas', 'POST', { dia: gerar.dataset.gerar })).lista; guardar('mukifo_lista', lista); fila.length = 0; guardar('mukifo_fila', fila); $('#dlgGerar').close(); desenhar(); vibrar([30, 60, 30]); }
+  catch (err) { $('#dlgGerar').close(); aviso(err instanceof SemInternet ? 'Precisa de internet para gerar a lista.' : err.message, 'erro'); desenhar(); }
+}
 $('#conteudo').addEventListener('click', async (e) => {
   const gerar = e.target.closest('[data-gerar]');
   if (gerar) {
-    gerar.disabled = true; gerar.textContent = 'Montando a lista…';
-    try { lista = (await api('/api/listas', 'POST', { dia: gerar.dataset.gerar })).lista; guardar('mukifo_lista', lista); desenhar(); }
-    catch (err) { aviso(err instanceof SemInternet ? 'Precisa de internet para gerar a lista.' : err.message, 'erro'); desenhar(); }
+    await gerarLista(gerar);
     return;
   }
   const ed = e.target.closest('[data-editar]');

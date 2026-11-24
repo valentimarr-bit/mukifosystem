@@ -31,7 +31,7 @@ input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border
 button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
-<div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button></div>
+<div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button><button id="aH">Histórico</button></div>
 
 <main id="telaV">
   <section><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off"><div class="cabset" id="cabset" hidden></div><div class="grade" id="grade"></div></section>
@@ -41,6 +41,10 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
     <button class="grande sec" id="bCancelar">Descartar pedido</button></aside>
 </main>
 
+<main id="telaH" hidden style="grid-template-columns:1fr;padding:0 14px 90px;max-width:760px;margin:0 auto">
+  <div style="display:flex;gap:8px;align-items:center;margin:8px 0"><input id="hDia" type="date" class="f" style="flex:1"><button class="sec" id="hHoje" style="min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt)">Hoje</button></div>
+  <div id="hResumo" class="mut" style="margin:4px 0 10px"></div><div id="hLista"></div>
+</main>
 <main id="telaR" hidden style="grid-template-columns:1fr">
   <section><div class="painel" style="position:static"><b>Conferir QR do cliente</b>
     <video id="cam" playsinline style="width:100%;border-radius:12px;margin:8px 0;display:none"></video>
@@ -55,6 +59,11 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
   <div class="formas" id="formas"><button data-f="pix">Pix</button><button data-f="debito">Débito</button><button data-f="credito">Crédito</button><button data-f="dinheiro">Dinheiro</button></div>
   <div id="boxMaq"><label class="mut">Maquininha</label><select class="f" id="maq"></select></div>
   <label class="mut">Valor desta cobrança (para dividir a conta, diminua)</label><input id="valor" inputmode="decimal">
+  <div id="boxDin" hidden>
+    <label class="mut">Valor recebido do cliente</label><input id="recebido" inputmode="decimal" placeholder="quanto o cliente deu">
+    <div class="formas" id="notas" style="margin-top:8px"></div>
+    <div id="troco" style="font-size:1.4em;font-weight:700;margin:10px 0;text-align:center"></div>
+  </div>
   <div class="mut ruim" id="dErro"></div><button class="grande" id="dOk">Cobrar</button><button class="grande sec" id="dFecha">Voltar</button></dialog>
 <div id="msg"></div>
 <script src="/entrar.js"></script>
@@ -136,17 +145,48 @@ $('#cobsPend').onclick = tentar(async (e) => { const b = e.target.closest('butto
 $('#bCancelar').onclick = tentar(async () => { await esvaziar(); if (confirm('Descartar este pedido?')) { await api(`/api/venda/comandas/${atual.id}/cancelar`, 'POST', {}); atual = null; await lerComandas(); } });
 
 $('#bCobrar').onclick = async () => { await esvaziar(); if (!atual?.id) return; forma = null; $('#dErro').textContent = ''; $('#dValor').textContent = R$(atual.restante); $('#valor').value = String(atual.restante).replace('.', ',');
-  document.querySelectorAll('#formas button').forEach((b) => b.classList.remove('on')); $('#boxMaq').hidden = true;
+  document.querySelectorAll('#formas button').forEach((b) => b.classList.remove('on')); $('#boxMaq').hidden = true; $('#boxDin').hidden = true;
   $('#maq').innerHTML = '<option value="">Automática (padrão)</option>' + maqs.filter((m) => m.ativa).map((m) => `<option value="${m.id}">${m.nome}</option>`).join(''); $('#dCobrar').showModal(); };
-$('#formas').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; forma = b.dataset.f; document.querySelectorAll('#formas button').forEach((x) => x.classList.toggle('on', x === b)); $('#boxMaq').hidden = forma === 'dinheiro'; };
+$('#formas').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; forma = b.dataset.f; document.querySelectorAll('#formas button').forEach((x) => x.classList.toggle('on', x === b)); $('#boxMaq').hidden = forma === 'dinheiro'; $('#boxDin').hidden = forma !== 'dinheiro'; if (forma === 'dinheiro') { $('#recebido').value = ''; calcTroco(); } };
+const num = (v) => parseFloat(String(v).replace(',', '.'));
+function calcTroco() {   // troco = recebido − valor cobrado (só na tela; o sistema registra o valor cobrado)
+  const dev = num($('#valor').value), rec = num($('#recebido').value), t = $('#troco');
+  const notas = [...new Set([dev, 10, 20, 50, 100, 200].filter((n) => Number.isFinite(n) && n >= dev - 0.005))].sort((a, b) => a - b).slice(0, 6);
+  $('#notas').innerHTML = notas.map((n) => `<button type="button" data-n="${n}">${n === dev ? 'Exato ' : ''}${R$(n)}</button>`).join('');
+  if (!Number.isFinite(rec)) { t.textContent = ''; return; }
+  const dif = Math.round((rec - dev) * 100) / 100;
+  t.style.color = dif < 0 ? 'var(--bad)' : 'var(--ok, #4ade80)';
+  t.textContent = dif < 0 ? `Falta ${R$(-dif)}` : dif === 0 ? 'Sem troco' : `Troco: ${R$(dif)}`;
+}
+$('#recebido').oninput = $('#valor').oninput = calcTroco;
+$('#notas').onclick = (e) => { const b = e.target.closest('button[data-n]'); if (b) { $('#recebido').value = String(b.dataset.n).replace('.', ','); calcTroco(); } };
 $('#dFecha').onclick = () => $('#dCobrar').close();
 $('#dOk').onclick = async () => { try { if (!forma) throw new Error('Escolha a forma de pagamento.');
+  let troco = 0;
+  if (forma === 'dinheiro') { const dev = num($('#valor').value), rec = num($('#recebido').value);
+    if (Number.isFinite(rec) && rec < dev - 0.005) throw new Error(`O cliente deu menos do que ${R$(dev)}.`);
+    if (Number.isFinite(rec)) troco = Math.round((rec - dev) * 100) / 100; }
   const r = await api(`/api/venda/comandas/${atual.id}/cobrar`, 'POST', { forma, valor: parseFloat(String($('#valor').value).replace(',', '.')), maquininha_id: $('#maq').value ? +$('#maq').value : undefined });
-  $('#dCobrar').close(); if (r.maquininha) msg(`Passe ${R$(r.comanda.pendente)} na ${r.maquininha}, depois toque em “Recebido ✓”.`); depois(r); } catch (e) { $('#dErro').textContent = e.message; } };
+  $('#dCobrar').close(); if (r.maquininha) msg(`Passe ${R$(r.comanda.pendente)} na ${r.maquininha}, depois toque em “Recebido ✓”.`); depois(r);
+  if (troco > 0) { msg(`💵 Devolva de troco: ${R$(troco)}`); clearTimeout(msg.t); msg.t = setTimeout(() => ($('#msg').style.display = 'none'), 15000); } } catch (e) { $('#dErro').textContent = e.message; } };
 
 // ---- retirada do app ----
-$('#aV').onclick = () => { $('#telaV').hidden = false; $('#telaR').hidden = true; $('#aV').classList.add('on'); $('#aR').classList.remove('on'); };
-$('#aR').onclick = () => { $('#telaV').hidden = true; $('#telaR').hidden = false; $('#aR').classList.add('on'); $('#aV').classList.remove('on'); lerRetiradas(); };
+const abas = (qual) => { $('#telaV').hidden = qual !== 'V'; $('#telaR').hidden = qual !== 'R'; $('#telaH').hidden = qual !== 'H'; for (const k of 'VRH') $('#a' + k).classList.toggle('on', k === qual); };
+const ROTULO = { entregue: 'Entregue', recebido: 'Pago · na fila', preparando: 'Preparando', pronto: 'Pronto', cancelado: 'Cancelado', aguardando_pagamento: 'Aguardando pagamento' };
+const FORMA = { pix: 'Pix', debito: 'Débito', credito: 'Crédito', dinheiro: 'Dinheiro' };
+async function lerHistorico() {
+  const r = await api('/api/venda/historico' + ($('#hDia').value ? '?dia=' + $('#hDia').value : '')); $('#hDia').value = r.dia;   // sem data: o servidor usa o dia do turno
+  const validos = r.pedidos.filter((p) => p.status !== 'cancelado'), soma = validos.reduce((s, p) => s + p.total, 0);
+  $('#hResumo').textContent = `${validos.length} pedido(s) · ${R$(soma)}` + (r.pedidos.length > validos.length ? ` · ${r.pedidos.length - validos.length} cancelado(s)` : '');
+  $('#hLista').innerHTML = r.pedidos.length ? r.pedidos.map((p) => `<div class="ret" style="margin-bottom:8px${p.status === 'cancelado' ? ';opacity:.55' : ''}"><div style="display:flex;justify-content:space-between;gap:8px"><b>#${p.numero} ${p.origem === 'celular' ? '📱' : '🍸'} ${p.nome_cliente ?? ''}</b><b>${R$(p.total)}</b></div>
+    <div class="mut">${new Date(String(p.criado_em).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} · ${ROTULO[p.status] ?? p.status}${p.pagamentos.length ? ' · ' + p.pagamentos.map((c) => `${FORMA[c.forma] ?? c.forma} ${R$(c.valor)}`).join(' + ') : ''}</div>
+    <div>${p.itens.map((i) => `${i.quantidade}× ${i.nome}`).join(', ')}</div></div>`).join('') : '<p class="mut">Nenhum pedido neste dia.</p>';
+}
+$('#aH').onclick = () => { abas('H'); lerHistorico().catch((e) => msg(e.message, true)); };
+$('#hDia').onchange = () => lerHistorico().catch((e) => msg(e.message, true));
+$('#hHoje').onclick = () => { $('#hDia').value = ''; lerHistorico().catch((e) => msg(e.message, true)); };
+$('#aV').onclick = () => abas('V');
+$('#aR').onclick = () => { abas('R'); lerRetiradas(); };
 $('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
 async function lerRetiradas() { const r = await api('/api/venda/retiradas'); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
   $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';

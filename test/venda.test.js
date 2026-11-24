@@ -202,3 +202,15 @@ test('desempenho: indicadores do período batem com as vendas feitas', async () 
   assert.ok(Array.isArray(d.hora) && d.hora.length >= 1);
   assert.equal((await chamar('/api/desempenho?de=2020-01-01&ate=2024-01-01')).status, 400);
 });
+
+test('histórico: lista os pedidos do dia com itens e forma de pagamento', async () => {
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const id = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda.id;
+  await chamar(`/api/venda/comandas/${id}/itens`, 'POST', { produto_id: prod, delta: 2 });
+  await chamar(`/api/venda/comandas/${id}/cobrar`, 'POST', { forma: 'dinheiro' });
+  const h = (await chamar('/api/venda/historico')).corpo;
+  const p = h.pedidos.find((x) => x.id === id);
+  assert.ok(p, 'pedido aparece no histórico');
+  assert.equal(p.itens[0].quantidade, 2); assert.equal(p.pagamentos[0].forma, 'dinheiro');
+  assert.equal((await chamar('/api/venda/historico', 'GET', null, { token: null })).status, 401);
+});

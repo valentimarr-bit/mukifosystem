@@ -207,6 +207,21 @@ async function resumo(db, url) {
   return json({ dia, vendas: vendas.n, total: r2(vendas.total), por_forma: formas.results, por_maquininha: maqs.results });
 }
 
+/** GET /api/venda/historico?dia=AAAA-MM-DD — todos os pedidos do dia (balcão e app), do mais novo ao mais antigo, com itens e pagamento. */
+async function historico(db, url) {
+  const dia = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('dia') ?? '') ? url.searchParams.get('dia') : diaDoTurno();
+  const [{ results: peds }, { results: itens }, { results: pags }] = await Promise.all([
+    db.prepare(`SELECT id, numero, origem, status, nome_cliente, total, criado_em FROM pedido
+                WHERE origem IN ('balcao','celular') AND dia = ? AND status <> 'aberta' ORDER BY criado_em DESC, id DESC LIMIT 500`).bind(dia).all(),
+    db.prepare(`SELECT ip.pedido_id, ip.nome, ip.quantidade FROM item_pedido ip JOIN pedido p ON p.id = ip.pedido_id
+                WHERE p.origem IN ('balcao','celular') AND p.dia = ? ORDER BY ip.id`).bind(dia).all(),
+    db.prepare(`SELECT c.pedido_id, c.forma, c.valor, c.operador FROM cobranca c JOIN pedido p ON p.id = c.pedido_id
+                WHERE p.origem IN ('balcao','celular') AND p.dia = ? AND c.status = 'paga'`).bind(dia).all()]);
+  const agrupa = (lista) => { const m = new Map(); for (const x of lista) { if (!m.has(x.pedido_id)) m.set(x.pedido_id, []); m.get(x.pedido_id).push(x); } return m; };
+  const it = agrupa(itens), pg = agrupa(pags);
+  return json({ dia, pedidos: peds.map((p) => ({ ...p, itens: (it.get(p.id) ?? []).map((i) => ({ nome: i.nome, quantidade: i.quantidade })), pagamentos: (pg.get(p.id) ?? []).map((c) => ({ forma: c.forma, valor: c.valor })) })) });
+}
+
 async function configurarMaquininha(db, id, corpo) {
   const m = await db.prepare('SELECT id FROM maquininha WHERE id = ?').bind(id).first();
   if (!m) return erro('Maquininha não encontrada.', 404);
@@ -248,6 +263,7 @@ export async function rotearVenda(request, env, url) {
     await db.prepare("INSERT INTO configuracao (chave, valor) VALUES ('travar_estoque', ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor").bind(corpo?.ativa === false ? 'nao' : 'sim').run();
     return json({ ok: true, ativa: await travaLigada(db) });
   }
+  if (m === 'GET' && p === '/api/venda/historico') return historico(db, url);
   if (m === 'GET' && p === '/api/venda/retiradas') return listarRetiradas(db);
   if (m === 'POST' && p === '/api/venda/retirada') return validarRetirada(db, corpo, eu);
   if (m === 'PUT' && p === '/api/venda/pix') {
