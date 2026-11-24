@@ -1,6 +1,7 @@
 // Rotas da API do Mukifo (Cloudflare D1 em env.DB).
 import { usuarioLogado, rotearAuth } from './auth.js';
 import { rotearFotos } from './fotos.js';
+import { rotearProdutos } from './produtos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -341,8 +342,9 @@ export async function rotearApi(request, env, url) {
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);
+  if (p === '/api/produtos' || p.startsWith('/api/produtos/')) return rotearProdutos(request, env, url);
   if (m === 'GET' && p === '/api/insumos') {
-    const { results } = await db.prepare('SELECT nome, embalagem FROM insumo WHERE ativo = 1 ORDER BY nome').all();
+    const { results } = await db.prepare('SELECT id, nome, embalagem, unidade_ficha FROM insumo WHERE ativo = 1 ORDER BY nome').all();
     return json(results);
   }
 

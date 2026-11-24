@@ -49,6 +49,14 @@
   #dlgFoto .previa { width:100%; height:260px; object-fit:contain; background:var(--bg); border-radius:10px; margin:10px 0; display:block; }
   #dlgFoto .acoes { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
   #dlgFoto .acoes .btn { flex:1; min-width:120px; text-align:center; text-decoration:none; }
+  #dlgProduto { border:none; border-radius:16px; background:var(--card); color:var(--txt); width:min(94vw,560px); max-height:92vh; padding:20px; }
+  #dlgProduto::backdrop { background:rgba(0,0,0,.7); }
+  #dlgProduto h3, #dlgProduto h4 { margin:0 0 6px; }
+  #dlgProduto label { display:block; margin:12px 0 4px; color:var(--mut); font-size:14px; }
+  #dlgProduto label.chk { display:flex; gap:8px; align-items:center; color:var(--txt); }
+  #dlgProduto input:not([type=checkbox]), #dlgProduto select { width:100%; }
+  #dlgProduto .lfi { display:grid; grid-template-columns:1fr 84px 38px 42px; gap:6px; align-items:center; margin-bottom:6px; }
+  #dlgProduto .acoes { display:flex; gap:8px; margin-top:14px; } #dlgProduto .acoes .btn { flex:1; }
   #cupom { display:none; }
   @media print {
     body { background:#fff; color:#000; } header, main > *:not(#cupom) { display:none !important; }
@@ -89,8 +97,9 @@
   </section>
 
   <section id="produtos" hidden>
-    <p class="mut">CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
-    <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th></tr></thead><tbody id="tbProdutos"></tbody></table>
+    <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
+    <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
+    <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
   </section>
 
   <section id="fotos" hidden>
@@ -134,6 +143,19 @@
     <div id="retornoConta"></div>
     <div class="bar"><button class="btn" id="sair">Sair deste aparelho</button></div>
   </section>
+
+  <dialog id="dlgProduto">
+    <h3 id="prodTitulo"></h3>
+    <label for="prodNome">Nome (igual ao do sistema de vendas)</label><input id="prodNome" autocomplete="off">
+    <label for="prodPreco">Preço de venda (R$)</label><input id="prodPreco" inputmode="decimal" placeholder="ex.: 18,00">
+    <label class="chk"><input type="checkbox" id="prodBaixa"> Dá baixa no estoque quando vende</label>
+    <label class="chk" id="prodAtivoBox"><input type="checkbox" id="prodAtivo"> Produto ativo (desmarque para tirar do cardápio)</label>
+    <h4>Ficha — o que vai em cada um</h4>
+    <div id="prodFicha"></div>
+    <button class="btn" id="prodAddIng">＋ Ingrediente</button>
+    <p class="mut" id="prodMsg"></p>
+    <div class="acoes"><button class="btn" id="prodFechar">Cancelar</button><button class="btn prim" id="prodSalvar">Salvar</button></div>
+  </dialog>
 
   <dialog id="dlgFoto">
     <h3 id="fotoNome"></h3>
@@ -228,13 +250,74 @@ $('#copiarZap').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(txt); alertar('Texto copiado.'); } catch { alertar('Não consegui copiar automaticamente.'); }
 });
 
+let produtosLista = [];
 async function carregarProdutos() {
   const [p] = await Promise.all([api('/api/produtos'), Fotos.carregar()]);
   p.sort((a, b) => (b.tem_ficha - a.tem_ficha) || ((a.lucro_pct ?? 999) - (b.lucro_pct ?? 999)));
-  $('#tbProdutos').innerHTML = p.map((x) => `<tr><td><div class="linha-foto">${Fotos.miniatura('produtos', x.id, 40)}<div>${esc(x.produto)}${x.tem_ficha ? '' : ' <span class="mut">· sem ficha</span>'}</div></div></td>
-    <td>${brl(x.preco_venda)}</td><td>${x.tem_ficha ? brl(x.cmv) : '—'}</td><td class="larga">${x.tem_ficha ? brl(x.lucro) : '—'}</td>
-    <td class="${x.lucro_pct != null && x.lucro_pct < 60 ? 'neg' : ''}">${x.tem_ficha && x.lucro_pct != null ? fmt(x.lucro_pct) + '%' : '—'}</td></tr>`).join('');
+  produtosLista = p;
+  desenharProdutos();
 }
+function desenharProdutos() {
+  const q = $('#pBusca').value.toLowerCase();
+  $('#tbProdutos').innerHTML = produtosLista.filter((x) => x.produto.toLowerCase().includes(q)).map((x) => `<tr><td><div class="linha-foto">${Fotos.miniatura('produtos', x.id, 40)}<div>${esc(x.produto)}${x.tem_ficha ? '' : ' <span class="mut">· sem ficha</span>'}</div></div></td>
+    <td>${brl(x.preco_venda)}</td><td>${x.tem_ficha ? brl(x.cmv) : '—'}</td><td class="larga">${x.tem_ficha ? brl(x.lucro) : '—'}</td>
+    <td class="${x.lucro_pct != null && x.lucro_pct < 60 ? 'neg' : ''}">${x.tem_ficha && x.lucro_pct != null ? fmt(x.lucro_pct) + '%' : '—'}</td>
+    <td><button class="btn" data-editar-produto="${x.id}">Editar</button></td></tr>`).join('');
+}
+$('#pBusca').addEventListener('input', desenharProdutos);
+$('#tbProdutos').addEventListener('click', (ev) => { const b = ev.target.closest('[data-editar-produto]'); if (b) abrirProduto(Number(b.dataset.editarProduto)); });
+$('#novoProduto').addEventListener('click', () => abrirProduto(null));
+
+// ---- editar produto ----
+let insumosLista = [], pEdit = null;
+const eu = () => Mukifo.token();
+async function chamar(url, metodo, corpo) {
+  const r = await fetch(url, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + eu() } });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) Mukifo.pedir(() => {});
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+  return j;
+}
+function linhaFicha(l = {}) {
+  const opts = insumosLista.map((i) => `<option value="${i.id}" ${i.id === l.insumo_id ? 'selected' : ''}>${esc(i.nome)}</option>`).join('');
+  return `<div class="lfi"><select class="fi-insumo"><option value="">Escolha o ingrediente…</option>${opts}</select>
+    <input class="fi-qtd" inputmode="decimal" placeholder="Qtd" value="${l.quantidade ?? ''}"><span class="mut fi-un">${esc(l.unidade_ficha ?? '')}</span>
+    <button class="btn" data-tirar aria-label="Tirar ingrediente">✕</button></div>`;
+}
+async function abrirProduto(id) {
+  if (!Mukifo.token()) return Mukifo.pedir(() => abrirProduto(id));
+  try {
+    if (!insumosLista.length) insumosLista = await api('/api/insumos');
+    pEdit = id ? await chamar('/api/produtos/' + id, 'GET') : { id: null, nome: '', preco_venda: null, baixa_estoque: true, ativo: true, ficha: [] };
+  } catch (e) { return alertar(e.message, 'neg'); }
+  $('#prodTitulo').textContent = id ? 'Editar produto' : 'Novo produto';
+  $('#prodNome').value = pEdit.nome;
+  $('#prodPreco').value = pEdit.preco_venda == null ? '' : String(pEdit.preco_venda).replace('.', ',');
+  $('#prodBaixa').checked = pEdit.baixa_estoque;
+  $('#prodAtivo').checked = pEdit.ativo; $('#prodAtivoBox').hidden = !id;
+  $('#prodFicha').innerHTML = pEdit.ficha.map(linhaFicha).join('');
+  $('#prodMsg').textContent = id ? 'Se mudar o nome, ele precisa continuar igual ao do sistema de vendas, senão os relatórios novos não encontram o produto.' : '';
+  $('#dlgProduto').showModal();
+}
+$('#prodAddIng').addEventListener('click', () => $('#prodFicha').insertAdjacentHTML('beforeend', linhaFicha()));
+$('#prodFicha').addEventListener('click', (ev) => { if (ev.target.closest('[data-tirar]')) ev.target.closest('.lfi').remove(); });
+$('#prodFicha').addEventListener('change', (ev) => {
+  if (!ev.target.classList.contains('fi-insumo')) return;
+  const i = insumosLista.find((x) => x.id === Number(ev.target.value));
+  ev.target.closest('.lfi').querySelector('.fi-un').textContent = i?.unidade_ficha ?? '';
+});
+const lerNumero = (t) => { const x = String(t ?? '').trim().replace(/\./g, '').replace(',', '.'); return x === '' ? null : Number(x); };
+$('#prodSalvar').addEventListener('click', async () => {
+  const ficha = [...document.querySelectorAll('#prodFicha .lfi')].map((l) => ({ insumo_id: l.querySelector('.fi-insumo').value === '' ? null : Number(l.querySelector('.fi-insumo').value), quantidade: lerNumero(l.querySelector('.fi-qtd').value) }));
+  const corpo = { nome: $('#prodNome').value, preco_venda: lerNumero($('#prodPreco').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
+  $('#prodSalvar').disabled = true;
+  try {
+    await chamar(pEdit.id ? '/api/produtos/' + pEdit.id : '/api/produtos', pEdit.id ? 'PUT' : 'POST', corpo);
+    $('#dlgProduto').close(); fCatalogo.produtos = null; await carregarProdutos(); alertar('Produto salvo ✓', 'pos');
+  } catch (e) { $('#prodMsg').textContent = e.message; }
+  $('#prodSalvar').disabled = false;
+});
+$('#prodFechar').addEventListener('click', () => $('#dlgProduto').close());
 
 function desenharContagem() {
   $('#contagemLista').innerHTML = `<table><tbody>${estoque.map((i, k) => `
