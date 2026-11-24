@@ -214,3 +214,18 @@ test('histórico: lista os pedidos do dia com itens e forma de pagamento', async
   assert.equal(p.itens[0].quantidade, 2); assert.equal(p.pagamentos[0].forma, 'dinheiro');
   assert.equal((await chamar('/api/venda/historico', 'GET', null, { token: null })).status, 401);
 });
+
+test('produção: venda de balcão paga aparece na produção e sai quando marcada como pronta', async () => {
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const id = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda.id;
+  await chamar(`/api/venda/comandas/${id}/itens`, 'POST', { produto_id: prod, delta: 1 });
+  assert.ok(!(await chamar('/api/producao')).corpo.pedidos.some((p) => p.id === id), 'aberta ainda não vai para a produção');
+  await chamar(`/api/venda/comandas/${id}/cobrar`, 'POST', { forma: 'dinheiro' });
+  const na = (await chamar('/api/producao')).corpo.pedidos.find((p) => p.id === id);
+  assert.ok(na, 'paga entra na produção'); assert.equal(na.origem, 'balcao'); assert.equal(na.status, 'recebido');
+  assert.equal((await chamar(`/api/producao/${id}/preparo`, 'POST', { acao: 'preparando' })).status, 200);
+  assert.equal((await chamar('/api/producao')).corpo.pedidos.find((p) => p.id === id).status, 'preparando');
+  assert.equal((await chamar(`/api/producao/${id}/preparo`, 'POST', { acao: 'pronto' })).status, 200);
+  assert.ok(!(await chamar('/api/producao')).corpo.pedidos.some((p) => p.id === id), 'pronta sai da tela');
+  assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(id).first()).status, 'entregue');
+});

@@ -34,7 +34,7 @@ function cartao(p, novo) {
   const itens = p.itens.map((i) => `<div class="item"><h3><b>${i.quantidade}×</b> ${esc(i.nome)}</h3>${i.combo ? i.combo.map((c) => `<div class="sub"><b>${c.quantidade}× ${esc(c.nome)}</b>${rec(c.receita)}</div>`).join('') : rec(i.receita)}</div>`).join('');
   const atraso = p.minutos >= 10 && p.status !== 'pronto';
   const botao = p.status === 'recebido' ? `<button class="btn" data-id="${p.id}" data-acao="preparando">▶ Começar a preparar</button>` : p.status === 'preparando' ? `<button class="btn ok" data-id="${p.id}" data-acao="pronto">✔ Pronto</button>` : '<div class="mut" style="text-align:center">Pronto · esperando o cliente mostrar o QR no balcão</div>';
-  return `<section class="ped ${p.status}${novo ? ' novo' : ''}"><div class="topo"><span class="num">${esc(p.numero)}</span><span class="tempo${atraso ? ' atraso' : ''}">${esc(p.nome_cliente || '')} · ${p.minutos ?? 0} min</span></div>${itens}${botao}</section>`;
+  return `<section class="ped ${p.status}${novo ? ' novo' : ''}"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}</span><span class="tempo${atraso ? ' atraso' : ''}">${esc(p.nome_cliente || '')} · ${p.minutos ?? 0} min</span></div>${itens}${botao}</section>`;
 }
 async function atualizar() {
   try {

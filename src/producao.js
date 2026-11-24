@@ -3,6 +3,7 @@
 import { json } from './api.js';
 import { usuarioLogado } from './auth.js';
 import { expirarPendentes } from './cliente.js';
+import { diaDoTurno } from './venda.js';
 import { avisarPedido, pushLigado } from './push.js';
 
 const erro = (m, s = 400) => json({ erro: m }, s);
@@ -10,9 +11,13 @@ const r3 = (x) => Math.round(x * 1000) / 1000;
 
 export async function listarProducao(db) {
   await expirarPendentes(db);
-  const { results: pedidos } = await db.prepare(`SELECT id, numero, nome_cliente, status, total, pago_em, preparo_em, pronto_em,
+  // App: sai da tela quando o QR é lido (entregue). Balcão: a venda já nasce "entregue" (pagou, levou), então fica na produção
+  // do dia até alguém marcar "pronto" — o status no banco não muda, só preparo_em/pronto_em.
+  const { results: brutos } = await db.prepare(`SELECT id, numero, origem, nome_cliente, status, total, pago_em, preparo_em, pronto_em,
     CAST((julianday('now') - julianday(pago_em)) * 1440 AS INTEGER) AS minutos FROM pedido
-    WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all();
+    WHERE (origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto'))
+       OR (origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL AND dia = ?) ORDER BY pago_em, id`).bind(diaDoTurno()).all();
+  const pedidos = brutos.map((p) => (p.origem === 'balcao' ? { ...p, status: p.preparo_em ? 'preparando' : 'recebido' } : p));
   if (!pedidos.length) return { pedidos: [] };
   const marcas = pedidos.map(() => '?').join(',');
   const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
@@ -46,6 +51,15 @@ export async function rotearProducao(request, env, url) {
     let c = {}; try { c = await request.json(); } catch { /* vazio */ }
     const acao = c?.acao;
     if (!AVISOS[acao]) return erro('Escolha “preparando” ou “pronto”.');
+    const orig = await db.prepare('SELECT origem FROM pedido WHERE id = ?').bind(k[1]).first();
+    if (orig?.origem === 'balcao') {   // venda de balcão: só marca o andamento; não há cliente para avisar
+      const sql = acao === 'preparando'
+        ? "UPDATE pedido SET preparo_em = datetime('now') WHERE id = ? AND origem = 'balcao' AND status = 'entregue' AND preparo_em IS NULL AND pronto_em IS NULL"
+        : "UPDATE pedido SET pronto_em = datetime('now'), preparo_em = COALESCE(preparo_em, datetime('now')) WHERE id = ? AND origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL";
+      const r = await db.prepare(sql).bind(k[1]).run();
+      if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa.', 409);
+      return json({ ok: true, avisos_enviados: 0 });
+    }
     const de = acao === 'preparando' ? "('recebido')" : "('recebido', 'preparando')";
     const col = acao === 'preparando' ? 'preparo_em' : 'pronto_em';
     const r = await db.prepare(`UPDATE pedido SET status = ?, ${col} = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ${de}`).bind(acao, k[1]).run();
