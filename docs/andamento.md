@@ -188,3 +188,6 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Todas as tabelas da gestão ordenam pelo título (toque = crescente, de novo = decrescente; ▲▼). `public/ordenar.js`: entende R$, %, datas dd/mm e texto; linhas de total ficam no fim; vazio vai para o fim; mantém a ordem quando a tabela é redesenhada. O estoque mantém a própria ordenação (data-ordem); `data-sem-ordem` na tabela desliga.
 
 - Botões Baixar modelo / Exportar / Importar de Produtos e Fichas saíram da aba Produtos; ficam só na aba Excel (que já os tinha).
+
+- Menu da gestão em 5 grupos (📦 Estoque · 🍹 Cardápio · 💰 Resultado · 👥 Clientes · ⚙️ Sistema) com abas do grupo numa segunda linha; Venda/Produção fixos no topo. O <nav id=navAbas> original fica escondido e continua mandando (permissões e lógica não mudaram).
+- Desempenho: nova caixa "Desempenho por produto" (sempre visível): todos os produtos vendidos no período com Qtd, vs período anterior, faturamento, % do total, custo, lucro e margem; ordenável pelo título. Servidor: `produtos` em /api/desempenho.

@@ -18,7 +18,7 @@ window.Cadastros = (() => {
     const ok = (id) => mods.includes(id);
     document.querySelectorAll('nav button[data-aba]').forEach((b) => { const m = ABA_MODULO[b.dataset.aba]; if (m) b.hidden = !(ok(m) || (m === 'financeiro' && ok('caixa'))); });
     document.querySelectorAll('nav button[data-aba=auditoria]').forEach((b) => { b.hidden = Mukifo.usuario()?.papel !== 'superadmin'; });   // só o superadmin vê o registro de atividades
-    document.querySelectorAll('nav a[data-modulo]').forEach((a) => { a.hidden = !ok(a.dataset.modulo); });
+    document.querySelectorAll('header a[data-modulo]').forEach((a) => { a.hidden = !ok(a.dataset.modulo); });
     const vis = [...document.querySelectorAll('nav button[data-aba]')].filter((b) => !b.hidden);
     const atual = document.querySelector('nav button[aria-pressed=true]');
     if (atual?.hidden && vis[0]) vis[0].click();

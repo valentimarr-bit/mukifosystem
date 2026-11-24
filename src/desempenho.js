@@ -114,6 +114,7 @@ export async function periodo(db, de, ate) {
     cobertura_ficha_pct: fat ? Math.round((fatComCusto / fat) * 100) : null,
     dias: dias.map((d) => ({ ...d, fat: r2(d.fat) })), hora: hora.map((h) => ({ ...h, fat: r2(h.fat) })),
     formas: formas.map((f) => ({ ...f, fat: r2(f.fat) })), maquininhas: maqs.map((m) => ({ ...m, total: r2(m.total) })), origens: origens.map((o) => ({ ...o, fat: r2(o.fat) })),
+    produtos: [...prods].sort((a, b) => b.fat - a.fat).slice(0, 400),   // desempenho de TODOS os produtos vendidos no período
     top_qtd: [...prods].sort((a, b) => b.qtd - a.qtd).slice(0, 10), top_lucro: prods.filter((a) => a.lucro != null).sort((a, b) => b.lucro - a.lucro).slice(0, 10),
     margem_baixa: prods.filter((a) => a.lucro != null && a.fat > 0 && a.lucro / a.fat < 0.5 && a.qtd >= 3).sort((a, b) => a.lucro / a.fat - b.lucro / b.fat).slice(0, 8),
     sem_ficha: prods.filter((a) => a.semFicha).sort((a, b) => b.fat - a.fat).slice(0, 8),
@@ -139,6 +140,9 @@ export async function getDesempenho(request, env, url) {
                 AND COALESCE((SELECT SUM(quantidade) FROM movimento_estoque WHERE insumo_id = i.id), 0) <= 0`).first(),
     tempos(db, de, ate), tempos(db, antesDe, antesAte), extras(db, de, ate),
   ]);
+  const antes = new Map(anterior.produtos.map((x) => [normalizarNome(x.nome), x]));
+  const totalFat = atual.fat || 0;
+  atual.produtos = atual.produtos.map((x) => { const a = antes.get(normalizarNome(x.nome)); return { ...x, pct_fat: totalFat ? Math.round((x.fat / totalFat) * 1000) / 10 : null, margem_pct: x.lucro != null && x.fat > 0 ? Math.round((x.lucro / x.fat) * 1000) / 10 : null, qtd_anterior: a?.qtd ?? 0, var_qtd_pct: a?.qtd ? Math.round(((x.qtd - a.qtd) / a.qtd) * 1000) / 10 : null }; });
   const dow = new Map(); for (const d of atual.dias) { const w = new Date(d.dia + 'T12:00:00Z').getUTCDay(); const x = dow.get(w) ?? { dia: DIAS_SEMANA[w], dias: 0, fat: 0 }; x.dias++; x.fat += d.fat; dow.set(w, x); }
   return json({
     de, ate, dias_no_periodo: n, anterior: { de: antesDe, ate: antesAte, fat: anterior.fat, vendas: anterior.vendas, ticket: anterior.ticket },
