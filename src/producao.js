@@ -31,7 +31,7 @@ export async function listarProducao(db) {
   }
   if (!pedidos.length) return { pedidos: [], entregues };
   const marcas = pedidos.map(() => '?').join(',');
-  const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade - ip.entregue_qtd AS quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) AND ip.quantidade - ip.entregue_qtd > 0 ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
+  const { results: itens } = await db.prepare(`SELECT ip.id, ip.pedido_id, ip.produto_id, ip.nome, ip.pronto_em, COALESCE(pr.pronta_entrega, 0) AS pronta, ip.quantidade - ip.entregue_qtd AS quantidade FROM item_pedido ip LEFT JOIN produto pr ON pr.id = ip.produto_id WHERE ip.pedido_id IN (${marcas}) AND ip.quantidade - ip.entregue_qtd > 0 ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
   const prodIds = [...new Set(itens.map((i) => i.produto_id))];
   const pm = prodIds.map(() => '?').join(',');
   const [{ results: comps }, { results: fichas }] = await Promise.all([
@@ -44,8 +44,8 @@ export async function listarProducao(db) {
   return {
     entregues,
     pedidos: pedidos.map((p) => ({ ...p, itens: itens.filter((i) => i.pedido_id === p.id).map((i) => doCombo.has(i.produto_id)
-      ? { nome: i.nome, quantidade: i.quantidade, combo: doCombo.get(i.produto_id).map((c) => ({ nome: c.nome, quantidade: c.quantidade * i.quantidade, receita: receita(c.produto_id, c.quantidade * i.quantidade) })) }
-      : { nome: i.nome, quantidade: i.quantidade, receita: receita(i.produto_id, i.quantidade) }) })),
+      ? { id: i.id, pronto: !!i.pronto_em, pronta: !!i.pronta, nome: i.nome, quantidade: i.quantidade, combo: doCombo.get(i.produto_id).map((c) => ({ nome: c.nome, quantidade: c.quantidade * i.quantidade, receita: receita(c.produto_id, c.quantidade * i.quantidade) })) }
+      : { id: i.id, pronto: !!i.pronto_em, pronta: !!i.pronta, nome: i.nome, quantidade: i.quantidade, receita: receita(i.produto_id, i.quantidade) }) })),
   };
 }
 
@@ -58,6 +58,8 @@ export async function rotearProducao(request, env, url) {
   if (!(await usuarioLogado(request, env))) return erro('Entre com seu nome e senha', 401);
   const db = env.DB, m = request.method, p = url.pathname;
   if (m === 'GET' && p === '/api/producao') return json({ ...(await listarProducao(db)), push: pushLigado(env) });
+  const ki = p.match(/^\/api\/producao\/([\w-]+)\/item\/(\d+)\/pronto$/);
+  if (m === 'POST' && ki) return itemPronto(env, db, ki[1], Number(ki[2]), request);
   const k = p.match(/^\/api\/producao\/([\w-]+)\/preparo$/);
   if (m === 'POST' && k) {
     let c = {}; try { c = await request.json(); } catch { /* vazio */ }
@@ -70,16 +72,49 @@ export async function rotearProducao(request, env, url) {
         : "UPDATE pedido SET pronto_em = datetime('now'), preparo_em = COALESCE(preparo_em, datetime('now')) WHERE id = ? AND origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL";
       const r = await db.prepare(sql).bind(k[1]).run();
       if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa.', 409);
+      if (acao === 'pronto') await db.prepare("UPDATE item_pedido SET pronto_em = COALESCE(pronto_em, datetime('now')) WHERE pedido_id = ?").bind(k[1]).run();
       return json({ ok: true, avisos_enviados: 0 });
     }
     const de = acao === 'preparando' ? "('recebido')" : "('recebido', 'preparando')";
     const col = acao === 'preparando' ? 'preparo_em' : 'pronto_em';
     const r = await db.prepare(`UPDATE pedido SET status = ?, ${col} = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ${de}`).bind(acao, k[1]).run();
     if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa (talvez já tenha sido retirado).', 409);
+    if (acao === 'pronto') await db.prepare("UPDATE item_pedido SET pronto_em = COALESCE(pronto_em, datetime('now')) WHERE pedido_id = ?").bind(k[1]).run();
     const ped = await db.prepare('SELECT numero FROM pedido WHERE id = ?').bind(k[1]).first();
     const a = AVISOS[acao], tx = textosPedido(await itensComPronta(db, k[1]), ped.numero)[acao];
     const push = await avisarPedido(env, k[1], { titulo: tx.titulo, corpo: tx.corpo, vibrar: a.vibrar, numero: ped.numero, etapa: acao });
     return json({ ok: true, avisos_enviados: push.enviados ?? 0 });
   }
   return null;
+}
+
+/** Marca (ou desmarca) um item como pronto. Todos os itens de produção prontos → o pedido inteiro fica pronto (e o cliente é avisado). */
+async function itemPronto(env, db, pedidoId, itemId, request) {
+  let c = {}; try { c = await request.json(); } catch { /* vazio */ }
+  const marcar = c?.pronto !== false;
+  const ped = await db.prepare('SELECT id, numero, origem, status, preparo_em, pronto_em FROM pedido WHERE id = ?').bind(pedidoId).first();
+  if (!ped) return erro('Pedido não encontrado.', 404);
+  const aberto = ped.origem === 'celular' ? ['recebido', 'preparando'].includes(ped.status) : (ped.origem === 'balcao' && ped.status === 'entregue' && !ped.pronto_em);
+  if (!aberto) return erro('Esse pedido não está mais em produção.', 409);
+  const it = await db.prepare('SELECT i.id, i.nome, COALESCE(p.pronta_entrega, 0) AS pronta FROM item_pedido i LEFT JOIN produto p ON p.id = i.produto_id WHERE i.id = ? AND i.pedido_id = ?').bind(itemId, pedidoId).first();
+  if (!it) return erro('Item não encontrado.', 404);
+  await db.prepare(marcar ? "UPDATE item_pedido SET pronto_em = COALESCE(pronto_em, datetime('now')) WHERE id = ?" : 'UPDATE item_pedido SET pronto_em = NULL WHERE id = ?').bind(itemId).run();
+  if (marcar) {   // mexer em um item já conta como começo do preparo
+    if (ped.origem === 'celular') await db.prepare("UPDATE pedido SET status = 'preparando', preparo_em = COALESCE(preparo_em, datetime('now')) WHERE id = ? AND status = 'recebido'").bind(pedidoId).run();
+    else await db.prepare("UPDATE pedido SET preparo_em = COALESCE(preparo_em, datetime('now')) WHERE id = ?").bind(pedidoId).run();
+  }
+  const falta = await db.prepare('SELECT COUNT(*) AS n FROM item_pedido i LEFT JOIN produto p ON p.id = i.produto_id WHERE i.pedido_id = ? AND i.quantidade - i.entregue_qtd > 0 AND COALESCE(p.pronta_entrega, 0) = 0 AND i.pronto_em IS NULL').bind(pedidoId).first();
+  let todos = false, avisos = 0;
+  if (marcar && falta.n === 0) {
+    todos = true;
+    const col = ped.origem === 'celular' ? "UPDATE pedido SET status = 'pronto', pronto_em = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ('recebido', 'preparando')" : "UPDATE pedido SET pronto_em = datetime('now') WHERE id = ? AND origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL";
+    const r = await db.prepare(col).bind(pedidoId).run();
+    if (r?.meta?.changes && ped.origem === 'celular') {
+      const a = AVISOS.pronto, tx = textosPedido(await itensComPronta(db, pedidoId), ped.numero).pronto;
+      avisos = (await avisarPedido(env, pedidoId, { titulo: tx.titulo, corpo: tx.corpo, vibrar: a.vibrar, numero: ped.numero, etapa: 'pronto' })).enviados ?? 0;
+    }
+  } else if (marcar && ped.origem === 'celular' && !it.pronta) {   // ainda faltam itens: avisa só o que já ficou pronto
+    avisos = (await avisarPedido(env, pedidoId, { titulo: `Seu ${it.nome} está pronto! 🎉`, corpo: `Pedido ${ped.numero}: pode buscar no balcão mostrando o QR. Os outros itens já vêm.`, vibrar: AVISOS.pronto.vibrar, numero: ped.numero, etapa: 'item' })).enviados ?? 0;
+  }
+  return json({ ok: true, pedido_pronto: todos, avisos_enviados: avisos });
 }

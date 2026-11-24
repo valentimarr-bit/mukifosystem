@@ -11,7 +11,7 @@ import { verificarGoogle } from '../src/clientes.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
@@ -278,4 +278,23 @@ test('carteira: recarga por Pix só credita quando confirmada (uma vez), paga pe
   const rest = (await chamar('/api/conta/carteira', 'GET', null, sess, null)).corpo.saldo; assert.ok(rest >= 0);
   assert.equal((await chamar(`/api/clientes/${cad.corpo.cliente.id}/saldo`, 'POST', { valor: -9999, obs: 'x' })).status, 400);
   assert.equal((await chamar(`/api/clientes/${cad.corpo.cliente.id}/saldo`, 'POST', { valor: 10, obs: 'dinheiro no balcão' })).status, 200);
+});
+
+test('produção: pronto por item; todos prontos → pedido pronto automaticamente', async () => {
+  await chamar('/api/teste', 'PUT', { ativo: true });
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Davi Item', celular: '(51) 98888-0002', email: 'davi@email.com', senha: 'segredo1', aceite: true }, {}, null);
+  const { results: ps } = await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL ORDER BY id LIMIT 2').all();
+  const ped = await chamar('/api/cliente/pedidos', 'POST', { itens: ps.map((p) => ({ produto_id: p.id, quantidade: 1 })) }, { 'X-Sessao-Cliente': cad.corpo.token }, null);
+  assert.equal(ped.status, 201);
+  const itens = (await env.DB.prepare('SELECT id FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(ped.corpo.id).all()).results;
+  const a = await chamar(`/api/producao/${ped.corpo.id}/item/${itens[0].id}/pronto`, 'POST', { pronto: true });
+  assert.equal(a.status, 200); assert.equal(a.corpo.pedido_pronto, false);
+  assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(ped.corpo.id).first()).status, 'preparando');
+  assert.equal((await chamar(`/api/producao/${ped.corpo.id}/item/${itens[0].id}/pronto`, 'POST', { pronto: false })).corpo.pedido_pronto, false);
+  await chamar(`/api/producao/${ped.corpo.id}/item/${itens[0].id}/pronto`, 'POST', { pronto: true });
+  const b = await chamar(`/api/producao/${ped.corpo.id}/item/${itens[1].id}/pronto`, 'POST', { pronto: true });
+  assert.equal(b.corpo.pedido_pronto, true);
+  assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(ped.corpo.id).first()).status, 'pronto');
+  assert.equal((await chamar(`/api/producao/${ped.corpo.id}/item/${itens[0].id}/pronto`, 'POST', { pronto: true })).status, 409);
+  await chamar('/api/teste', 'PUT', { ativo: false });
 });

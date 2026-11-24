@@ -172,3 +172,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Equipe: Gestão → cliente → "Carteira" lança +/− com motivo (recarga em dinheiro, estorno).
 - Contabilidade: recarga NÃO é venda; a venda entra quando o pedido é pago com saldo (cobrança forma pix, operador "saldo"). Saldo de cliente é dinheiro a devolver: conversar com o contador (regras de estorno/validade).
 - Apple Pay / Google Pay para recarregar: precisa de gateway com carteira digital (pendente de escolher gateway). O webhook do gateway pode chamar `confirmarRecarga`.
+
+## Pronto por item (produção)
+- Migração `0021_item_pronto`: `item_pedido.pronto_em`. Cada item do cartão tem "✔ Item pronto" (e "desfazer"). Marcar um item já inicia o preparo; ao marcar o último item de produção, o pedido vira PRONTO e o cliente é avisado. Itens "pronta entrega" não têm botão (entregues no balcão). Enquanto faltam itens, o cliente recebe o aviso "Seu <item> está pronto". O botão "Pronto" do pedido inteiro continua e marca todos os itens.
+- Rota: `POST /api/producao/:pedido/item/:item/pronto` `{pronto: true|false}`.

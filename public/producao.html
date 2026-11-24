@@ -37,7 +37,9 @@ const rec = (l) => l.length ? `<ul class="rec">${l.map((r) => `<li><span class="
 const hora = (t) => t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
 function cartao(p, novo) {
   if (p.status === 'entregue') return `<section class="ped entregue"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}</span><span class="tempo">${esc(p.nome_cliente || '')} · ${hora(p.entregue_em)}</span></div><ul>${p.itens.map((i) => `<li>${i.quantidade}× ${esc(i.nome)}</li>`).join('')}</ul></section>`;
-  const itens = p.itens.map((i) => `<div class="item"><h3><b>${i.quantidade}×</b> ${esc(i.nome)}</h3>${i.combo ? i.combo.map((c) => `<div class="sub"><b>${c.quantidade}× ${esc(c.nome)}</b>${rec(c.receita)}</div>`).join('') : rec(i.receita)}</div>`).join('');
+  const podeItem = p.status === 'recebido' || p.status === 'preparando';
+  const btnItem = (i) => !podeItem ? '' : i.pronta ? '<div class="mut">🍺 pronta entrega — entregar no balcão</div>' : i.pronto ? `<button class="btn sec" data-id="${p.id}" data-item="${i.id}" data-pronto="0">✓ Pronto — desfazer</button>` : `<button class="btn ok" data-id="${p.id}" data-item="${i.id}" data-pronto="1">✔ Item pronto</button>`;
+  const itens = p.itens.map((i) => `<div class="item"${i.pronto ? ' style="opacity:.6"' : ''}><h3><b>${i.quantidade}×</b> ${esc(i.nome)}${i.pronto ? ' ✓' : ''}</h3>${i.combo ? i.combo.map((c) => `<div class="sub"><b>${c.quantidade}× ${esc(c.nome)}</b>${rec(c.receita)}</div>`).join('') : rec(i.receita)}${btnItem(i)}</div>`).join('');
   const atraso = p.minutos >= 10 && p.status !== 'pronto';
   const botao = p.status === 'recebido' ? `<button class="btn" data-id="${p.id}" data-acao="preparando">▶ Começar a preparar</button>` : p.status === 'preparando' ? `<button class="btn ok" data-id="${p.id}" data-acao="pronto">✔ Pronto</button>` : '<div class="mut" style="text-align:center">Pronto · esperando o cliente mostrar o QR no balcão</div>';
   return `<section class="ped ${p.status}${novo ? ' novo' : ''}"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}${p.remessa ? ` <b style="color:#f59e0b">REP ${p.remessa}</b>` : ''}</span><span class="tempo${atraso ? ' atraso' : ''}">${esc(p.nome_cliente || '')} · ${p.minutos ?? 0} min</span></div>${itens}${botao}</section>`;
@@ -52,7 +54,9 @@ async function atualizar() {
     $('#fila').innerHTML = col('c1', '📥 RECEBIDO', rec, 'Nada esperando') + col('c2', '🔥 EM PRODUÇÃO', prod, 'Nada em preparo') + col('c3', '✅ ENTREGUE', ent, 'Nenhuma entrega hoje');
   } catch (e) { if (!/Entre/.test(e.message)) aviso(e.message); }
 }
-$('#fila').onclick = async (e) => { const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
+$('#fila').onclick = async (e) => { const bi = e.target.closest('[data-item]');
+  if (bi) { bi.disabled = true; try { const r = await api(`/api/producao/${bi.dataset.id}/item/${bi.dataset.item}/pronto`, { pronto: bi.dataset.pronto === '1' }); aviso(r.pedido_pronto ? 'Pedido todo pronto — cliente avisado.' : bi.dataset.pronto === '1' ? 'Item pronto.' : 'Item desmarcado.'); } catch (er) { aviso(er.message); } return atualizar(); }
+  const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
   try { const r = await api(`/api/producao/${b.dataset.id}/preparo`, { acao: b.dataset.acao }); aviso(b.dataset.acao === 'preparando' ? 'Cliente avisado: começou o preparo.' : 'Cliente avisado: pedido pronto.'); await atualizar(); } catch (er) { aviso(er.message); atualizar(); } };
 $('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
 function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
