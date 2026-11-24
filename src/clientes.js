@@ -2,6 +2,7 @@
 import { json } from './api.js';
 import { hashSenha, hashToken, aleatorio, igual, usuarioLogado } from './auth.js';
 import { celularValido } from './cliente.js';
+import { modoTeste } from './trava.js';
 import { NIVEIS, nivelDe } from './dominio/niveis.js';
 
 const erro = (m, s = 400) => json({ erro: m }, s);
@@ -62,7 +63,7 @@ async function entrar(db, c) {
   const cli = await db.prepare('SELECT * FROM cliente WHERE ativo = 1 AND ((? IS NOT NULL AND celular = ?) OR email = ?)').bind(cel, cel, login).first();
   const falha = erro('Celular, e-mail ou senha não conferem.', 401);
   if (!cli || !cli.senha_hash) return falha;
-  if (cli.bloqueado_ate && cli.bloqueado_ate > new Date().toISOString().replace('T', ' ').slice(0, 19)) return erro('Muitas tentativas. Espere alguns minutos e tente de novo.', 429);
+  if (!(await modoTeste(db)) && cli.bloqueado_ate && cli.bloqueado_ate > new Date().toISOString().replace('T', ' ').slice(0, 19)) return erro('Muitas tentativas. Espere alguns minutos e tente de novo.', 429);
   if (!igual(await hashSenha(String(c?.senha ?? ''), cli.sal), cli.senha_hash)) {
     await db.prepare(`UPDATE cliente SET falhas = falhas + 1, bloqueado_ate = CASE WHEN falhas + 1 >= ${MAX_FALHAS} THEN datetime('now', '+${BLOQUEIO_MIN} minutes') END, falhas = CASE WHEN falhas + 1 >= ${MAX_FALHAS} THEN 0 ELSE falhas + 1 END WHERE id = ?`).bind(cli.id).run();
     return falha;

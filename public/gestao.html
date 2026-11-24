@@ -220,6 +220,9 @@
       <h3>Trava de estoque</h3>
       <label class="chk"><input type="checkbox" id="travaEstoque"> Não deixar vender o que não tem no estoque</label>
       <p class="mut">Só vale para ingredientes que já foram contados ou comprados. Faça a primeira contagem para a trava funcionar em tudo.</p>
+      <h3>🧪 Modo teste</h3>
+      <label class="chk"><input type="checkbox" id="modoTeste"> Fingir que os pagamentos entraram (sem restrições)</label>
+      <p class="mut">Ligado: todo pagamento (balcão e app) é dado como recebido na hora, a trava de estoque e os limites de pedidos/tentativas ficam desligados, e uma faixa laranja aparece nas telas. As cobranças ficam marcadas como "teste". Desligue antes de abrir para clientes de verdade.</p>
       <h3>Maquininhas</h3>
       <div id="listaMaq"></div>
       <div class="bar"><label>Escolha da maquininha:</label><select id="modoRot"><option value="padrao">Sempre a padrão (eu escolho outra se quiser)</option><option value="equilibrar">Equilibrar entre as maquininhas</option></select><button class="btn" id="rotSalvar">Salvar</button></div>
@@ -580,12 +583,14 @@ let maqLista = [];
 async function carregarVenda() {
   const pix = await chamarConta('/api/venda/pix', null, 'GET');
   $('#pixChave').value = pix.chave; $('#pixNome').value = pix.nome; $('#pixCidade').value = pix.cidade;
+  try { $('#modoTeste').checked = (await (await fetch('/api/teste')).json()).ativo; } catch {}
   $('#travaEstoque').checked = (await chamarConta('/api/venda/trava', null, 'GET')).ativa;
   const r = await chamarConta('/api/venda/maquininhas', null, 'GET'); maqLista = r.maquininhas; $('#modoRot').value = r.modo;
   $('#listaMaq').innerHTML = maqLista.map((m) => `<div class="bar"><input data-m="${m.id}" data-c="nome" value="${esc(m.nome)}"><input data-m="${m.id}" data-c="serie" placeholder="Nº de série" value="${esc(m.serie ?? '')}">
     <label><input type="checkbox" data-m="${m.id}" data-c="ativa" ${m.ativa ? 'checked' : ''}> ativa</label><label><input type="radio" name="maqPadrao" data-m="${m.id}" data-c="padrao" ${m.padrao ? 'checked' : ''}> padrão</label>
     <button class="btn" data-salvarmaq="${m.id}">Salvar</button></div>`).join('');
 }
+$('#modoTeste').onchange = async (e) => { try { const r = await fetch('/api/teste', { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + window.Mukifo.token() }, body: JSON.stringify({ ativo: e.target.checked }) }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'Erro ' + r.status); msgConta(e.target.checked ? 'Modo teste LIGADO: pagamentos simulados.' : 'Modo teste desligado.'); location.reload(); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#travaEstoque').onchange = async (e) => { try { await chamarConta('/api/venda/trava', { ativa: e.target.checked }, 'PUT'); msgConta(e.target.checked ? 'Trava de estoque ligada.' : 'Trava de estoque desligada: vai vender mesmo sem estoque.'); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#pixSalvar').onclick = async () => { try { await chamarConta('/api/venda/pix', { chave: $('#pixChave').value, nome: $('#pixNome').value, cidade: $('#pixCidade').value }, 'PUT'); msgConta('Pix salvo.'); } catch (e) { msgConta(e.message, 'neg'); } };
 $('#rotSalvar').onclick = async () => { try { await chamarConta('/api/venda/roteamento', { modo: $('#modoRot').value }, 'PUT'); msgConta('Escolha da maquininha salva.'); } catch (e) { msgConta(e.message, 'neg'); } };

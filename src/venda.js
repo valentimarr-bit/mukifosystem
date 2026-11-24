@@ -5,7 +5,7 @@ import { usuarioLogado } from './auth.js';
 import { ordenarCategorias } from './dominio/categorias.js';
 import { escolherMaquininha } from './pagamentos/roteador.js';
 import { validarRetirada, listarRetiradas, lerPix, salvarPix } from './cliente.js';
-import { conferirEstoque, disponibilidade, travaLigada } from './trava.js';
+import { conferirEstoque, disponibilidade, travaLigada, modoTeste } from './trava.js';
 import { enviarCobranca, naviConfigurado } from './pagamentos/navi.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
@@ -153,8 +153,9 @@ async function cobrar(db, env, id, corpo, eu) {
   if (!Number.isFinite(valor) || valor <= 0) return erro('Valor inválido.');
   if (valor > c.restante + 0.005) return erro(`O valor passa do que falta cobrar (R$ ${c.restante.toFixed(2).replace('.', ',')}).`);
 
+  const teste = await modoTeste(db);   // no modo teste todo pagamento é dado como recebido, sem maquininha
   let maquininha = null, motivo = null;
-  if (forma !== 'dinheiro') {
+  if (forma !== 'dinheiro' && !teste) {
     const { maquininhas, modo } = await maquininhasEModo(db);
     const { results } = await db.prepare("SELECT maquininha_id, COUNT(*) AS n FROM cobranca WHERE status = 'pendente' AND maquininha_id IS NOT NULL GROUP BY maquininha_id").all();
     const e = escolherMaquininha({ explicita: corpo?.maquininha_id ?? null, modo, maquininhas, pendentes: new Map(results.map((r) => [r.maquininha_id, r.n])) });
@@ -162,10 +163,10 @@ async function cobrar(db, env, id, corpo, eu) {
     maquininha = e.maquininha; motivo = e.motivo;
   }
   const cid = `cob-${id8()}${id8()}`;
-  const paga = forma === 'dinheiro';
+  const paga = forma === 'dinheiro' || teste;
   await db.batch([
     db.prepare(`INSERT INTO cobranca (id, pedido_id, maquininha_id, forma, valor, status, operador, paga_em) VALUES (?, ?, ?, ?, ?, ?, ?, ${paga ? "datetime('now')" : 'NULL'})`)
-      .bind(cid, id, maquininha?.id ?? null, forma, valor, paga ? 'paga' : 'pendente', eu.nome),
+      .bind(cid, id, maquininha?.id ?? null, forma, valor, paga ? 'paga' : 'pendente', teste ? 'teste' : eu.nome),
     db.prepare("UPDATE pedido SET status = 'aguardando_pagamento' WHERE id = ? AND status = 'aberta'").bind(id),
   ]);
   const envio = maquininha ? await enviarCobranca(env, { id: cid, forma, valor, pedido: id }, maquininha) : { modo: 'manual' };

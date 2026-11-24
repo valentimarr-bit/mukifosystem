@@ -74,6 +74,7 @@
 <div id="mensagem"></div>
 <main id="conteudo"></main>
 <div class="rodape" id="rodape" hidden>
+  <button class="btn peq" id="btnLimpar" aria-label="Limpar a lista">🗑 Limpar</button>
   <button class="btn peq" id="btnAdicionar" aria-label="Adicionar item">＋ Item</button>
   <button class="btn prim" id="btnFinalizar">Finalizar compra</button>
 </div>
@@ -101,6 +102,13 @@
   <label for="adQtd">Quantidade</label>
   <input id="adQtd" inputmode="decimal" value="1">
   <div class="acoes"><button class="btn" data-fechar>Cancelar</button><button class="btn prim" id="adSalvar">Adicionar</button></div>
+</dialog>
+
+<dialog id="dlgLimpar">
+  <h3>Limpar a lista?</h3>
+  <p id="limpaTexto"></p>
+  <p><b>Tem certeza?</b> Isso não lança nada no estoque e não dá para desfazer. Depois você pode gerar uma lista nova.</p>
+  <div class="acoes"><button class="btn" data-fechar>Não, voltar</button><button class="btn prim" id="limpaOk" style="background:var(--bad);border-color:var(--bad);color:#fff">Sim, limpar</button></div>
 </dialog>
 
 <dialog id="dlgFinalizar">
@@ -281,6 +289,22 @@ $('#adSalvar').addEventListener('click', async () => {
     lista = (await api(`/api/listas/${lista.id}/itens`, 'POST', { insumo: $('#adNome').value.trim(), quantidade: q })).lista;
     guardar('mukifo_lista', lista); $('#dlgAdicionar').close(); desenhar(); aviso('Item adicionado.');
   } catch (e) { aviso(e instanceof SemInternet ? 'Sem internet: tente de novo quando voltar.' : e.message, 'erro'); }
+});
+
+$('#btnLimpar').addEventListener('click', () => {
+  const todos = itensDe(lista), feitos = todos.filter((i) => i.comprado).length;
+  $('#limpaTexto').innerHTML = `A lista tem <b>${todos.length}</b> item(ns)` + (feitos ? ` e <b>${feitos}</b> já marcado(s) como comprado(s). <span style="color:var(--bad)">Essas marcações serão perdidas.</span>` : '.');
+  $('#dlgLimpar').showModal();
+});
+$('#limpaOk').addEventListener('click', async () => {
+  $('#limpaOk').disabled = true;
+  try {
+    if (!navigator.onLine) throw new SemInternet();
+    await api(`/api/listas/${lista.id}/limpar`, 'POST', {});
+    fila.length = 0; guardar('mukifo_fila', fila);   // marcações pendentes eram dessa lista
+    $('#dlgLimpar').close(); vibrar([30, 60, 30]); lista = null; guardar('mukifo_lista', null); desenhar(); aviso('Lista limpa ✓ Gere uma nova quando quiser.');
+  } catch (e) { $('#dlgLimpar').close(); aviso(e instanceof SemInternet ? 'Precisa de internet para limpar a lista.' : e.message, 'erro'); }
+  $('#limpaOk').disabled = false;
 });
 
 $('#btnFinalizar').addEventListener('click', () => {

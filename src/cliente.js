@@ -1,7 +1,7 @@
 // App do cliente: o pedido só entra na fila DEPOIS de pago. A retirada é feita por QR de uso único, conferido no balcão.
 import { json } from './api.js';
 import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
-import { conferirEstoque } from './trava.js';
+import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { clienteLogado } from './clientes.js';
 
@@ -46,7 +46,9 @@ export const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '
 
 async function criarPedido(db, request, corpo) {
   await expirarPendentes(db);
+  const teste = await modoTeste(db);
   const pix = await lerPix(db);
+  if (teste && !pix.chave) pix.chave = 'teste@mukifo.app';
   if (!pix.chave) return erro('Os pedidos pelo celular ainda não foram liberados. Peça no balcão.', 503);
   const conta = await clienteLogado(request, { DB: db });   // quem tem conta não precisa digitar de novo e ganha pontos
   const nome = String(conta?.nome ?? corpo?.nome ?? '').trim().slice(0, 40);
@@ -82,7 +84,7 @@ async function criarPedido(db, request, corpo) {
   const [pc, po] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND celular = ?").bind(celular).first(),
     db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
-  if (pc.n >= MAX_PENDENTES_CELULAR || po.n >= MAX_PENDENTES_ORIGEM) return erro('Você já tem pedidos esperando pagamento. Pague ou aguarde alguns minutos.', 429);
+  if (!teste && (pc.n >= MAX_PENDENTES_CELULAR || po.n >= MAX_PENDENTES_ORIGEM)) return erro('Você já tem pedidos esperando pagamento. Pague ou aguarde alguns minutos.', 429);
 
   const chaveQr = segredo(), tokenHash = await sha256(chaveQr);
   for (let t = 0; t < 3; t++) {
@@ -97,7 +99,11 @@ async function criarPedido(db, request, corpo) {
         db.prepare("INSERT INTO cobranca (id, pedido_id, forma, valor, status, operador) VALUES (?, ?, 'pix', ?, 'pendente', 'app')").bind(cid, id, total),
       ]);
       const copiaECola = gerarPix({ ...pix, valor: total, txid: `MKF${dia.replaceAll('-', '')}${numero}` });
-      return json({ id, numero, total, validade_min: VALIDADE_MIN, chave_qr: chaveQr, pix: copiaECola }, 201);
+      if (teste) {   // "fingir que o pagamento entrou": confirma na hora, pelo mesmo caminho do pagamento real
+        await db.prepare("UPDATE cobranca SET status = 'paga', paga_em = datetime('now'), operador = 'teste' WHERE id = ?").bind(cid).run();
+        await conferirQuitacao(db, id, 'teste');
+      }
+      return json({ id, numero, total, validade_min: VALIDADE_MIN, chave_qr: chaveQr, pix: copiaECola, teste }, 201);
     } catch { /* número repetido por pedidos simultâneos: tenta de novo */ }
   }
   return erro('Não consegui registrar o pedido. Tente de novo.', 409);

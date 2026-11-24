@@ -47,6 +47,7 @@ async function atualizar() {
 $('#fila').onclick = async (e) => { const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
   try { const r = await api(`/api/producao/${b.dataset.id}/preparo`, { acao: b.dataset.acao }); aviso(b.dataset.acao === 'preparando' ? 'Cliente avisado: começou o preparo.' : 'Cliente avisado: pedido pronto.'); await atualizar(); } catch (er) { aviso(er.message); atualizar(); } };
 $('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
-function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(atualizar, 4000); }
+function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && token) atualizar(); });
 iniciar();
 </script></body></html>

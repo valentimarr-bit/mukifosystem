@@ -5,7 +5,14 @@
 const EPS = 1e-6;
 const arred = (x) => Math.floor(x + EPS);
 
+/** Modo teste (liga o superadmin): pagamentos são simulados, sem trava de estoque nem limites. Vem marcado como operador 'teste'. */
+export async function modoTeste(db) {
+  const c = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'modo_teste'").first();
+  return c?.valor === 'sim';
+}
+
 export async function travaLigada(db) {
+  if (await modoTeste(db)) return false;
   const c = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'travar_estoque'").first();
   return (c?.valor ?? 'sim') !== 'nao';
 }

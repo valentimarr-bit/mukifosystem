@@ -161,3 +161,37 @@ test('painel de permissões: o superadmin escolhe os módulos de cada login e o 
   const eu = lista.find((u) => u.papel === 'superadmin');
   if (eu) assert.equal((await chamar(`/api/usuarios/${eu.id}/modulos`, 'PUT', { modulos: [] })).status, 409);
 });
+
+test('lista de compras: limpar descarta a lista aberta sem mexer no estoque', async () => {
+  const antes = (await env.DB.prepare('SELECT COUNT(*) AS n FROM movimento_estoque').first()).n;
+  const lista = (await chamar('/api/listas', 'POST', { dia: 'quinta' })).corpo.lista;
+  assert.ok(lista.id);
+  assert.equal((await chamar(`/api/listas/${lista.id}/limpar`, 'POST', {}, {}, null)).status, 401);
+  assert.equal((await chamar(`/api/listas/${lista.id}/limpar`, 'POST', {})).status, 200);
+  assert.equal((await chamar('/api/listas/atual')).corpo.lista, null);
+  assert.equal((await chamar(`/api/listas/${lista.id}/limpar`, 'POST', {})).status, 409);          // já limpa
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM movimento_estoque').first()).n, antes);
+});
+
+test('visual da casa: público para ler, só superadmin grava, valores inválidos viram padrão', async () => {
+  assert.equal((await chamar('/api/visual', 'GET', null, {}, null)).corpo.visual, null);
+  assert.equal((await chamar('/api/visual', 'PUT', { tema: 'oceano' }, {}, null)).status, 403);
+  const r = await chamar('/api/visual', 'PUT', { tema: 'nao-existe', acento: '#12ab34', raio: '99', botoes: 'extra', fonte: 'redonda', marca: { nome: 'Mukifo <b>Bar', emoji: '🍹' } });
+  assert.equal(r.status, 200); assert.equal(r.corpo.visual.tema, null); assert.equal(r.corpo.visual.raio, null); assert.equal(r.corpo.visual.acento, '#12ab34');
+  const lido = (await chamar('/api/visual', 'GET', null, {}, null)).corpo.visual;
+  assert.equal(lido.botoes, 'extra'); assert.equal(lido.marca.nome, 'Mukifo bBar'); assert.equal(lido.marca.emoji, '🍹');
+});
+
+test('modo teste: pagamento do app e do balcão entra sozinho, sem trava, marcado como teste', async () => {
+  assert.equal((await chamar('/api/teste', 'GET', null, {}, null)).corpo.ativo, false);
+  assert.equal((await chamar('/api/teste', 'PUT', { ativo: true }, {}, null)).status, 403);
+  assert.equal((await chamar('/api/teste', 'PUT', { ativo: true })).corpo.ativo, true);
+  assert.equal((await chamar('/api/visual', 'GET', null, {}, null)).corpo.teste, true);
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const r = await chamar('/api/cliente/pedidos', 'POST', { nome: 'Teste', celular: '51999990000', itens: [{ produto_id: prod, quantidade: 1 }] }, {}, null);
+  assert.equal(r.status, 201); assert.equal(r.corpo.teste, true);
+  const c = await env.DB.prepare('SELECT status, operador FROM cobranca WHERE pedido_id = ?').bind(r.corpo.id).first();
+  assert.equal(c.status, 'paga'); assert.equal(c.operador, 'teste');
+  assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(r.corpo.id).first()).status, 'recebido');
+  await chamar('/api/teste', 'PUT', { ativo: false });
+});

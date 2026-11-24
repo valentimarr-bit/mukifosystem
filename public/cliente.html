@@ -18,7 +18,7 @@ input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:1
 #cardapio>.busca{margin:10px 12px 0;width:calc(100% - 24px)}.cabset{padding:0 12px}.chips{display:none!important}
 button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style></head><body>
-<header style="display:flex;gap:10px;align-items:center;justify-content:space-between"><div><h1>🍸 Mukifo</h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></div><button id="bConta" class="chip" style="min-height:48px;padding:0 14px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button></header>
+<header style="display:flex;gap:10px;align-items:center;justify-content:space-between"><div><h1><span data-marca-emoji>🍸</span> <span data-marca-nome>Mukifo</span></h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></div><button id="bConta" class="chip" style="min-height:48px;padding:0 14px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button></header>
 
 <div id="cardapio"><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off" enterkeyhint="search"><div class="cabset" id="cabset" hidden></div><div class="lista" id="lista"></div>
   <div class="barra"><button class="grande" id="bCarrinho" disabled>Toque nos produtos para pedir</button></div><div id="aviso" hidden></div></div>
@@ -74,6 +74,8 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 const CH = 'mukifo_pedido_app';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+let aba = 0;   // aba escondida: consulta 1 a cada 5 ticks (o aviso de preparo já vai por push)
+document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) consultar(); });
 let cardapio = [], cat = -1, cart = new Map(), prods = new Map(), pedido = null, timer = null;
 const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
 const tela = (id) => ['cardapio', 'telaConta', 'telaDados', 'telaPix', 'telaQr', 'telaFim'].forEach((t) => $('#' + t).hidden = t !== id);
@@ -118,7 +120,7 @@ $('#bPagar').onclick = async () => { $('#bPagar').disabled = true; $('#erro').te
     guardar(pedido); cart.clear(); acompanhar(); assinarPush(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; };
 async function recarregar() { try { cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; prods.clear(); cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); [...cart.keys()].forEach((id) => { if (!prods.has(id) || prods.get(id).restam === 0) cart.delete(id); else if (prods.get(id).restam != null) cart.set(id, Math.min(cart.get(id), prods.get(id).restam)); }); desenhar(); } catch {} }
 
-function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(consultar, 3000); }
+function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 3000); }
 function mostrarPix() { $('#pNum').textContent = pedido.numero; $('#pTotal').textContent = R$(pedido.total); $('#pCola').textContent = pedido.pix; $('#qrPix').src = qrImg(pedido.pix); tela('telaPix'); }
 $('#bCopiar').onclick = async () => { try { await navigator.clipboard.writeText(pedido.pix); $('#bCopiar').textContent = 'Copiado ✓'; } catch { $('#pCola').focus(); } };
 async function consultar() {
@@ -127,7 +129,7 @@ async function consultar() {
   if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
   const s = await r.json();
   if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
-  if (s.pago) { clearInterval(timer); timer = setInterval(consultar, 4000); etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
+  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
     $('#qItens').innerHTML = s.itens.map((i) => `${i.quantidade}× ${i.nome}`).join('<br>'); return tela('telaQr'); }
   if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
   const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;

@@ -326,6 +326,13 @@ async function patchItemLista(db, id, itemId, body) {
   return json({ ok: true });
 }
 
+/** POST /api/listas/:id/limpar — descarta a lista aberta (nada entra no estoque). */
+async function limparLista(db, id) {
+  const r = await db.prepare("UPDATE lista_compras SET status = 'cancelada' WHERE id = ? AND status = 'aberta'").bind(id).run();
+  if (!r?.meta?.changes) return erro('Essa lista não está mais aberta.', 409);
+  return json({ ok: true });
+}
+
 /** POST /api/listas/:id/finalizar — o que foi marcado entra no estoque como compra (uma por fornecedor). */
 async function finalizarLista(db, id, body) {
   const lista = await lerLista(db, id);
@@ -386,6 +393,30 @@ async function putRecomendados(db, body) {
   return json({ ok: true, salvos: stmts.length });
 }
 
+import { modoTeste } from './trava.js';
+
+// ---------------- visual da casa (cores e marca padrão para todos os aparelhos) ----------------
+const TEMAS_OK = ['escuro', 'claro', 'vinho', 'chimarrao', 'oceano', 'grafite', 'areia', 'contraste'];
+async function visualDaCasa(request, env, db) {
+  if (request.method === 'GET') {
+    const r = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'visual'").first();
+    let v = null; try { v = r ? JSON.parse(r.valor) : null; } catch { /* vazio */ }
+    return json({ visual: v, teste: await modoTeste(db) });
+  }
+  if (request.method !== 'PUT') return erro('Método não permitido', 405);
+  const eu = await usuarioLogado(request, env);
+  if (!eu || eu.papel !== 'superadmin') return erro('Só o superadmin muda o visual da casa.', 403);
+  let c; try { c = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
+  const v = {
+    tema: TEMAS_OK.includes(c.tema) ? c.tema : null, acento: /^#[0-9a-fA-F]{6}$/.test(c.acento ?? '') ? c.acento : null,
+    raio: ['0', '8', '14', '24'].includes(String(c.raio)) ? String(c.raio) : null, texto: ['0.9', '1', '1.15', '1.3'].includes(String(c.texto)) ? String(c.texto) : '1',
+    botoes: ['normal', 'grande', 'extra'].includes(c.botoes) ? c.botoes : 'normal', fonte: ['sistema', 'redonda', 'serifa', 'mono'].includes(c.fonte) ? c.fonte : 'sistema',
+    marca: { nome: String(c.marca?.nome ?? '').replace(/[<>]/g, '').trim().slice(0, 30), emoji: String(c.marca?.emoji ?? '').trim().slice(0, 4) },
+  };
+  await db.prepare("INSERT INTO configuracao (chave, valor) VALUES ('visual', ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor").bind(JSON.stringify(v)).run();
+  return json({ ok: true, visual: v });
+}
+
 // ---------------- roteador ----------------
 
 export async function rotearApi(request, env, url) {
@@ -394,6 +425,16 @@ export async function rotearApi(request, env, url) {
   const m = request.method;
   const p = url.pathname;
   if (p.startsWith('/api/auth/') || p === '/api/usuarios' || p === '/api/modulos' || p.startsWith('/api/usuarios/')) return rotearAuth(request, env, url);
+  if (p === '/api/visual') return visualDaCasa(request, env, db);
+  if (p === '/api/teste') {
+    if (request.method === 'PUT') {
+      const eu = await usuarioLogado(request, env);
+      if (!eu || eu.papel !== 'superadmin') return erro('Só o superadmin liga o modo teste.', 403);
+      let c = {}; try { c = await request.json(); } catch { /* vazio */ }
+      await db.prepare("INSERT INTO configuracao (chave, valor) VALUES ('modo_teste', ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor").bind(c.ativo ? 'sim' : 'nao').run();
+    }
+    return json({ ativo: await modoTeste(db) });
+  }
   const modulo = moduloDaRota(p);
   if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
     const eu = await usuarioLogado(request, env);
@@ -429,6 +470,7 @@ export async function rotearApi(request, env, url) {
     if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/itens$/))) return postItemLista(db, Number(k[1]), body);
     if (m === 'PATCH' && (k = p.match(/^\/api\/listas\/(\d+)\/itens\/(\d+)$/))) return patchItemLista(db, Number(k[1]), Number(k[2]), body);
     if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/finalizar$/))) return finalizarLista(db, Number(k[1]), body);
+    if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/limpar$/))) return limparLista(db, Number(k[1]));
     return null;
   }
   if (m === 'PUT' && p === '/api/alertas') {

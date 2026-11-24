@@ -3,7 +3,19 @@
 /fotos.js
   Cache-Control: public, max-age=300
 /tema.js
-  Cache-Control: public, max-age=300
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/entrar.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/planilhas.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/financeiro.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/cadastros.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/vendor/*
+  Cache-Control: public, max-age=604800
+/icone*
+  Cache-Control: public, max-age=604800
 
 /sw.js
   Cache-Control: no-cache

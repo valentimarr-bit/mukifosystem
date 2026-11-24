@@ -131,3 +131,9 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **App nativo:** o site já é instalável (manifest + service worker). App de loja (Android/iOS) = embrulhar com Capacitor; exige conta Google Play (US$ 25) e Apple (US$ 99/ano).
 - **Painel de permissões** (Conta → superadmin): marque quais módulos cada gerente enxerga (venda, produção, caixa, estoque, recomendado, produtos, combos, níveis, fotos, registrar, fornecedores, clientes, desempenho, financeiro, excel). O **servidor também barra** rotas desses módulos (403). Padrão do gerente: tudo menos desempenho, financeiro e Excel. Superadmin sempre vê tudo.
 - Migração `0013_clientes_e_dias`.
+
+## 24/11 — Limpar lista, visual da casa, modo teste, otimização
+- **Lista de compras**: botão "🗑 Limpar" + confirmação "Tem certeza?" (mostra quantos itens e quantos já marcados). `POST /api/listas/:id/limpar` cancela a lista aberta (não mexe no estoque).
+- **Visual da casa**: `GET/PUT /api/visual` (leitura pública, gravação só superadmin; valores inválidos viram padrão). Painel de personalização em `tema.js`.
+- **Modo teste** (Gestão → Conta, só superadmin; `GET/PUT /api/teste`): pagamento do balcão e do app entra na hora (cobrança com operador `teste`), trava de estoque, limite de pedidos pendentes e bloqueio de login do cliente desligados; faixa laranja "MODO TESTE" em todas as telas. ⚠ As vendas de teste entram nos relatórios — desligue antes de abrir ao público.
+- **Otimização** (medido localmente com 30 mil movimentos de estoque; produção/D1 não medida): migração `0014` — `WHERE tipo='venda' AND referencia=?` (a cada venda) fazia SCAN da tabela inteira, agora usa índice; saldo por insumo lido só no índice (covering). Sondagem do app/produção/venda pausa com a aba escondida; `tema.js` duplicado removido do venda; cache de scripts/ícones/vendor.

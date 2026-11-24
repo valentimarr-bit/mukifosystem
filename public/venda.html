@@ -57,7 +57,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
   <label class="mut">Valor desta cobrança (para dividir a conta, diminua)</label><input id="valor" inputmode="decimal">
   <div class="mut ruim" id="dErro"></div><button class="grande" id="dOk">Cobrar</button><button class="grande sec" id="dFecha">Voltar</button></dialog>
 <div id="msg"></div>
-<script src="/entrar.js"></script><script src="/tema.js"></script>
+<script src="/entrar.js"></script>
 <script>
 Tema.ligarSeletor(document.getElementById('tema'));
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
@@ -169,5 +169,5 @@ async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukif
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();
   try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
 iniciar().catch((e) => msg(e.message, true));
-setInterval(() => { if (token && !$('#dCobrar').open && !emVoo && !pend.size && !atual?.provisoria) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
+setInterval(() => { if (!document.hidden && token && !$('#dCobrar').open && !emVoo && !pend.size && !atual?.provisoria) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
 </script></body></html>
