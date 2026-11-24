@@ -26,6 +26,13 @@ npm run deploy
 ```
 Depois abra `/gestao.html`, vá em **Registrar** e faça a primeira **contagem** (sem ela o estoque aparece zerado).
 
+## App de compras no celular
+Abra `https://<seu-endereço>/compras/` no celular e instale na tela inicial
+(Android/Chrome: menu ⋮ → *Adicionar à tela inicial*; iPhone/Safari: Compartilhar → *Adicionar à Tela de Início*).
+Gere a lista de segunda ou quinta, toque em cada item que comprou (✎ para mudar quantidade ou anotar o valor pago)
+e toque em **Finalizar compra**: os itens marcados entram no estoque. Funciona sem internet (as marcações sobem quando a conexão volta)
+e em mais de um celular ao mesmo tempo.
+
 > ⚠️ `npm run seed` APAGA e recarrega tudo (inclusive vendas, compras e contagens). Use só na carga inicial.
 
 Para rodar no computador: copie `.dev.vars.exemplo` para `.dev.vars`, depois `npm run db:migrar:local`, `npm run seed:local` e `npm run dev`.
@@ -45,6 +52,9 @@ Se mudar a planilha antiga: `npm run seed:gerar` e `npm run gabarito` (precisam 
 | `POST /api/vendas/relatorio` | Importa o relatório do dia e dá baixa pela ficha (senha) |
 | `POST /api/contagem` | Contagem física; diferença vira perda/sobra (senha) |
 | `POST /api/compras` | Compra recebida; atualiza estoque e preço (senha) |
+| `GET /api/listas/atual` · `POST /api/listas` | Lista de compras aberta / gerar nova (senha) |
+| `PATCH /api/listas/:id/itens/:item` · `POST /api/listas/:id/itens` | Marcar, ajustar ou adicionar item (senha) |
+| `POST /api/listas/:id/finalizar` | Lança no estoque o que foi marcado (senha) |
 
 ## Trabalhar de qualquer conta Claude ou aparelho
 Ver [docs/colaborar.md](docs/colaborar.md): colaboradores no GitHub, `main` protegida, deploy automático pela Cloudflare (Workers Builds) e `docs/andamento.md` atualizado em toda sessão.

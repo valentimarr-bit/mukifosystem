@@ -80,32 +80,36 @@ async function getEstoque(db, url) {
   });
 }
 
-async function getListaCompras(db, url) {
-  const resp = await (await getEstoque(db, url)).json();
-  const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
+/** Calcula a lista de compras sugerida para o dia, agrupada por fornecedor. */
+async function calcularLista(db, dia) {
+  const [insumos, produtos, historico, atual, f] = await Promise.all([
+    carregarInsumos(db), carregarProdutos(db), carregarHistorico(db), estoqueAtual(db), folga(db)]);
+  const painel = painelEstoque({ insumos, produtos, historico, atual, dia, folga: f });
+  const porNome = new Map(insumos.map((i) => [i.nome, i]));
   const grupos = new Map();
   const producao = [];
-  for (const l of resp.itens) {
+  for (const l of painel) {
     if (!(l.sugestao > 0)) continue;
-    const i = insumos.get(l.insumo);
-    if (i.producao_propria) { producao.push({ insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem }); continue; }
-    const f = i.fornecedor ?? 'Sem fornecedor';
-    if (!grupos.has(f)) grupos.set(f, { fornecedor: f, itens: [], total_estimado: 0, tem_preco_estimado: false });
-    const g = grupos.get(f);
+    const i = porNome.get(l.insumo);
+    if (i.producao_propria) { producao.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem }); continue; }
+    const fo = i.fornecedor ?? 'Sem fornecedor';
+    if (!grupos.has(fo)) grupos.set(fo, { fornecedor: fo, itens: [], total_estimado: 0, tem_preco_estimado: false });
+    const g = grupos.get(fo);
     const preco = precoDe(i);
-    g.itens.push({ insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco });
+    g.itens.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco });
     if (preco != null) g.total_estimado = r2(g.total_estimado + preco * l.sugestao);
     if (i.preco_unidade == null) g.tem_preco_estimado = true;
   }
   const { results: forn } = await db.prepare('SELECT nome, como_recebe FROM fornecedor').all();
-  const como = new Map(forn.map((f) => [f.nome, f.como_recebe]));
-  // Hortifruti/Ceasa vai por último, como na planilha.
-  const lista = [...grupos.values()].map((g) => ({ ...g, como_recebe: como.get(g.fornecedor) ?? null }))
-    .sort((a, b) => (a.fornecedor === 'Ceasa') - (b.fornecedor === 'Ceasa') || a.fornecedor.localeCompare(b.fornecedor, 'pt-BR'));
-  return json({
-    dia: resp.dia, gerado_em: new Date().toISOString(), fornecedores: lista, producao,
-    total_estimado: r2(lista.reduce((s, g) => s + g.total_estimado, 0)),
-  });
+  const como = new Map(forn.map((x) => [x.nome, x.como_recebe]));
+  const lista = [...grupos.values()].map((g) => ({ ...g, como_recebe: como.get(g.fornecedor) ?? null })).sort(ordemFornecedor);
+  return { dia, fornecedores: lista, producao, total_estimado: r2(lista.reduce((t, g) => t + g.total_estimado, 0)) };
+}
+// Hortifruti/Ceasa vai por último, como na planilha.
+const ordemFornecedor = (a, b) => (a.fornecedor === 'Ceasa') - (b.fornecedor === 'Ceasa') || a.fornecedor.localeCompare(b.fornecedor, 'pt-BR');
+
+async function getListaCompras(db, url) {
+  return json({ ...(await calcularLista(db, diaCompra(url))), gerado_em: new Date().toISOString() });
 }
 
 async function getProdutos(db) {
@@ -206,29 +210,124 @@ async function postContagem(db, body) {
   return json({ ok: true, itens: itens.length, diferencas }, 201);
 }
 
-/** POST /api/compras  { fornecedor, data?, itens: [{insumo, quantidade, valor_pago}] } */
-async function postCompra(db, body) {
-  const itens = body?.itens ?? [];
-  if (!itens.length) return erro('Nenhum item na compra');
+/** Registra uma compra: entrada no estoque e atualização do preço. Devolve {erro} ou {compra_id, total}. */
+async function registrarCompra(db, { fornecedor, data, usuario, itens }) {
   const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
-  const forn = body.fornecedor ? await db.prepare('SELECT id FROM fornecedor WHERE nome = ?').bind(body.fornecedor).first() : null;
-  const data = body.data ?? new Date().toISOString().slice(0, 10);
-  const total = r2(itens.reduce((s, i) => s + (Number(i.valor_pago) || 0), 0));
+  for (const it of itens) if (!insumos.has(it.insumo) || !(Number(it.quantidade) > 0)) return { erro: `Item inválido: ${it.insumo}` };
+  const forn = fornecedor ? await db.prepare('SELECT id FROM fornecedor WHERE nome = ?').bind(fornecedor).first() : null;
+  const total = r2(itens.reduce((t, i) => t + (Number(i.valor_pago) || 0), 0));
   const compra = await db.prepare('INSERT INTO compra (fornecedor_id, data, total, registrado_por) VALUES (?, ?, ?, ?) RETURNING id')
-    .bind(forn?.id ?? null, data, total, body.usuario ?? null).first();
+    .bind(forn?.id ?? null, data ?? new Date().toISOString().slice(0, 10), total, usuario ?? null).first();
   const stmts = [];
   for (const it of itens) {
     const i = insumos.get(it.insumo);
     const q = Number(it.quantidade);
-    if (!i || !(q > 0)) return erro(`Item inválido: ${it.insumo}`);
     const valor = Number(it.valor_pago) || null;
     stmts.push(db.prepare('INSERT INTO item_compra (compra_id, insumo_id, quantidade, valor_pago) VALUES (?, ?, ?, ?)').bind(compra.id, i.id, q, valor));
-    stmts.push(db.prepare(`INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, custo, referencia, usuario) VALUES (?, ?, ?, ?, ?, ?)`)
-      .bind(i.id, i.producao_propria ? 'producao' : 'compra', q, valor, `compra-${compra.id}`, body.usuario ?? null));
+    stmts.push(db.prepare('INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, custo, referencia, usuario) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(i.id, i.producao_propria ? 'producao' : 'compra', q, valor, `compra-${compra.id}`, usuario ?? null));
     if (valor) stmts.push(db.prepare('UPDATE insumo SET preco_unidade = ? WHERE id = ?').bind(r2(valor / q), i.id));
   }
   await db.batch(stmts);
-  return json({ ok: true, compra_id: compra.id, total }, 201);
+  return { compra_id: compra.id, total };
+}
+
+/** POST /api/compras  { fornecedor, data?, itens: [{insumo, quantidade, valor_pago}] } */
+async function postCompra(db, body) {
+  const itens = body?.itens ?? [];
+  if (!itens.length) return erro('Nenhum item na compra');
+  const r = await registrarCompra(db, { ...body, itens });
+  return r.erro ? erro(r.erro) : json({ ok: true, ...r }, 201);
+}
+
+// ---------------- lista de compras no celular ----------------
+
+async function lerLista(db, id) {
+  const lista = await db.prepare('SELECT * FROM lista_compras WHERE id = ?').bind(id).first();
+  if (!lista) return null;
+  const { results } = await db.prepare(
+    `SELECT il.*, i.nome AS insumo, i.embalagem, COALESCE(i.preco_unidade, i.preco_referencia) AS preco_unidade
+     FROM item_lista il JOIN insumo i ON i.id = il.insumo_id WHERE il.lista_id = ? ORDER BY il.ordem, il.id`).bind(id).all();
+  const grupos = new Map();
+  for (const it of results) {
+    const f = it.fornecedor ?? 'Sem fornecedor';
+    if (!grupos.has(f)) grupos.set(f, { fornecedor: f, itens: [] });
+    grupos.get(f).itens.push({ ...it, comprado: !!it.comprado });
+  }
+  const itens = results.length;
+  const comprados = results.filter((i) => i.comprado).length;
+  return { ...lista, itens_total: itens, itens_comprados: comprados, fornecedores: [...grupos.values()].sort(ordemFornecedor) };
+}
+
+async function getListaAtual(db) {
+  const r = await db.prepare("SELECT id FROM lista_compras WHERE status = 'aberta' ORDER BY id DESC LIMIT 1").first();
+  return json({ lista: r ? await lerLista(db, r.id) : null });
+}
+
+/** POST /api/listas { dia, usuario? } — gera a lista a partir da sugestão (cancela a lista aberta anterior). */
+async function postLista(db, body) {
+  const dia = body?.dia === 'segunda' ? 'segunda' : 'quinta';
+  const calc = await calcularLista(db, dia);
+  await db.prepare("UPDATE lista_compras SET status = 'cancelada' WHERE status = 'aberta'").run();
+  const l = await db.prepare('INSERT INTO lista_compras (dia_compra, usuario) VALUES (?, ?) RETURNING id').bind(dia, body?.usuario ?? null).first();
+  const stmts = [];
+  let ordem = 0;
+  for (const g of calc.fornecedores) for (const it of g.itens) {
+    stmts.push(db.prepare('INSERT INTO item_lista (lista_id, insumo_id, fornecedor, ordem, quantidade_sugerida) VALUES (?, ?, ?, ?, ?)')
+      .bind(l.id, it.insumo_id, g.fornecedor, ordem++, it.quantidade));
+  }
+  if (stmts.length) await db.batch(stmts);
+  return json({ lista: await lerLista(db, l.id) }, 201);
+}
+
+/** POST /api/listas/:id/itens { insumo, quantidade } — adiciona um item esquecido. */
+async function postItemLista(db, id, body) {
+  const lista = await db.prepare("SELECT status FROM lista_compras WHERE id = ?").bind(id).first();
+  if (!lista) return erro('Lista não encontrada', 404);
+  if (lista.status !== 'aberta') return erro('Esta lista já foi fechada', 409);
+  const i = await db.prepare(
+    'SELECT i.id, f.nome AS fornecedor FROM insumo i LEFT JOIN fornecedor f ON f.id = i.fornecedor_id WHERE i.nome = ?').bind(body?.insumo ?? '').first();
+  const q = Number(body?.quantidade);
+  if (!i || !(q > 0)) return erro('Escolha um item e a quantidade');
+  await db.prepare(`INSERT INTO item_lista (lista_id, insumo_id, fornecedor, ordem, quantidade_sugerida) VALUES (?, ?, ?, 9999, ?)
+                    ON CONFLICT (lista_id, insumo_id) DO UPDATE SET quantidade_sugerida = excluded.quantidade_sugerida`)
+    .bind(id, i.id, i.fornecedor ?? 'Sem fornecedor', q).run();
+  return json({ lista: await lerLista(db, id) }, 201);
+}
+
+/** PATCH /api/listas/:id/itens/:item { comprado?, quantidade_comprada?, valor_pago? } */
+async function patchItemLista(db, id, itemId, body) {
+  const it = await db.prepare(
+    'SELECT il.*, l.status FROM item_lista il JOIN lista_compras l ON l.id = il.lista_id WHERE il.id = ? AND il.lista_id = ?').bind(itemId, id).first();
+  if (!it) return erro('Item não encontrado', 404);
+  if (it.status !== 'aberta') return erro('Esta lista já foi fechada', 409);
+  const comprado = body.comprado === undefined ? !!it.comprado : !!body.comprado;
+  const num = (v, atual) => (v === undefined ? atual : v === null || v === '' ? null : Number(v));
+  const qc = num(body.quantidade_comprada, it.quantidade_comprada);
+  const vp = num(body.valor_pago, it.valor_pago);
+  if ((qc != null && !(qc >= 0)) || (vp != null && !(vp >= 0))) return erro('Número inválido');
+  await db.prepare('UPDATE item_lista SET comprado = ?, comprado_em = ?, quantidade_comprada = ?, valor_pago = ? WHERE id = ?')
+    .bind(comprado ? 1 : 0, comprado ? (it.comprado_em ?? new Date().toISOString()) : null, qc, vp, itemId).run();
+  return json({ ok: true });
+}
+
+/** POST /api/listas/:id/finalizar — o que foi marcado entra no estoque como compra (uma por fornecedor). */
+async function finalizarLista(db, id, body) {
+  const lista = await lerLista(db, id);
+  if (!lista) return erro('Lista não encontrada', 404);
+  if (lista.status !== 'aberta') return erro('Esta lista já foi fechada', 409);
+  const compras = [];
+  for (const g of lista.fornecedores) {
+    const itens = g.itens.filter((i) => i.comprado && (i.quantidade_comprada ?? i.quantidade_sugerida) > 0)
+      .map((i) => ({ insumo: i.insumo, quantidade: i.quantidade_comprada ?? i.quantidade_sugerida, valor_pago: i.valor_pago }));
+    if (!itens.length) continue;
+    const r = await registrarCompra(db, { fornecedor: g.fornecedor, usuario: body?.usuario, itens });
+    if (r.erro) return erro(r.erro);
+    compras.push({ fornecedor: g.fornecedor, itens: itens.length, ...r });
+  }
+  await db.prepare("UPDATE lista_compras SET status = 'finalizada', finalizada_em = datetime('now') WHERE id = ?").bind(id).run();
+  const faltaram = lista.fornecedores.flatMap((g) => g.itens.filter((i) => !i.comprado).map((i) => i.insumo));
+  return json({ ok: true, compras, faltaram });
 }
 
 // ---------------- roteador ----------------
@@ -241,8 +340,25 @@ export async function rotearApi(request, env, url) {
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);
+  if (m === 'GET' && p === '/api/insumos') {
+    const { results } = await db.prepare('SELECT nome, embalagem FROM insumo WHERE ativo = 1 ORDER BY nome').all();
+    return json(results);
+  }
+
+  if (p.startsWith('/api/listas')) {
+    if (!autorizado(request, env)) return erro('Senha de gerente inválida', 401);
+    let body = {};
+    if (m === 'POST' || m === 'PATCH') { try { body = await request.json(); } catch { body = {}; } }
+    let k;
+    if (m === 'GET' && p === '/api/listas/atual') return getListaAtual(db);
+    if (m === 'POST' && p === '/api/listas') return postLista(db, body);
+    if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/itens$/))) return postItemLista(db, Number(k[1]), body);
+    if (m === 'PATCH' && (k = p.match(/^\/api\/listas\/(\d+)\/itens\/(\d+)$/))) return patchItemLista(db, Number(k[1]), Number(k[2]), body);
+    if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/finalizar$/))) return finalizarLista(db, Number(k[1]), body);
+    return null;
+  }
   if (m === 'POST' && ['/api/vendas/relatorio', '/api/contagem', '/api/compras'].includes(p)) {
-    if (!autorizado(request, env)) return erro('Senha de administrador inválida', 401);
+    if (!autorizado(request, env)) return erro('Senha de gerente inválida', 401);
     let body;
     try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
     if (p === '/api/vendas/relatorio') return postRelatorio(db, body);

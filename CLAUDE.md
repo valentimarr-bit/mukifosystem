@@ -26,7 +26,7 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 1. ✅ Repositório + deploy na Cloudflare (página inicial + `/api/saude`).
 2. ✅ Banco D1 + importação da planilha e do histórico. Números batem com a planilha (`npm test`). Falta: aplicar no D1 de produção e importar o extrato da adquirente.
 3. App POS: vender, cobrar, imprimir comanda, baixa por ficha, offline.
-4. Estoque, contagens, perdas e **lista de compras impressa na DX8000**.
+4. Estoque, contagens, perdas e lista de compras — ✅ lista no celular (`/compras/`); impressão na DX8000 opcional.
 5. Painel: CMV, lucro, perdas em R$, consumo teórico × real.
 6. Hortifruti (peso/unidade, fator de limpeza).
 7. Pedidos pelo celular: PWA, Pix, fila pública, vibração/som/push quando pronto.
@@ -43,6 +43,7 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 - Regras de cálculo: `src/dominio/estoque.js` (funções puras). **Qualquer mudança nelas tem que manter `npm test` passando** — o teste compara com a planilha antiga.
 - API: `src/api.js`. Escritas exigem `Authorization: Bearer <ADMIN_TOKEN>`.
 - Página de gestão provisória: `public/gestao.html`.
+- **App de compras (PWA) no celular: `public/compras/`** — a lista de compras é usada aqui (marcar o que comprou → entra no estoque). A impressão na DX8000 fica como opção secundária.
 
 ## Como trabalhar
 - Trabalhe numa branch e abra pull request; a `main` é protegida e publica sozinha na Cloudflare.

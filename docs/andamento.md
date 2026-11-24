@@ -2,6 +2,16 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-23 (3ª sessão) — app de compras no celular
+**Feito**
+- Migração `0002_lista_compras.sql` (lista_compras, item_lista).
+- API de listas: gerar (segunda/quinta), marcar/ajustar item, adicionar esquecido, finalizar → compra por fornecedor + entrada no estoque + preço real atualizado.
+- App `/compras/` (PWA instalável): marca com um toque (vibra), ✎ para quantidade/valor pago, ocultar comprados, funciona sem internet com fila de envio, sincroniza entre celulares a cada 20 s.
+- 15 testes passando (inclui o fluxo da lista).
+
+**Próximo**
+- Igual à sessão anterior (subir o D1 no PC) + abrir `/compras/` no celular e instalar.
+
 ## 2026-11-23 (2ª sessão) — fase 2
 **Feito**
 - Dados da planilha extraídos (`scripts/extrair_planilha.py` → `seed/planilha.json`): 78 insumos, 87 fichas, 19 fornecedores, 31 dias de vendas.

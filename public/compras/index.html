@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Compras">
+<link rel="manifest" href="/compras/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/compras/icone-192.png">
+<link rel="icon" href="/compras/icone-192.png">
+<title>Mukifo — Compras</title>
+<style>
+  :root { --bg:#111; --card:#1c1c1c; --line:#2e2e2e; --txt:#f4f4f4; --mut:#9a9a9a; --acc:#ffb347; --ok:#7ddc8a; --bad:#ff8a80; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden] { display:none !important; }
+  html, body { margin:0; background:var(--bg); color:var(--txt); font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  body { padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
+  header { position:sticky; top:0; z-index:5; background:#000; padding:calc(10px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line); }
+  .topo { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .topo b { font-size:19px; letter-spacing:.04em; }
+  .barra { height:8px; background:var(--line); border-radius:8px; margin-top:10px; overflow:hidden; }
+  .barra i { display:block; height:100%; background:var(--ok); width:0; transition:width .25s; }
+  .resumo { display:flex; flex-wrap:wrap; gap:2px 12px; justify-content:space-between; color:var(--mut); font-size:14px; margin-top:6px; }
+  .aviso { background:#3a2a00; color:#ffd166; padding:8px 16px; font-size:14px; }
+  main { padding:12px 12px 0; }
+  .grupo { margin-bottom:14px; }
+  .grupo h2 { font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--acc); margin:14px 4px 6px; display:flex; justify-content:space-between; }
+  .grupo h2 span { color:var(--mut); text-transform:none; letter-spacing:0; font-weight:400; }
+  .item { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px; min-height:64px; user-select:none; }
+  .caixa { flex:0 0 34px; height:34px; border-radius:9px; border:2px solid var(--mut); display:grid; place-items:center; font-size:22px; font-weight:700; color:#111; }
+  .item.ok { opacity:.55; }
+  .item.ok .caixa { background:var(--ok); border-color:var(--ok); }
+  .item.ok .nome { text-decoration:line-through; }
+  .txt { flex:1; min-width:0; }
+  .nome { font-size:17px; }
+  .qtd { font-weight:700; font-size:20px; margin-right:4px; }
+  .det { color:var(--mut); font-size:13px; }
+  .editar { flex:0 0 44px; height:44px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--mut); font-size:20px; }
+  .rodape { position:fixed; left:0; right:0; bottom:0; z-index:5; background:#000; border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
+  button { font:inherit; }
+  .btn { flex:1; min-height:52px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--txt); font-size:17px; font-weight:600; }
+  .btn.prim { background:var(--acc); color:#111; border-color:var(--acc); }
+  .btn.peq { flex:0 0 auto; padding:0 16px; }
+  .vazio { text-align:center; padding:40px 16px; }
+  .vazio p { color:var(--mut); }
+  .vazio .btn { display:block; width:100%; margin:12px 0; }
+  .chip { border:1px solid var(--line); background:transparent; color:var(--mut); border-radius:20px; padding:6px 12px; font-size:14px; }
+  .chip[aria-pressed=true] { color:#111; background:var(--txt); }
+  dialog { border:none; border-radius:16px; background:var(--card); color:var(--txt); width:min(92vw,420px); padding:20px; }
+  dialog::backdrop { background:rgba(0,0,0,.7); }
+  dialog h3 { margin:0 0 4px; }
+  label { display:block; margin:14px 0 4px; color:var(--mut); font-size:14px; }
+  input { width:100%; min-height:50px; font-size:20px; padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:#111; color:var(--txt); }
+  .acoes { display:flex; gap:8px; margin-top:18px; }
+  .msg { margin:12px; padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--line); }
+  .msg.ok { border-color:#2e5a35; } .msg.erro { border-color:#5a2e2e; color:var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <div class="topo"><b id="titulo">MUKIFO · Compras</b><button class="chip" id="ocultar" aria-pressed="false">Ocultar comprados</button></div>
+  <div id="progresso" hidden>
+    <div class="barra"><i id="barra"></i></div>
+    <div class="resumo"><span id="contagem"></span><span id="valores"></span></div>
+  </div>
+</header>
+<div id="offline" class="aviso" hidden></div>
+<div id="mensagem"></div>
+<main id="conteudo"></main>
+<div class="rodape" id="rodape" hidden>
+  <button class="btn peq" id="btnAdicionar" aria-label="Adicionar item">＋ Item</button>
+  <button class="btn prim" id="btnFinalizar">Finalizar compra</button>
+</div>
+
+<dialog id="dlgSenha">
+  <h3>Senha de gerente</h3>
+  <p class="det">A mesma senha da gestão. Fica salva neste celular.</p>
+  <input id="senha" type="password" autocomplete="current-password">
+  <div class="acoes"><button class="btn prim" id="salvarSenha">Entrar</button></div>
+</dialog>
+
+<dialog id="dlgEditar">
+  <h3 id="edNome"></h3>
+  <p class="det" id="edSug"></p>
+  <label for="edQtd">Quantidade comprada</label>
+  <input id="edQtd" inputmode="decimal">
+  <label for="edValor">Valor pago no total (R$) — opcional</label>
+  <input id="edValor" inputmode="decimal" placeholder="ex.: 42,50">
+  <div class="acoes">
+    <button class="btn" id="edNao">Não achei</button>
+    <button class="btn prim" id="edSalvar">Comprei</button>
+  </div>
+</dialog>
+
+<dialog id="dlgAdicionar">
+  <h3>Adicionar item</h3>
+  <label for="adNome">Item</label>
+  <input id="adNome" list="insumos" autocomplete="off" placeholder="Comece a digitar">
+  <datalist id="insumos"></datalist>
+  <label for="adQtd">Quantidade</label>
+  <input id="adQtd" inputmode="decimal" value="1">
+  <div class="acoes"><button class="btn" data-fechar>Cancelar</button><button class="btn prim" id="adSalvar">Adicionar</button></div>
+</dialog>
+
+<dialog id="dlgFinalizar">
+  <h3>Finalizar compra?</h3>
+  <p id="fimTexto"></p>
+  <div class="acoes"><button class="btn" data-fechar>Voltar</button><button class="btn prim" id="fimOk">Finalizar</button></div>
+</dialog>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const num = (n, d = 2) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: d });
+const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const lerNum = (s) => { const t = String(s ?? '').trim().replace(/\./g, '').replace(',', '.'); return t === '' ? null : Number(t); };
+const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const recuperar = (k, padrao) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : padrao; } catch { return padrao; } };
+const vibrar = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+
+let token = recuperar('mukifo_token_compras', '');
+let lista = recuperar('mukifo_lista', null);           // cópia local: abre sem internet
+let fila = recuperar('mukifo_fila', []);               // marcações ainda não enviadas
+let ocultar = recuperar('mukifo_ocultar', false);
+let editando = null;
+
+// ---------- servidor ----------
+class SemInternet extends Error {}
+async function api(caminho, metodo = 'GET', corpo) {
+  let r;
+  try {
+    r = await fetch(caminho, { method: metodo, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+  } catch { throw new SemInternet(); }
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { pedirSenha(); throw new Error('Senha inválida'); }
+  if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; }
+  return j;
+}
+
+async function enviarFila() {
+  while (fila.length) {
+    const op = fila[0];
+    try { await api(`/api/listas/${op.lista}/itens/${op.item}`, 'PATCH', op.dados); }
+    catch (e) {
+      if (e instanceof SemInternet) break;
+      if (e.status >= 400 && e.status < 500) aviso(e.message, 'erro'); // ex.: lista fechada por outro celular — descarta
+      else break;
+    }
+    fila.shift(); guardar('mukifo_fila', fila);
+  }
+  mostrarOffline();
+}
+
+async function atualizar() {
+  if (!token) return pedirSenha();
+  await enviarFila();
+  if (fila.length) return;
+  try {
+    const r = await api('/api/listas/atual');
+    lista = r.lista; guardar('mukifo_lista', lista); desenhar();
+  } catch (e) { if (!(e instanceof SemInternet)) aviso(e.message, 'erro'); mostrarOffline(); }
+}
+
+function mostrarOffline() {
+  const el = $('#offline');
+  el.hidden = navigator.onLine && !fila.length;
+  el.textContent = !navigator.onLine ? `Sem internet. As marcações ficam guardadas e vão sozinhas quando a conexão voltar${fila.length ? ` (${fila.length} aguardando)` : ''}.`
+    : `${fila.length} marcação(ões) aguardando envio…`;
+}
+
+// ---------- tela ----------
+function itensDe(l) { return l ? l.fornecedores.flatMap((f) => f.itens) : []; }
+
+function desenhar() {
+  const main = $('#conteudo');
+  $('#ocultar').setAttribute('aria-pressed', ocultar);
+  if (!lista) {
+    $('#progresso').hidden = true; $('#rodape').hidden = true; $('#ocultar').hidden = true;
+    $('#titulo').textContent = 'MUKIFO · Compras';
+    const hoje = new Date().getDay();
+    const sugerido = [5, 6, 0, 1].includes(hoje) ? 'segunda' : 'quinta';
+    main.innerHTML = `<div class="vazio"><h2>Nenhuma lista aberta</h2>
+      <p>A lista é montada com o que falta no estoque para cobrir os próximos dias.</p>
+      <button class="btn ${sugerido === 'segunda' ? 'prim' : ''}" data-gerar="segunda">Gerar lista de SEGUNDA<br><small>cobre terça e quarta</small></button>
+      <button class="btn ${sugerido === 'quinta' ? 'prim' : ''}" data-gerar="quinta">Gerar lista de QUINTA<br><small>cobre quinta a domingo</small></button></div>`;
+    return;
+  }
+  $('#ocultar').hidden = false; $('#progresso').hidden = false; $('#rodape').hidden = false;
+  const todos = itensDe(lista);
+  const feitos = todos.filter((i) => i.comprado);
+  $('#titulo').textContent = `Compra de ${lista.dia_compra === 'segunda' ? 'segunda' : 'quinta'}`;
+  $('#barra').style.width = (todos.length ? (feitos.length / todos.length) * 100 : 0) + '%';
+  $('#contagem').textContent = `${feitos.length} de ${todos.length} comprados`;
+  const estimado = todos.reduce((s, i) => s + (i.preco_unidade || 0) * i.quantidade_sugerida, 0);
+  const pago = feitos.reduce((s, i) => s + (i.valor_pago || 0), 0);
+  $('#valores').textContent = pago ? `pago ${brl(pago)} · previsto ${brl(estimado)}` : `previsto ${brl(estimado)}`;
+
+  main.innerHTML = lista.fornecedores.map((g) => {
+    const itens = [...g.itens].sort((a, b) => a.comprado - b.comprado);
+    const visiveis = ocultar ? itens.filter((i) => !i.comprado) : itens;
+    const faltam = itens.filter((i) => !i.comprado).length;
+    if (!visiveis.length) return '';
+    return `<section class="grupo"><h2>${esc(g.fornecedor)}<span>${faltam ? `faltam ${faltam}` : 'tudo certo ✓'}</span></h2>
+      ${visiveis.map((i) => {
+        const q = i.quantidade_comprada ?? i.quantidade_sugerida;
+        const mudou = i.quantidade_comprada != null && i.quantidade_comprada !== i.quantidade_sugerida;
+        return `<div class="item ${i.comprado ? 'ok' : ''}" data-id="${i.id}" role="checkbox" aria-checked="${i.comprado}" tabindex="0">
+          <div class="caixa">${i.comprado ? '✓' : ''}</div>
+          <div class="txt"><div class="nome"><span class="qtd">${num(q)}</span>${esc(i.insumo)}</div>
+          <div class="det">${esc(i.embalagem)}${mudou ? ` · pedido ${num(i.quantidade_sugerida)}` : ''}${i.valor_pago ? ` · pago ${brl(i.valor_pago)}` : ''}</div></div>
+          <button class="editar" data-editar="${i.id}" aria-label="Ajustar quantidade e valor">✎</button></div>`;
+      }).join('')}</section>`;
+  }).join('') || '<div class="vazio"><h2>Tudo comprado ✓</h2><p>Toque em “Finalizar compra” para lançar no estoque.</p></div>';
+}
+
+function aviso(texto, tipo = 'ok') {
+  $('#mensagem').innerHTML = `<div class="msg ${tipo}">${texto}</div>`;
+  clearTimeout(aviso.t); aviso.t = setTimeout(() => ($('#mensagem').innerHTML = ''), 7000);
+}
+
+// ---------- ações ----------
+function mudarItem(id, dados) {
+  const it = itensDe(lista).find((i) => i.id === id);
+  if (!it) return;
+  Object.assign(it, dados);
+  guardar('mukifo_lista', lista);
+  fila.push({ lista: lista.id, item: id, dados }); guardar('mukifo_fila', fila);
+  desenhar(); enviarFila();
+}
+
+$('#conteudo').addEventListener('click', async (e) => {
+  const gerar = e.target.closest('[data-gerar]');
+  if (gerar) {
+    gerar.disabled = true; gerar.textContent = 'Montando a lista…';
+    try { lista = (await api('/api/listas', 'POST', { dia: gerar.dataset.gerar })).lista; guardar('mukifo_lista', lista); desenhar(); }
+    catch (err) { aviso(err instanceof SemInternet ? 'Precisa de internet para gerar a lista.' : err.message, 'erro'); desenhar(); }
+    return;
+  }
+  const ed = e.target.closest('[data-editar]');
+  if (ed) return abrirEditar(Number(ed.dataset.editar));
+  const item = e.target.closest('.item');
+  if (item) {
+    const it = itensDe(lista).find((i) => i.id === Number(item.dataset.id));
+    vibrar(it.comprado ? 8 : 20);
+    mudarItem(it.id, { comprado: !it.comprado });
+  }
+});
+$('#conteudo').addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && e.target.classList.contains('item')) { e.preventDefault(); e.target.click(); } });
+
+$('#ocultar').addEventListener('click', () => { ocultar = !ocultar; guardar('mukifo_ocultar', ocultar); desenhar(); });
+
+function abrirEditar(id) {
+  editando = itensDe(lista).find((i) => i.id === id);
+  $('#edNome').textContent = editando.insumo;
+  $('#edSug').textContent = `Pedido: ${num(editando.quantidade_sugerida)} (${editando.embalagem})` + (editando.preco_unidade ? ` · previsto ${brl(editando.preco_unidade)} cada` : '');
+  $('#edQtd').value = num(editando.quantidade_comprada ?? editando.quantidade_sugerida);
+  $('#edValor').value = editando.valor_pago ? num(editando.valor_pago) : '';
+  $('#dlgEditar').showModal();
+}
+$('#edSalvar').addEventListener('click', () => {
+  const q = lerNum($('#edQtd').value), v = lerNum($('#edValor').value);
+  if (q == null || !(q >= 0) || (v != null && !(v >= 0))) return aviso('Confira os números.', 'erro');
+  $('#dlgEditar').close(); vibrar(20);
+  mudarItem(editando.id, { comprado: q > 0, quantidade_comprada: q === editando.quantidade_sugerida ? null : q, valor_pago: v });
+});
+$('#edNao').addEventListener('click', () => { $('#dlgEditar').close(); mudarItem(editando.id, { comprado: false, quantidade_comprada: 0 }); });
+
+$('#btnAdicionar').addEventListener('click', async () => {
+  $('#adNome').value = ''; $('#adQtd').value = '1'; $('#dlgAdicionar').showModal();
+  if (!$('#insumos').children.length) {
+    try { const ins = await api('/api/insumos'); $('#insumos').innerHTML = ins.map((i) => `<option value="${esc(i.nome)}">${esc(i.embalagem)}</option>`).join(''); } catch {}
+  }
+});
+$('#adSalvar').addEventListener('click', async () => {
+  const q = lerNum($('#adQtd').value);
+  try {
+    await enviarFila();
+    lista = (await api(`/api/listas/${lista.id}/itens`, 'POST', { insumo: $('#adNome').value.trim(), quantidade: q })).lista;
+    guardar('mukifo_lista', lista); $('#dlgAdicionar').close(); desenhar(); aviso('Item adicionado.');
+  } catch (e) { aviso(e instanceof SemInternet ? 'Sem internet: tente de novo quando voltar.' : e.message, 'erro'); }
+});
+
+$('#btnFinalizar').addEventListener('click', () => {
+  const todos = itensDe(lista), feitos = todos.filter((i) => i.comprado);
+  $('#fimTexto').innerHTML = feitos.length
+    ? `<b>${feitos.length}</b> item(ns) entram no estoque agora.` + (todos.length - feitos.length ? `<br><br>${todos.length - feitos.length} não foram marcados e ficam de fora.` : '')
+    : 'Nenhum item marcado. A lista será fechada sem lançar nada no estoque.';
+  $('#dlgFinalizar').showModal();
+});
+$('#fimOk').addEventListener('click', async () => {
+  $('#fimOk').disabled = true;
+  try {
+    await enviarFila();
+    if (fila.length) throw new SemInternet();
+    const r = await api(`/api/listas/${lista.id}/finalizar`, 'POST', {});
+    $('#dlgFinalizar').close(); vibrar([30, 60, 30]);
+    lista = null; guardar('mukifo_lista', null); desenhar();
+    aviso(`Compra lançada no estoque ✓<br>${r.compras.map((c) => `${esc(c.fornecedor)}: ${c.itens} item(ns)${c.total ? ' · ' + brl(c.total) : ''}`).join('<br>')}`
+      + (r.faltaram.length ? `<br><br><b>Não comprados:</b> ${r.faltaram.map(esc).join(', ')}` : ''));
+  } catch (e) { $('#dlgFinalizar').close(); aviso(e instanceof SemInternet ? 'Precisa de internet para finalizar. As marcações estão guardadas.' : e.message, 'erro'); }
+  $('#fimOk').disabled = false;
+});
+
+document.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+
+function pedirSenha() { if (!$('#dlgSenha').open) { $('#senha').value = ''; $('#dlgSenha').showModal(); } }
+$('#salvarSenha').addEventListener('click', () => { token = $('#senha').value.trim(); guardar('mukifo_token_compras', token); $('#dlgSenha').close(); atualizar(); });
+
+// ---------- início ----------
+window.addEventListener('online', atualizar);
+window.addEventListener('offline', mostrarOffline);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizar(); });
+setInterval(() => { if (!document.hidden) atualizar(); }, 20000); // outro celular pode ter marcado algo
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/compras/sw.js').catch(() => {});
+desenhar(); mostrarOffline(); atualizar();
+</script>
+</body>
+</html>

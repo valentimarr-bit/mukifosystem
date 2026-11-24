@@ -8,7 +8,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../seed/seed.sql')]),
+  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../seed/seed.sql')]),
   ADMIN_TOKEN: 'segredo-teste',
   ASSETS: { fetch: () => new Response('estatico') },
 };
@@ -16,8 +16,8 @@ const chamar = async (caminho, opcoes = {}) => {
   const r = await worker.fetch(new Request('https://mukifo.test' + caminho, opcoes), env);
   return { status: r.status, corpo: await r.json() };
 };
-const post = (caminho, corpo, token = 'segredo-teste') => chamar(caminho, {
-  method: 'POST', body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+const post = (caminho, corpo, token = 'segredo-teste', method = 'POST') => chamar(caminho, {
+  method, body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
 });
 
 test('saúde mostra o banco conectado', async () => {
@@ -74,4 +74,42 @@ test('produtos trazem CMV e lucro; preço real da compra substitui a estimativa'
   const c = corpo.find((p) => p.produto === 'CAIPIRINHA CACHAÇA');
   assert.ok(c.tem_ficha && c.cmv > 0 && c.lucro > 0);
   assert.ok(corpo.some((p) => !p.tem_ficha), 'lista produtos vendidos sem ficha');
+});
+
+test('lista no celular: gerar, marcar, ajustar, adicionar esquecido, finalizar → entra no estoque', async () => {
+  const auth = { headers: { authorization: 'Bearer segredo-teste' } };
+  assert.equal((await chamar('/api/listas/atual')).status, 401, 'pede senha');
+  assert.equal((await chamar('/api/listas/atual', auth)).corpo.lista, null);
+
+  let r = await post('/api/listas', { dia: 'quinta' });
+  assert.equal(r.status, 201);
+  const lista = r.corpo.lista;
+  assert.ok(lista.itens_total > 10);
+  assert.equal(lista.fornecedores.at(-1).fornecedor, 'Ceasa');
+  assert.ok(!lista.fornecedores.some((f) => f.fornecedor === 'Produção própria'));
+
+  const limao = lista.fornecedores.at(-1).itens.find((i) => i.insumo === 'Limão Taiti');
+  const antes = (await chamar('/api/estoque')).corpo.itens.find((i) => i.insumo === 'Limão Taiti').atual;
+  r = await post(`/api/listas/${lista.id}/itens/${limao.id}`, { comprado: true, quantidade_comprada: 3, valor_pago: 21 }, undefined, 'PATCH');
+  assert.equal(r.status, 200);
+
+  r = await post(`/api/listas/${lista.id}/itens`, { insumo: 'Seda', quantidade: 2 });
+  const seda = r.corpo.lista.fornecedores.flatMap((f) => f.itens).find((i) => i.insumo === 'Seda');
+  await post(`/api/listas/${lista.id}/itens/${seda.id}`, { comprado: true }, undefined, 'PATCH');
+
+  const atual = (await chamar('/api/listas/atual', auth)).corpo.lista;
+  assert.equal(atual.itens_comprados, 2);
+
+  r = await post(`/api/listas/${lista.id}/finalizar`, {});
+  assert.equal(r.status, 200);
+  assert.equal(r.corpo.compras.length, 2);
+  assert.ok(r.corpo.faltaram.length > 0);
+
+  const est = (await chamar('/api/estoque')).corpo.itens;
+  assert.equal(est.find((i) => i.insumo === 'Limão Taiti').atual, Math.round((antes + 3) * 100) / 100);
+  assert.equal((await chamar('/api/listas/atual', auth)).corpo.lista, null, 'lista fechada');
+  const prod = (await chamar('/api/produtos')).corpo;
+  assert.ok(prod.length);
+  r = await post(`/api/listas/${lista.id}/itens/${limao.id}`, { comprado: false }, undefined, 'PATCH');
+  assert.equal(r.status, 409, 'lista finalizada não muda');
 });
