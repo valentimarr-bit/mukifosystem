@@ -11,7 +11,7 @@ import { verificarGoogle } from '../src/clientes.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
@@ -223,4 +223,30 @@ test('esqueci a senha: código do balcão cria senha nova, vale uma vez e derrub
   assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51988887777', senha: 'senha-antiga' }, {}, null)).status, 401);
   assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51988887777', senha: 'nova-senha-1' }, {}, null)).status, 200);
   assert.equal((await chamar('/api/conta/eu', 'GET', null, { 'X-Sessao-Cliente': tokenAntigo }, null)).status, 401);   // sessão antiga caiu
+});
+
+test('auditoria: registra quem fez o quê (sem senhas), só o superadmin lê, e erros ficam marcados', async () => {
+  // gerente comum (não superadmin) faz coisas com login próprio
+  const ger = await chamar('/api/usuarios', 'POST', { nome: 'Gerente Auditado', senha: 'senha-gerente-1' });
+  assert.ok([200, 201].includes(ger.status));
+  const lg = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'senha-gerente-1' }, {}, null);
+  assert.equal(lg.status, 200);
+  const errado = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'errada-errada' }, {}, null); assert.equal(errado.status, 401);
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const com = await chamar('/api/venda/comandas', 'POST', {}, {}, lg.corpo.token);
+  await chamar(`/api/venda/comandas/${com.corpo.comanda.id}/itens`, 'POST', { produto_id: prod, delta: 1 }, {}, lg.corpo.token);
+  // quem não é superadmin não lê
+  assert.equal((await chamar('/api/auditoria', 'GET', null, {}, lg.corpo.token)).status, 403);
+  assert.equal((await chamar('/api/auditoria', 'GET', null, {}, null)).status, 401);
+  const j = (await chamar('/api/auditoria?pessoa=' + encodeURIComponent('Gerente Auditado'))).corpo;
+  const acoes = j.registros.map((r) => r.acao);
+  assert.ok(acoes.includes('Entrou no sistema') && acoes.includes('Abriu uma venda') && acoes.includes('Mexeu nos itens da venda'));
+  assert.ok(j.registros.some((r) => r.acao === 'Entrou no sistema' && r.status === 401), 'tentativa com senha errada fica registrada');
+  assert.ok(!JSON.stringify(j).includes('senha-gerente-1') && !JSON.stringify(j).includes('errada-errada'), 'senha nunca é gravada');
+  assert.ok(j.pessoas.some((p) => p.nome === 'Gerente Auditado' && p.erros >= 1 && p.ultimo_login));
+  // ver (GET) não polui o registro
+  const antes = (await chamar('/api/auditoria')).corpo.total; await chamar('/api/estoque'); await chamar('/api/estoque');
+  assert.equal((await chamar('/api/auditoria')).corpo.total, antes);
+  // filtro só erros
+  assert.ok((await chamar('/api/auditoria?so_erros=1')).corpo.registros.every((r) => r.status >= 400));
 });

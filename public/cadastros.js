@@ -17,6 +17,7 @@ window.Cadastros = (() => {
   function aplicarModulos(mods) {
     const ok = (id) => mods.includes(id);
     document.querySelectorAll('nav button[data-aba]').forEach((b) => { const m = ABA_MODULO[b.dataset.aba]; if (m) b.hidden = !(ok(m) || (m === 'financeiro' && ok('caixa'))); });
+    document.querySelectorAll('nav button[data-aba=auditoria]').forEach((b) => { b.hidden = Mukifo.usuario()?.papel !== 'superadmin'; });   // só o superadmin vê o registro de atividades
     document.querySelectorAll('nav a[data-modulo]').forEach((a) => { a.hidden = !ok(a.dataset.modulo); });
     const vis = [...document.querySelectorAll('nav button[data-aba]')].filter((b) => !b.hidden);
     const atual = document.querySelector('nav button[aria-pressed=true]');
@@ -37,6 +38,19 @@ window.Cadastros = (() => {
       } catch (er) { alert(er.message); }
     };
   }
+
+  // ---- atividades (auditoria) ----
+  const quandoBr = (t) => t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+  async function auditoria() {
+    const f = new URLSearchParams(); if ($('#auPessoa').value) f.set('pessoa', $('#auPessoa').value); if ($('#auDe').value) f.set('de', $('#auDe').value); if ($('#auAte').value) f.set('ate', $('#auAte').value);
+    if ($('#auQ').value.trim()) f.set('q', $('#auQ').value.trim()); if ($('#auErros').checked) f.set('so_erros', '1');
+    let j; try { j = await api('/api/auditoria?' + f, null, 'GET'); } catch (e) { return ($('#auCorpo').innerHTML = `<p class="neg">${esc(e.message)}</p>`); }
+    const atual = $('#auPessoa').value; $('#auPessoa').innerHTML = '<option value="">Todas as pessoas</option>' + j.pessoas.map((p) => `<option value="${esc(p.nome)}">${esc(p.nome)} (${p.acoes})</option>`).join(''); $('#auPessoa').value = atual;
+    $('#auResumo').innerHTML = `<div class="forn"><h3>Por pessoa</h3><table><thead><tr><th>Quem</th><th>Tipo</th><th>Ações</th><th>Erros</th><th>Último login</th><th>Última ação</th></tr></thead><tbody>${j.pessoas.map((p) => `<tr data-p="${esc(p.nome)}" style="cursor:pointer"><td>${esc(p.nome)}</td><td>${{ equipe: 'Equipe', cliente: 'Cliente', visitante: 'Visitante' }[p.tipo]}</td><td>${p.acoes}</td><td class="${p.erros ? 'neg' : ''}">${p.erros}</td><td>${quandoBr(p.ultimo_login)}</td><td>${quandoBr(p.ultima)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut">Nada registrado ainda.</td></tr>'}</tbody></table><p class="mut">Toque numa pessoa para filtrar. Guarda ${j.retencao_dias} dias. Senhas, códigos e fotos nunca são gravados.</p></div>`;
+    $('#auCorpo').innerHTML = `<p class="mut">${j.mostrando} de ${j.total} registro(s)</p><table><thead><tr><th>Quando</th><th>Quem</th><th>O que fez</th><th>Detalhe</th><th>Resultado</th></tr></thead><tbody>${j.registros.map((r) => `<tr><td>${quandoBr(r.quando)}</td><td>${esc(r.ator_nome)}<div class="mut">${r.ator_tipo === 'equipe' ? esc(r.papel ?? '') : r.ator_tipo}${r.ip ? ' · ' + esc(r.ip) : ''}</div></td><td>${esc(r.acao)}</td><td class="mut" style="max-width:340px;word-break:break-word">${r.resumo ? esc(typeof r.resumo === 'string' ? r.resumo : JSON.stringify(r.resumo)) : ''}</td><td class="${r.status >= 400 ? 'neg' : 'pos'}">${r.status >= 400 ? '✖ ' + r.status : '✔'}</td></tr>`).join('')}</tbody></table>`;
+  }
+  $('#auAtualiza').onclick = auditoria; ['auPessoa', 'auDe', 'auAte', 'auErros'].forEach((id) => { $('#' + id).onchange = auditoria; }); $('#auQ').onchange = auditoria;
+  $('#auResumo').onclick = (e) => { const tr = e.target.closest('tr[data-p]'); if (tr) { $('#auPessoa').value = tr.dataset.p; auditoria(); } };
 
   // ---- clientes ----
   async function clientes() {
@@ -93,5 +107,5 @@ window.Cadastros = (() => {
     $('#foNovo').onclick = () => abrir(null);
     listar().catch((e) => aviso($('#foMsg'), e.message, true));
   }
-  return { aplicarModulos, carregarPermissoes, clientes, fornecedores };
+  return { aplicarModulos, carregarPermissoes, clientes, fornecedores, auditoria };
 })();

@@ -108,6 +108,7 @@
     <button data-aba="financeiro">Financeiro</button>
     <button data-aba="planilhas">Excel</button>
     <a href="/venda.html" data-modulo="venda" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a><a href="/producao.html" data-modulo="producao" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Produção →</a>
+    <button data-aba="auditoria" hidden>Atividades</button>
     <button data-aba="conta">Conta</button>
   </nav>
 </header>
@@ -150,6 +151,11 @@
   <section id="desempenho" hidden>
     <div class="bar"><select id="dpPeriodo"><option value="0">Hoje (turno)</option><option value="6" selected>Últimos 7 dias</option><option value="13">Últimos 14 dias</option><option value="29">Últimos 30 dias</option><option value="89">Últimos 90 dias</option></select><span class="mut" id="dpFaixa"></span></div>
     <div id="dpCorpo"><p class="mut">Carregando…</p></div>
+  </section>
+
+  <section id="auditoria" hidden>
+    <div class="bar"><select id="auPessoa"><option value="">Todas as pessoas</option></select><input id="auDe" type="date" title="De"><input id="auAte" type="date" title="Até"><input id="auQ" type="search" autocomplete="off" placeholder="Buscar (ação, item, valor…)" style="flex:1;min-width:160px"><label class="chk"><input type="checkbox" id="auErros"> só erros</label><button class="btn" id="auAtualiza">Atualizar</button></div>
+    <div id="auResumo"></div><div id="auCorpo"><p class="mut">Carregando…</p></div>
   </section>
 
   <section id="combos" hidden>
@@ -279,6 +285,7 @@ $('#relDia').value = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-pressed', x === b));
   document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== b.dataset.aba));
+  if (b.dataset.aba === 'auditoria') Cadastros.auditoria();
   if (b.dataset.aba === 'clientes') Cadastros.clientes();
   if (b.dataset.aba === 'fornecedores') Cadastros.fornecedores();
   if (b.dataset.aba === 'financeiro') Financeiro.iniciar(Mukifo.usuario()?.modulos?.includes('financeiro') ?? Mukifo.usuario()?.papel === 'superadmin');

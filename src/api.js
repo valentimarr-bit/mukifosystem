@@ -10,6 +10,7 @@ import { rotearFinanceiro } from './financeiro.js';
 import { rotearPlanilhas } from './planilhas.js';
 import { rotearFornecedores } from './fornecedores.js';
 import { rotearConta, rotearClientes } from './clientes.js';
+import { rotearAuditoria } from './auditoria.js';
 import { rotearProducao } from './producao.js';
 import { moduloDaRota } from './dominio/modulos.js';
 import {
@@ -425,6 +426,7 @@ export async function rotearApi(request, env, url) {
   const m = request.method;
   const p = url.pathname;
   if (p.startsWith('/api/auth/') || p === '/api/usuarios' || p === '/api/modulos' || p.startsWith('/api/usuarios/')) return rotearAuth(request, env, url);
+  if (p === '/api/auditoria') return rotearAuditoria(request, env, url);
   if (p === '/api/visual') return visualDaCasa(request, env, db);
   if (p === '/api/teste') {
     if (request.method === 'PUT') {
