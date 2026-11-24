@@ -2,6 +2,20 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-24 — login e deploy só pelo site
+**Feito**
+- Código enviado ao GitHub (`main`).
+- Login (`migrations/0003_usuarios.sql`, `src/auth.js`, `public/entrar.js`): o primeiro acesso, com `CODIGO_PRIMEIRO_ACESSO`, cria o **superadmin**; ele troca a senha, adiciona gerentes e passa o cargo (só um superadmin por vez). Gestão (aba Conta) e app de compras usam o mesmo login. `ADMIN_TOKEN` virou chave de emergência.
+- Banco se monta sozinho: `wrangler.jsonc` sem `database_id` (o deploy cria o D1) e o Worker aplica migrações + seed no primeiro acesso. Seed agrupado em 20 comandos (limites do D1). Testado no D1 local do wrangler com banco vazio.
+- 25 testes passando.
+
+**Próximo**
+- Publicar pelo painel da Cloudflare (README → "Publicar") e criar o segredo `CODIGO_PRIMEIRO_ACESSO`.
+- Aplicar a interface do Armant 360 com as cores do Mukifo (falta acesso ao repo `cscarmant/armant360` e as cores/logo do Mukifo).
+
+**Em aberto**
+- Se a criação automática do D1 falhar no build da Cloudflare: criar o D1 `mukifo` no painel e pôr o `database_id` no `wrangler.jsonc`.
+
 ## 2026-11-23 (3ª sessão) — app de compras no celular
 **Feito**
 - Migração `0002_lista_compras.sql` (lista_compras, item_lista).

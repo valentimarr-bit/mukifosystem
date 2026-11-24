@@ -41,7 +41,8 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 
 ## Código
 - Regras de cálculo: `src/dominio/estoque.js` (funções puras). **Qualquer mudança nelas tem que manter `npm test` passando** — o teste compara com a planilha antiga.
-- API: `src/api.js`. Escritas exigem `Authorization: Bearer <ADMIN_TOKEN>`.
+- API: `src/api.js`. Escritas exigem login (`src/auth.js`): `Authorization: Bearer <token da sessão>`. O primeiro acesso (com `CODIGO_PRIMEIRO_ACESSO`) cria o superadmin; `ADMIN_TOKEN` é só chave de emergência.
+- Banco se monta sozinho no primeiro acesso (`src/banco/preparar.js`, SQL embutido em `src/banco/sql.js`). **Nova migração ou seed novo → `npm run sql:embutir`.**
 - Página de gestão provisória: `public/gestao.html`.
 - **App de compras (PWA) no celular: `public/compras/`** — a lista de compras é usada aqui (marcar o que comprou → entra no estoque). A impressão na DX8000 fica como opção secundária.
 

@@ -9,22 +9,17 @@ npm install
 npm run dev          # abre em http://localhost:8787
 ```
 
-## Publicar
-```bash
-npx wrangler login   # só na primeira vez
-npm run deploy
-```
+## Publicar na Cloudflare (só pelo site, sem terminal)
+1. Em [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Import a repository** → escolha `mukifosystem` → **Deploy**.
+   O banco D1 `mukifo` é criado sozinho no deploy; as tabelas e os dados da planilha entram no primeiro acesso.
+2. No Worker `mukifo` → **Settings** → **Variables and Secrets** → **Add**, tipo **Secret**:
+   - `CODIGO_PRIMEIRO_ACESSO` — um código só seu (obrigatório: sem ele ninguém consegue o primeiro acesso).
+   - `ADMIN_TOKEN` — chave de emergência (opcional; serve se todos esquecerem a senha).
+3. Abra `https://mukifo.<seu-subdominio>.workers.dev/gestao.html`, digite nome, senha e o código: **você vira o superadmin**.
+   Na aba **Conta** dá para trocar a senha, adicionar gerentes e passar o cargo de superadmin.
 
-## Banco de dados (fase 2) — uma vez
-```bash
-npm run db:criar                  # cria o D1 "mukifo"; copie o database_id que aparecer
-# cole o database_id no wrangler.jsonc (bloco d1_databases) e descomente o bloco
-npm run db:migrar                 # cria as tabelas
-npm run seed                      # carrega itens, fichas, fornecedores e 31 dias de vendas da planilha
-npx wrangler secret put ADMIN_TOKEN   # senha de gerente para registrar compras, contagens e relatórios
-npm run deploy
-```
-Depois abra `/gestao.html`, vá em **Registrar** e faça a primeira **contagem** (sem ela o estoque aparece zerado).
+Depois disso, todo push na `main` publica sozinho.
+Pelo terminal também funciona: `npx wrangler login` e `npm run deploy` (o banco é criado e montado do mesmo jeito).
 
 ## App de compras no celular
 Abra `https://<seu-endereço>/compras/` no celular e instale na tela inicial
@@ -33,9 +28,10 @@ Gere a lista de segunda ou quinta, toque em cada item que comprou (✎ para muda
 e toque em **Finalizar compra**: os itens marcados entram no estoque. Funciona sem internet (as marcações sobem quando a conexão volta)
 e em mais de um celular ao mesmo tempo.
 
-> ⚠️ `npm run seed` APAGA e recarrega tudo (inclusive vendas, compras e contagens). Use só na carga inicial.
+Para rodar no computador: copie `.dev.vars.exemplo` para `.dev.vars` e rode `npm run dev` (o banco local se monta sozinho).
 
-Para rodar no computador: copie `.dev.vars.exemplo` para `.dev.vars`, depois `npm run db:migrar:local`, `npm run seed:local` e `npm run dev`.
+> ⚠️ `npm run seed` APAGA e recarrega tudo (inclusive vendas, compras e contagens). Não use depois que o bar começar a registrar.
+> Criou uma migração ou regenerou o seed? Rode `npm run sql:embutir` (o `npm test` avisa se esquecer).
 
 ## Testes
 ```bash
@@ -46,6 +42,8 @@ Se mudar a planilha antiga: `npm run seed:gerar` e `npm run gabarito` (precisam 
 ## API
 | Rota | O que faz |
 |---|---|
+| `GET /api/auth/estado` · `POST /api/auth/primeiro-acesso` · `POST /api/auth/entrar` | Login (o primeiro acesso cria o superadmin) |
+| `POST /api/auth/trocar-senha` · `POST /api/auth/passar-cargo` · `GET/POST /api/usuarios` | Conta e pessoas com acesso |
 | `GET /api/estoque?dia=segunda\|quinta` | Estoque atual, mínimos, sugestão e situação por item |
 | `GET /api/lista-compras?dia=...` | Lista de compras por fornecedor + produção da casa |
 | `GET /api/produtos` | Preço, CMV, lucro e ficha de cada produto |
