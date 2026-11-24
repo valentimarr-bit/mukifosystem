@@ -1,5 +1,6 @@
 // Rotas da API do Mukifo (Cloudflare D1 em env.DB).
 import { usuarioLogado, rotearAuth } from './auth.js';
+import { rotearFotos } from './fotos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -73,7 +74,7 @@ async function getEstoque(db, url) {
     itens: painel.map((l) => {
       const i = porNome.get(l.insumo);
       return {
-        insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
+        insumo_id: i.id, insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
         minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, sugestao: l.sugestao, situacao: l.situacao,
         fornecedor: i.fornecedor, producao_propria: i.producao_propria,
       };
@@ -121,7 +122,7 @@ async function getProdutos(db) {
     const c = cmv(p, porNome, precos);
     const lucro = p.preco_venda != null ? p.preco_venda - c : null;
     return {
-      produto: p.nome, preco_venda: p.preco_venda, cmv: r2(c), lucro: lucro == null ? null : r2(lucro),
+      id: p.id, produto: p.nome, preco_venda: p.preco_venda, cmv: r2(c), lucro: lucro == null ? null : r2(lucro),
       lucro_pct: lucro == null || !p.preco_venda ? null : Math.round((lucro / p.preco_venda) * 1000) / 10,
       tem_ficha: p.ficha.length > 0 || !p.baixa_estoque, ficha: p.ficha,
     };
@@ -336,6 +337,7 @@ export async function rotearApi(request, env, url) {
   const m = request.method;
   const p = url.pathname;
   if (p.startsWith('/api/auth/') || p === '/api/usuarios') return rotearAuth(request, env, url);
+  if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);

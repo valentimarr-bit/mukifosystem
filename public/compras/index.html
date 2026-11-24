@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Compras">
 <script src="/tema.js"></script>
+<script src="/fotos.js"></script>
 <link rel="manifest" href="/compras/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/compras/icone-192.png">
 <link rel="icon" href="/compras/icone-192.png">
@@ -35,6 +36,8 @@
   .item.ok .caixa { background:var(--ok); border-color:var(--ok); }
   .item.ok .nome { text-decoration:line-through; }
   .txt { flex:1; min-width:0; }
+  .foto-mini { border-radius:10px; object-fit:cover; background:var(--bg); border:1px solid var(--line); flex:0 0 auto; display:block; }
+  .foto-mini.vazia { display:none; }
   .nome { font-size:17px; }
   .qtd { font-weight:700; font-size:20px; margin-right:4px; }
   .det { color:var(--mut); font-size:13px; }
@@ -156,6 +159,7 @@ async function atualizar() {
   try {
     const r = await api('/api/listas/atual');
     lista = r.lista; guardar('mukifo_lista', lista); desenhar();
+    Fotos.carregar().then(desenhar); // as fotos chegam depois; a lista já está na tela
   } catch (e) { if (!(e instanceof SemInternet)) aviso(e.message, 'erro'); mostrarOffline(); }
 }
 
@@ -204,6 +208,7 @@ function desenhar() {
         const mudou = i.quantidade_comprada != null && i.quantidade_comprada !== i.quantidade_sugerida;
         return `<div class="item ${i.comprado ? 'ok' : ''}" data-id="${i.id}" role="checkbox" aria-checked="${i.comprado}" tabindex="0">
           <div class="caixa">${i.comprado ? '✓' : ''}</div>
+          ${Fotos.miniatura('insumos', i.insumo_id, 52)}
           <div class="txt"><div class="nome"><span class="qtd">${num(q)}</span>${esc(i.insumo)}</div>
           <div class="det">${esc(i.embalagem)}${mudou ? ` · pedido ${num(i.quantidade_sugerida)}` : ''}${i.valor_pago ? ` · pago ${brl(i.valor_pago)}` : ''}</div></div>
           <button class="editar" data-editar="${i.id}" aria-label="Ajustar quantidade e valor">✎</button></div>`;

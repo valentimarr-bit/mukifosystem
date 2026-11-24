@@ -11,6 +11,7 @@
   // Tudo que não for arquivo estático (ex.: /api/...) cai no Worker.
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
 

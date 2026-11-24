@@ -33,6 +33,6 @@ export default {
       }
     }
 
-    return env.ASSETS.fetch(request);
+    return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Não encontrado', { status: 404 });
   },
 };

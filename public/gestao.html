@@ -6,6 +6,7 @@
 <title>Mukifo — Gestão</title>
 <meta name="theme-color" content="#000000">
 <script src="/tema.js"></script>
+<script src="/fotos.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
@@ -34,6 +35,20 @@
     table { font-size:14px; } th, td { padding:7px 3px; } th { top:118px; }
     .larga { display:none; }
   }
+  .foto-mini { display:inline-block; border-radius:8px; object-fit:cover; vertical-align:middle; background:var(--card); border:1px solid var(--line); flex:0 0 auto; }
+  .foto-mini.vazia { background:repeating-linear-gradient(45deg,var(--card),var(--card) 6px,var(--line) 6px,var(--line) 7px); }
+  .linha-foto { display:flex; align-items:center; gap:10px; }
+  .linha-foto > :last-child { min-width:0; }
+  .gradefoto { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .cartao-foto { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px; text-align:center; cursor:pointer; }
+  .cartao-foto .foto-mini { width:100%; height:130px; border-radius:8px; }
+  .cartao-foto div { margin-top:6px; font-size:14px; line-height:1.25; }
+  .cartao-foto.falta { border-style:dashed; }
+  #dlgFoto { border:none; border-radius:16px; background:var(--card); color:var(--txt); width:min(92vw,440px); padding:20px; }
+  #dlgFoto::backdrop { background:rgba(0,0,0,.7); }
+  #dlgFoto .previa { width:100%; height:260px; object-fit:contain; background:var(--bg); border-radius:10px; margin:10px 0; display:block; }
+  #dlgFoto .acoes { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  #dlgFoto .acoes .btn { flex:1; min-width:120px; text-align:center; text-decoration:none; }
   #cupom { display:none; }
   @media print {
     body { background:#fff; color:#000; } header, main > *:not(#cupom) { display:none !important; }
@@ -49,6 +64,7 @@
     <button data-aba="estoque" aria-pressed="true">Estoque</button>
     <button data-aba="lista">Lista de compras</button>
     <button data-aba="produtos">Produtos e lucro</button>
+    <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
     <button data-aba="conta">Conta</button>
   </nav>
@@ -75,6 +91,16 @@
   <section id="produtos" hidden>
     <p class="mut">CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th></tr></thead><tbody id="tbProdutos"></tbody></table>
+  </section>
+
+  <section id="fotos" hidden>
+    <div class="bar">
+      <label>Fotos de <select id="fTipo"><option value="produtos">Produtos (o que vende)</option><option value="insumos">Insumos (o que compra)</option></select></label>
+      <input id="fBusca" placeholder="Buscar" style="flex:1;min-width:140px">
+      <label><input type="checkbox" id="fSo"> só os que faltam</label>
+    </div>
+    <p class="mut" id="fResumo"></p>
+    <div class="gradefoto" id="fGrade"></div>
   </section>
 
   <section id="registrar" hidden>
@@ -109,6 +135,18 @@
     <div class="bar"><button class="btn" id="sair">Sair deste aparelho</button></div>
   </section>
 
+  <dialog id="dlgFoto">
+    <h3 id="fotoNome"></h3>
+    <img class="previa" id="fotoPrevia" alt="">
+    <input type="file" id="fotoArquivo" accept="image/*" hidden>
+    <div class="acoes">
+      <button class="btn prim" id="fotoEscolher">Escolher / tirar foto</button>
+      <a class="btn" id="fotoGoogle" target="_blank" rel="noopener">Procurar no Google</a>
+    </div>
+    <p class="mut" id="fotoMsg"></p>
+    <div class="acoes"><button class="btn" id="fotoRemover">Remover foto</button><button class="btn" id="fotoFechar">Fechar</button></div>
+  </dialog>
+
   <pre id="cupom"></pre>
 </main>
 <script>
@@ -130,6 +168,7 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   if (b.dataset.aba === 'lista') carregarLista();
   if (b.dataset.aba === 'produtos') carregarProdutos();
   if (b.dataset.aba === 'conta') carregarConta();
+  if (b.dataset.aba === 'fotos') carregarFotos();
 }));
 
 async function api(caminho, corpo) {
@@ -143,7 +182,8 @@ async function api(caminho, corpo) {
 
 async function carregarEstoque() {
   try {
-    estoque = (await api('/api/estoque?dia=' + $('#dia').value)).itens;
+    const [e] = await Promise.all([api('/api/estoque?dia=' + $('#dia').value), Fotos.carregar()]);
+    estoque = e.itens;
     desenharEstoque();
     desenharContagem();
   } catch (e) { $('#tbEstoque').innerHTML = `<tr><td colspan="5" class="neg">${esc(e.message)}</td></tr>`; }
@@ -151,7 +191,7 @@ async function carregarEstoque() {
 function desenharEstoque() {
   const b = $('#busca').value.toLowerCase(), dia = $('#dia').value;
   $('#tbEstoque').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(b)).map((i) => `
-    <tr><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></td>
+    <tr><td><div class="linha-foto">${Fotos.miniatura('insumos', i.insumo_id, 40)}<div>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></div></div></td>
     <td>${fmt(i.atual, 2)}</td><td>${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
     <td><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
     <td class="${i.situacao.split(' ')[0]}">${esc(i.situacao)}</td></tr>`).join('');
@@ -189,9 +229,9 @@ $('#copiarZap').addEventListener('click', async () => {
 });
 
 async function carregarProdutos() {
-  const p = await api('/api/produtos');
+  const [p] = await Promise.all([api('/api/produtos'), Fotos.carregar()]);
   p.sort((a, b) => (b.tem_ficha - a.tem_ficha) || ((a.lucro_pct ?? 999) - (b.lucro_pct ?? 999)));
-  $('#tbProdutos').innerHTML = p.map((x) => `<tr><td>${esc(x.produto)}${x.tem_ficha ? '' : ' <span class="mut">· sem ficha</span>'}</td>
+  $('#tbProdutos').innerHTML = p.map((x) => `<tr><td><div class="linha-foto">${Fotos.miniatura('produtos', x.id, 40)}<div>${esc(x.produto)}${x.tem_ficha ? '' : ' <span class="mut">· sem ficha</span>'}</div></div></td>
     <td>${brl(x.preco_venda)}</td><td>${x.tem_ficha ? brl(x.cmv) : '—'}</td><td class="larga">${x.tem_ficha ? brl(x.lucro) : '—'}</td>
     <td class="${x.lucro_pct != null && x.lucro_pct < 60 ? 'neg' : ''}">${x.tem_ficha && x.lucro_pct != null ? fmt(x.lucro_pct) + '%' : '—'}</td></tr>`).join('');
 }
@@ -259,6 +299,62 @@ $('#tbUsuarios').addEventListener('click', async (ev) => {
   catch (e) { msgConta(e.message, 'neg'); }
 });
 $('#sair').addEventListener('click', () => Mukifo.sair());
+
+// ---- fotos ----
+let fCatalogo = { produtos: null, insumos: null }, fAtual = null;
+async function catalogoFotos(tipo) {
+  if (!fCatalogo[tipo]) {
+    fCatalogo[tipo] = tipo === 'produtos'
+      ? (await api('/api/produtos')).map((x) => ({ id: x.id, nome: x.produto }))
+      : (await api('/api/estoque?dia=quinta')).itens.map((x) => ({ id: x.insumo_id, nome: x.insumo }));
+  }
+  return fCatalogo[tipo];
+}
+async function carregarFotos() {
+  const tipo = $('#fTipo').value;
+  try { await Promise.all([catalogoFotos(tipo), Fotos.carregar()]); } catch (e) { $('#fResumo').textContent = e.message; return; }
+  const q = $('#fBusca').value.toLowerCase(), so = $('#fSo').checked;
+  const todos = fCatalogo[tipo];
+  const com = todos.filter((x) => Fotos.tem(tipo, x.id)).length;
+  $('#fResumo').textContent = `${com} de ${todos.length} com foto — toque no item para adicionar ou trocar.`;
+  $('#fGrade').innerHTML = todos
+    .filter((x) => x.nome.toLowerCase().includes(q) && (!so || !Fotos.tem(tipo, x.id)))
+    .sort((a, b) => Fotos.tem(tipo, a.id) - Fotos.tem(tipo, b.id) || a.nome.localeCompare(b.nome))
+    .map((x) => `<div class="cartao-foto ${Fotos.tem(tipo, x.id) ? '' : 'falta'}" data-id="${x.id}" data-nome="${esc(x.nome)}">${Fotos.miniatura(tipo, x.id, 130)}<div>${esc(x.nome)}</div></div>`).join('');
+}
+['fTipo', 'fBusca', 'fSo'].forEach((id) => $('#' + id).addEventListener('input', carregarFotos));
+$('#fGrade').addEventListener('click', (ev) => {
+  const c = ev.target.closest('.cartao-foto'); if (!c) return;
+  if (!Mukifo.token()) return Mukifo.pedir(() => carregarFotos());
+  abrirFoto($('#fTipo').value, Number(c.dataset.id), c.dataset.nome);
+});
+function abrirFoto(tipo, id, nome) {
+  fAtual = { tipo, id, nome };
+  $('#fotoNome').textContent = nome;
+  $('#fotoMsg').textContent = 'Use uma foto sua ou da divulgação do fornecedor. O sistema reduz o tamanho sozinho.';
+  $('#fotoGoogle').href = 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(nome + (tipo === 'insumos' ? ' garrafa' : ''));
+  atualizarPrevia();
+  $('#dlgFoto').showModal();
+}
+function atualizarPrevia() {
+  const u = Fotos.url(fAtual.tipo, fAtual.id);
+  $('#fotoPrevia').src = u || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>');
+  $('#fotoPrevia').style.visibility = u ? 'visible' : 'hidden';
+  $('#fotoRemover').hidden = !u;
+}
+$('#fotoEscolher').addEventListener('click', () => $('#fotoArquivo').click());
+$('#fotoArquivo').addEventListener('change', async () => {
+  const f = $('#fotoArquivo').files[0]; $('#fotoArquivo').value = '';
+  if (!f) return;
+  $('#fotoMsg').textContent = 'Enviando…';
+  try { await Fotos.enviar(fAtual.tipo, fAtual.id, f, Mukifo.token()); $('#fotoMsg').textContent = 'Foto salva ✓'; atualizarPrevia(); carregarFotos(); }
+  catch (e) { $('#fotoMsg').textContent = e.message; if (/Entre/.test(e.message)) Mukifo.pedir(); }
+});
+$('#fotoRemover').addEventListener('click', async () => {
+  try { await Fotos.remover(fAtual.tipo, fAtual.id, Mukifo.token()); atualizarPrevia(); carregarFotos(); $('#fotoMsg').textContent = 'Foto removida.'; }
+  catch (e) { $('#fotoMsg').textContent = e.message; }
+});
+$('#fotoFechar').addEventListener('click', () => $('#dlgFoto').close());
 
 if (Mukifo.token()) carregarEstoque(); else Mukifo.pedir(carregarEstoque);
 </script>

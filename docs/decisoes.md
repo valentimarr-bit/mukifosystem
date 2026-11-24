@@ -10,6 +10,7 @@
 | 2026-11-23 | Lista de compras vai para um **app no celular** (PWA em `/compras/`): marca item a item, ajusta quantidade/valor, finaliza → entra no estoque. Funciona offline e em vários celulares. Impressão na DX8000 vira opcional. |
 | 2026-11-24 | Login por nome e senha (PBKDF2, sessão de 30 dias). O primeiro acesso cria o superadmin e exige `CODIGO_PRIMEIRO_ACESSO`, para quem achar o site antes não tomar o sistema. Um superadmin por vez; ele passa o cargo. Substitui a senha única de gerente. |
 | 2026-11-24 | Deploy sem terminal: D1 criado pelo deploy e banco montado pelo próprio Worker no primeiro acesso (migrações + seed embutidos). Ficamos na Cloudflare em vez de migrar para a Vercel. |
+| 2026-11-24 | Fotos: enviadas pela própria tela (não baixadas da internet pelo sistema, por causa de direitos de imagem), reduzidas no navegador e guardadas no D1 em base64. Sem R2 por enquanto; se passar de ~50 MB, migrar para R2. |
 
 ## Em aberto
 - Confirmar a adquirente das DX8000.
