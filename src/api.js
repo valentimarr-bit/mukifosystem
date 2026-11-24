@@ -1,0 +1,253 @@
+// Rotas da API do Mukifo (Cloudflare D1 em env.DB).
+import {
+  normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
+} from './dominio/estoque.js';
+
+export function json(dados, status = 200) {
+  return new Response(JSON.stringify(dados), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
+}
+const erro = (msg, status = 400) => json({ erro: msg }, status);
+const r2 = (x) => Math.round(x * 100) / 100;
+
+// ---------------- leitura do banco ----------------
+
+async function carregarInsumos(db) {
+  const { results } = await db.prepare(
+    `SELECT i.*, f.nome AS fornecedor FROM insumo i LEFT JOIN fornecedor f ON f.id = i.fornecedor_id WHERE i.ativo = 1 ORDER BY i.id`).all();
+  return results.map((i) => ({ ...i, consumo_inteiro: !!i.consumo_inteiro, producao_propria: !!i.producao_propria }));
+}
+
+async function carregarProdutos(db) {
+  const [{ results: prods }, { results: linhas }] = await Promise.all([
+    db.prepare('SELECT * FROM produto WHERE ativo = 1 ORDER BY id').all(),
+    db.prepare('SELECT ft.produto_id, ft.quantidade, ft.observacao, i.nome AS insumo FROM ficha_tecnica ft JOIN insumo i ON i.id = ft.insumo_id').all(),
+  ]);
+  const porProduto = new Map(prods.map((p) => [p.id, { ...p, baixa_estoque: !!p.baixa_estoque, ficha: [] }]));
+  for (const l of linhas) porProduto.get(l.produto_id)?.ficha.push({ insumo: l.insumo, quantidade: l.quantidade, observacao: l.observacao });
+  return [...porProduto.values()];
+}
+
+/** Vendas agrupadas por dia (todas as origens), no formato que mediasPorDia espera. */
+async function carregarHistorico(db) {
+  const [{ results }, { results: fora }] = await Promise.all([
+    db.prepare(`SELECT p.dia, ip.nome AS produto, SUM(ip.quantidade) AS quantidade
+                FROM item_pedido ip JOIN pedido p ON p.id = ip.pedido_id
+                WHERE p.status NOT IN ('cancelado', 'aguardando_pagamento')
+                GROUP BY p.dia, ip.nome ORDER BY p.dia`).all(),
+    db.prepare('SELECT dia, motivo FROM dia_fora_da_media').all(),
+  ]);
+  const motivo = new Map(fora.map((f) => [f.dia, f.motivo]));
+  const dias = new Map();
+  for (const r of results) {
+    if (!dias.has(r.dia)) dias.set(r.dia, { dia: r.dia, fora_da_media: motivo.get(r.dia) ?? null, itens: [] });
+    dias.get(r.dia).itens.push({ produto: r.produto, quantidade: r.quantidade });
+  }
+  return [...dias.values()];
+}
+
+async function estoqueAtual(db) {
+  const { results } = await db.prepare(
+    'SELECT i.nome, COALESCE(SUM(m.quantidade), 0) AS q FROM insumo i LEFT JOIN movimento_estoque m ON m.insumo_id = i.id GROUP BY i.id').all();
+  return new Map(results.map((r) => [r.nome, r.q]));
+}
+
+async function folga(db) {
+  const r = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'folga_minimo'").first();
+  return r ? Number(r.valor) : 0.2;
+}
+
+const diaCompra = (url) => (url.searchParams.get('dia') === 'segunda' ? 'segunda' : 'quinta');
+const precoDe = (i) => i.preco_unidade ?? i.preco_referencia ?? null;
+
+// ---------------- rotas de leitura ----------------
+
+async function getEstoque(db, url) {
+  const dia = diaCompra(url);
+  const [insumos, produtos, historico, atual, f] = await Promise.all([
+    carregarInsumos(db), carregarProdutos(db), carregarHistorico(db), estoqueAtual(db), folga(db)]);
+  const painel = painelEstoque({ insumos, produtos, historico, atual, dia, folga: f });
+  const porNome = new Map(insumos.map((i) => [i.nome, i]));
+  return json({
+    dia, folga: f,
+    itens: painel.map((l) => {
+      const i = porNome.get(l.insumo);
+      return {
+        insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
+        minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, sugestao: l.sugestao, situacao: l.situacao,
+        fornecedor: i.fornecedor, producao_propria: i.producao_propria,
+      };
+    }),
+  });
+}
+
+async function getListaCompras(db, url) {
+  const resp = await (await getEstoque(db, url)).json();
+  const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
+  const grupos = new Map();
+  const producao = [];
+  for (const l of resp.itens) {
+    if (!(l.sugestao > 0)) continue;
+    const i = insumos.get(l.insumo);
+    if (i.producao_propria) { producao.push({ insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem }); continue; }
+    const f = i.fornecedor ?? 'Sem fornecedor';
+    if (!grupos.has(f)) grupos.set(f, { fornecedor: f, itens: [], total_estimado: 0, tem_preco_estimado: false });
+    const g = grupos.get(f);
+    const preco = precoDe(i);
+    g.itens.push({ insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco });
+    if (preco != null) g.total_estimado = r2(g.total_estimado + preco * l.sugestao);
+    if (i.preco_unidade == null) g.tem_preco_estimado = true;
+  }
+  const { results: forn } = await db.prepare('SELECT nome, como_recebe FROM fornecedor').all();
+  const como = new Map(forn.map((f) => [f.nome, f.como_recebe]));
+  // Hortifruti/Ceasa vai por último, como na planilha.
+  const lista = [...grupos.values()].map((g) => ({ ...g, como_recebe: como.get(g.fornecedor) ?? null }))
+    .sort((a, b) => (a.fornecedor === 'Ceasa') - (b.fornecedor === 'Ceasa') || a.fornecedor.localeCompare(b.fornecedor, 'pt-BR'));
+  return json({
+    dia: resp.dia, gerado_em: new Date().toISOString(), fornecedores: lista, producao,
+    total_estimado: r2(lista.reduce((s, g) => s + g.total_estimado, 0)),
+  });
+}
+
+async function getProdutos(db) {
+  const [insumos, produtos] = await Promise.all([carregarInsumos(db), carregarProdutos(db)]);
+  const porNome = new Map(insumos.map((i) => [i.nome, i]));
+  const precos = new Map(insumos.map((i) => [i.nome, precoDe(i)]));
+  return json(produtos.map((p) => {
+    const c = cmv(p, porNome, precos);
+    const lucro = p.preco_venda != null ? p.preco_venda - c : null;
+    return {
+      produto: p.nome, preco_venda: p.preco_venda, cmv: r2(c), lucro: lucro == null ? null : r2(lucro),
+      lucro_pct: lucro == null || !p.preco_venda ? null : Math.round((lucro / p.preco_venda) * 1000) / 10,
+      tem_ficha: p.ficha.length > 0 || !p.baixa_estoque, ficha: p.ficha,
+    };
+  }));
+}
+
+// ---------------- rotas de escrita (exigem token) ----------------
+
+function autorizado(request, env) {
+  if (!env.ADMIN_TOKEN) return false;
+  return request.headers.get('authorization') === `Bearer ${env.ADMIN_TOKEN}`;
+}
+
+/** Lê um relatório de vendas no formato do sistema: Produto,UN,Estoque,Qtd. vendida,Total vendas */
+export function lerRelatorioCSV(texto) {
+  const itens = [];
+  for (const linha of texto.split(/\r?\n/).slice(1)) {
+    if (!linha.trim()) continue;
+    const campos = [];
+    let atual = '', aspas = false;
+    for (const ch of linha) {
+      if (ch === '"') aspas = !aspas;
+      else if (ch === ',' && !aspas) { campos.push(atual); atual = ''; } else atual += ch;
+    }
+    campos.push(atual);
+    if (campos.length < 5 || !campos[0].trim()) continue;
+    const quantidade = Number(campos[3].replace(/\./g, ''));
+    const total = Number(campos[4].replace(/\./g, '').replace(',', '.'));
+    if (!Number.isFinite(quantidade)) continue;
+    itens.push({ produto: campos[0].trim(), quantidade, total: Number.isFinite(total) ? total : 0 });
+  }
+  return itens;
+}
+
+/** POST /api/vendas/relatorio  { dia: 'YYYY-MM-DD', csv: '...' } — importa o relatório do dia e dá baixa no estoque. */
+async function postRelatorio(db, body) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(body?.dia ?? '')) return erro('Informe o dia no formato AAAA-MM-DD');
+  const itens = lerRelatorioCSV(body.csv ?? '');
+  if (!itens.length) return erro('Não encontrei nenhuma linha de venda no relatório');
+  const id = `rel-${body.dia}`;
+  if (await db.prepare('SELECT 1 FROM pedido WHERE id = ?').bind(id).first()) return erro(`O relatório de ${body.dia} já foi importado`, 409);
+
+  const [insumos, produtos] = await Promise.all([carregarInsumos(db), carregarProdutos(db)]);
+  const idProduto = new Map(produtos.map((p) => [p.nome_normalizado, p.id]));
+  const vendidos = new Map();
+  for (const it of itens) vendidos.set(normalizarNome(it.produto), (vendidos.get(normalizarNome(it.produto)) ?? 0) + it.quantidade);
+  const baixa = consumoPorVendas(insumos, produtos, vendidos);
+
+  const stmts = [db.prepare(`INSERT INTO pedido (id, numero, dia, origem, status, total) VALUES (?, 'REL', ?, 'relatorio', 'entregue', ?)`)
+    .bind(id, body.dia, r2(itens.reduce((s, i) => s + i.total, 0)))];
+  for (const it of itens) {
+    stmts.push(db.prepare('INSERT INTO item_pedido (pedido_id, produto_id, nome, quantidade, preco) VALUES (?, ?, ?, ?, ?)')
+      .bind(id, idProduto.get(normalizarNome(it.produto)) ?? null, it.produto, it.quantidade, it.quantidade ? r2(it.total / it.quantidade) : null));
+  }
+  for (const i of insumos) {
+    const q = baixa.get(i.nome);
+    if (q > 0) stmts.push(db.prepare(`INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, motivo, referencia) VALUES (?, 'venda', ?, 'relatório do dia', ?)`).bind(i.id, -q, id));
+  }
+  await db.batch(stmts);
+  return json({ ok: true, dia: body.dia, linhas: itens.length, sem_ficha: produtosSemFicha(produtos, vendidos) }, 201);
+}
+
+/** POST /api/contagem  { momento: 'fechamento'|'abertura', usuario, itens: [{insumo, contado}] } */
+async function postContagem(db, body) {
+  const itens = body?.itens ?? [];
+  if (!itens.length) return erro('Nenhum item contado');
+  const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
+  const atual = await estoqueAtual(db);
+  const data = new Date().toISOString();
+  const momento = body.momento === 'abertura' ? 'abertura' : 'fechamento';
+  const stmts = [];
+  const diferencas = [];
+  for (const { insumo, contado } of itens) {
+    const i = insumos.get(insumo);
+    if (!i || !Number.isFinite(Number(contado))) return erro(`Item inválido: ${insumo}`);
+    const esperado = atual.get(insumo) ?? 0;
+    const dif = Number(contado) - esperado;
+    stmts.push(db.prepare('INSERT INTO contagem (data, momento, insumo_id, esperado, contado, usuario) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(data, momento, i.id, esperado, Number(contado), body.usuario ?? null));
+    if (Math.abs(dif) > 1e-9) {
+      stmts.push(db.prepare(`INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, custo, motivo, usuario) VALUES (?, 'diferenca_contagem', ?, ?, ?, ?)`)
+        .bind(i.id, dif, precoDe(i) == null ? null : r2(dif * precoDe(i)), `contagem de ${momento}`, body.usuario ?? null));
+      diferencas.push({ insumo, esperado: r2(esperado), contado: Number(contado), diferenca: r2(dif), valor: precoDe(i) == null ? null : r2(dif * precoDe(i)) });
+    }
+  }
+  await db.batch(stmts);
+  return json({ ok: true, itens: itens.length, diferencas }, 201);
+}
+
+/** POST /api/compras  { fornecedor, data?, itens: [{insumo, quantidade, valor_pago}] } */
+async function postCompra(db, body) {
+  const itens = body?.itens ?? [];
+  if (!itens.length) return erro('Nenhum item na compra');
+  const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
+  const forn = body.fornecedor ? await db.prepare('SELECT id FROM fornecedor WHERE nome = ?').bind(body.fornecedor).first() : null;
+  const data = body.data ?? new Date().toISOString().slice(0, 10);
+  const total = r2(itens.reduce((s, i) => s + (Number(i.valor_pago) || 0), 0));
+  const compra = await db.prepare('INSERT INTO compra (fornecedor_id, data, total, registrado_por) VALUES (?, ?, ?, ?) RETURNING id')
+    .bind(forn?.id ?? null, data, total, body.usuario ?? null).first();
+  const stmts = [];
+  for (const it of itens) {
+    const i = insumos.get(it.insumo);
+    const q = Number(it.quantidade);
+    if (!i || !(q > 0)) return erro(`Item inválido: ${it.insumo}`);
+    const valor = Number(it.valor_pago) || null;
+    stmts.push(db.prepare('INSERT INTO item_compra (compra_id, insumo_id, quantidade, valor_pago) VALUES (?, ?, ?, ?)').bind(compra.id, i.id, q, valor));
+    stmts.push(db.prepare(`INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, custo, referencia, usuario) VALUES (?, ?, ?, ?, ?, ?)`)
+      .bind(i.id, i.producao_propria ? 'producao' : 'compra', q, valor, `compra-${compra.id}`, body.usuario ?? null));
+    if (valor) stmts.push(db.prepare('UPDATE insumo SET preco_unidade = ? WHERE id = ?').bind(r2(valor / q), i.id));
+  }
+  await db.batch(stmts);
+  return json({ ok: true, compra_id: compra.id, total }, 201);
+}
+
+// ---------------- roteador ----------------
+
+export async function rotearApi(request, env, url) {
+  const db = env.DB;
+  if (!db) return erro('Banco de dados ainda não configurado (fase 2: ver README)', 503);
+  const m = request.method;
+  const p = url.pathname;
+  if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
+  if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
+  if (m === 'GET' && p === '/api/produtos') return getProdutos(db);
+  if (m === 'POST' && ['/api/vendas/relatorio', '/api/contagem', '/api/compras'].includes(p)) {
+    if (!autorizado(request, env)) return erro('Senha de administrador inválida', 401);
+    let body;
+    try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
+    if (p === '/api/vendas/relatorio') return postRelatorio(db, body);
+    if (p === '/api/contagem') return postContagem(db, body);
+    return postCompra(db, body);
+  }
+  return null;
+}

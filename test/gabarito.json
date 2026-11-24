@@ -1,0 +1,2874 @@
+{
+ "dia_compra": "Quinta",
+ "folga": 0.2,
+ "dias_validos": [
+  4,
+  3,
+  3,
+  4,
+  2,
+  1
+ ],
+ "estoque": [
+  {
+   "insumo": "Cachaça Ypióca Ouro",
+   "inicio": 13,
+   "compra": 1,
+   "consumo_qtd": 3.8,
+   "consumo_un": 3.93782383419689,
+   "atual": 10.0621761658031,
+   "minimo_segunda": 1,
+   "minimo_quinta": 7,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 38,
+   "consumo_dia": [
+    0.038860103626943,
+    0.0345423143350604,
+    0.259067357512953,
+    4.55958549222798,
+    0.207253886010363,
+    0
+   ]
+  },
+  {
+   "insumo": "Cachaça Velho Barreiro",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.4,
+   "consumo_un": 0.43956043956044,
+   "atual": 1.56043956043956,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 18,
+   "consumo_dia": [
+    0.0274725274725275,
+    0.0915750915750916,
+    0.21978021978022,
+    0.164835164835165,
+    0.714285714285714,
+    0.32967032967033
+   ]
+  },
+  {
+   "insumo": "Cachaça Kariri",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.05,
+   "consumo_un": 0.0714285714285714,
+   "atual": 1.92857142857143,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 45,
+   "consumo_dia": [
+    0,
+    0,
+    0.0238095238095238,
+    0,
+    0.0714285714285714,
+    0
+   ]
+  },
+  {
+   "insumo": "Cachaça Ypióca Branca",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 25,
+   "consumo_dia": [
+    0,
+    0.015,
+    0,
+    0.0225,
+    0,
+    0.045
+   ]
+  },
+  {
+   "insumo": "Vodka Smirnoff",
+   "inicio": 3,
+   "compra": 1,
+   "consumo_qtd": 0.64,
+   "consumo_un": 0.641282565130261,
+   "atual": 3.35871743486974,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 38,
+   "consumo_dia": [
+    0.120240480961924,
+    0.156980627922512,
+    0.170340681362725,
+    0.227955911823647,
+    0.370741482965932,
+    0
+   ]
+  },
+  {
+   "insumo": "Vodka Absolut",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0.15,
+   "consumo_un": 0.15,
+   "atual": 2.85,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 90,
+   "consumo_dia": [
+    0,
+    0,
+    0.075,
+    0.13125,
+    0.0375,
+    0
+   ]
+  },
+  {
+   "insumo": "Whisky Passport",
+   "inicio": 4,
+   "compra": 1,
+   "consumo_qtd": 1.35,
+   "consumo_un": 1.35,
+   "atual": 3.65,
+   "minimo_segunda": 1,
+   "minimo_quinta": 3,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 45,
+   "consumo_dia": [
+    0.075,
+    0.1,
+    0.35,
+    1.2,
+    0.375,
+    0.075
+   ]
+  },
+  {
+   "insumo": "Whisky White Horse",
+   "inicio": 4,
+   "compra": 1,
+   "consumo_qtd": 1.125,
+   "consumo_un": 1.125,
+   "atual": 3.875,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 75,
+   "consumo_dia": [
+    0.16875,
+    0.025,
+    0.15,
+    0.54375,
+    0.375,
+    0
+   ]
+  },
+  {
+   "insumo": "Whisky Red Label",
+   "inicio": 3,
+   "compra": 1,
+   "consumo_qtd": 0.825,
+   "consumo_un": 0.825,
+   "atual": 3.175,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 90,
+   "consumo_dia": [
+    0.045,
+    0.0166666666666667,
+    0.186666666666667,
+    0.35625,
+    0.3,
+    0.045
+   ]
+  },
+  {
+   "insumo": "Whisky Jack Daniel's",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.3,
+   "consumo_un": 0.3,
+   "atual": 1.7,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 150,
+   "consumo_dia": [
+    0.0375,
+    0,
+    0.133333333333333,
+    0.1,
+    0.0625,
+    0
+   ]
+  },
+  {
+   "insumo": "Whisky Johnnie Walker Blonde",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0.05,
+   "consumo_un": 0.0666666666666667,
+   "atual": 2.93333333333333,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 110,
+   "consumo_dia": [
+    0,
+    0.0222222222222222,
+    0,
+    0.0166666666666667,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Gin Gordon's",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.305,
+   "consumo_un": 0.406666666666667,
+   "atual": 1.59333333333333,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 60,
+   "consumo_dia": [
+    0.163333333333333,
+    0.213333333333333,
+    0.14,
+    0.158333333333333,
+    0.373333333333333,
+    0.2
+   ]
+  },
+  {
+   "insumo": "Gin Tanqueray",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.05,
+   "consumo_un": 0.0666666666666667,
+   "atual": 1.93333333333333,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 120,
+   "consumo_dia": [
+    0.0166666666666667,
+    0,
+    0,
+    0.05,
+    0.0333333333333333,
+    0
+   ]
+  },
+  {
+   "insumo": "Infusão gin + hibisco + pimenta rosa",
+   "inicio": 0.5,
+   "compra": 2,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2.5,
+   "minimo_segunda": 0.5,
+   "minimo_quinta": 0.5,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 70,
+   "consumo_dia": [
+    0,
+    0,
+    0.04,
+    0.045,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Tequila Tequisla",
+   "inicio": 5,
+   "compra": 1,
+   "consumo_qtd": 1.5,
+   "consumo_un": 1.5,
+   "atual": 4.5,
+   "minimo_segunda": 1,
+   "minimo_quinta": 4,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 45,
+   "consumo_dia": [
+    0.16875,
+    0.1,
+    0.975,
+    1.3875,
+    0.3375,
+    0.3
+   ]
+  },
+  {
+   "insumo": "Tequila José Cuervo",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.05,
+   "consumo_un": 0.0666666666666667,
+   "atual": 1.93333333333333,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 110,
+   "consumo_dia": [
+    0,
+    0,
+    0.0444444444444444,
+    0,
+    0.0333333333333333,
+    0
+   ]
+  },
+  {
+   "insumo": "Rum Montilla Ouro",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 50,
+   "consumo_dia": [
+    0.01,
+    0.0266666666666667,
+    0.0133333333333333,
+    0.01,
+    0.02,
+    0.04
+   ]
+  },
+  {
+   "insumo": "Rum Montilla Prata",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 45,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0.025,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Fireball",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 90,
+   "consumo_dia": [
+    0,
+    0.0888888888888889,
+    0,
+    0,
+    0,
+    0.0666666666666667
+   ]
+  },
+  {
+   "insumo": "Howler Head",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 150,
+   "consumo_dia": [
+    0.00666666666666667,
+    0.0177777777777778,
+    0.00888888888888889,
+    0.00666666666666667,
+    0.0133333333333333,
+    0.0266666666666667
+   ]
+  },
+  {
+   "insumo": "Jägermeister",
+   "inicio": 11,
+   "compra": 2,
+   "consumo_qtd": 2.325,
+   "consumo_un": 3.32142857142857,
+   "atual": 9.67857142857143,
+   "minimo_segunda": 2,
+   "minimo_quinta": 6,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 95,
+   "consumo_dia": [
+    0.125,
+    0.928571428571429,
+    1.20238095238095,
+    1.15178571428571,
+    1.71428571428571,
+    0.535714285714286
+   ]
+  },
+  {
+   "insumo": "Aperol",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.24,
+   "consumo_un": 0.32,
+   "atual": 1.68,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 55,
+   "consumo_dia": [
+    0.16,
+    0.0266666666666667,
+    0.24,
+    0.32,
+    0.24,
+    0
+   ]
+  },
+  {
+   "insumo": "Campari",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.03,
+   "consumo_un": 0.030060120240481,
+   "atual": 1.96993987975952,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 55,
+   "consumo_dia": [
+    0.0225450901803607,
+    0.0267201068804275,
+    0.0634602538410154,
+    0.0501002004008016,
+    0.030060120240481,
+    0
+   ]
+  },
+  {
+   "insumo": "Vermute rosso",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.03,
+   "consumo_un": 0.03,
+   "atual": 1.97,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 45,
+   "consumo_dia": [
+    0.025,
+    0.0166666666666667,
+    0.0333333333333333,
+    0.04,
+    0.035,
+    0.01
+   ]
+  },
+  {
+   "insumo": "Cynar",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.01,
+   "consumo_un": 0.0111111111111111,
+   "atual": 1.98888888888889,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 35,
+   "consumo_dia": [
+    0,
+    0,
+    0.0037037037037037,
+    0,
+    0.0111111111111111,
+    0
+   ]
+  },
+  {
+   "insumo": "Cointreau",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 150,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Fernet",
+   "inicio": 4,
+   "compra": 1,
+   "consumo_qtd": 1.05,
+   "consumo_un": 1.4,
+   "atual": 3.6,
+   "minimo_segunda": 1,
+   "minimo_quinta": 3,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 75,
+   "consumo_dia": [
+    0.125,
+    0.0586666666666667,
+    0.666666666666667,
+    0.779666666666667,
+    0.416666666666667,
+    0.109333333333333
+   ]
+  },
+  {
+   "insumo": "Conhaque de alcatrão São João da Barra",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0.02,
+   "consumo_un": 0.0222222222222222,
+   "atual": 2.97777777777778,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 25,
+   "consumo_dia": [
+    0.00555555555555556,
+    0,
+    0.012962962962963,
+    0.00972222222222222,
+    0.00833333333333333,
+    0.00555555555555556
+   ]
+  },
+  {
+   "insumo": "Angostura",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.0003,
+   "consumo_un": 0.0015,
+   "atual": 1.9985,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 70,
+   "consumo_dia": [
+    0.006,
+    0.024,
+    0.0045,
+    0.001125,
+    0.0015,
+    0
+   ]
+  },
+  {
+   "insumo": "Espumante brut Salton Séries",
+   "inicio": 2,
+   "compra": 5,
+   "consumo_qtd": 0.36,
+   "consumo_un": 0.48,
+   "atual": 6.52,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 35,
+   "consumo_dia": [
+    0.24,
+    0.04,
+    0.36,
+    0.48,
+    0.36,
+    0
+   ]
+  },
+  {
+   "insumo": "Vinho tinto De Cesaro",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 30,
+   "consumo_dia": [
+    0,
+    0.0111111111111111,
+    0,
+    0,
+    0,
+    0.0333333333333333
+   ]
+  },
+  {
+   "insumo": "Beats Green Mix LN 269ml",
+   "inicio": 8,
+   "compra": 1,
+   "consumo_qtd": 2,
+   "consumo_un": 2,
+   "atual": 7,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6,
+   "consumo_dia": [
+    0,
+    0,
+    0.666666666666667,
+    0.75,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Beats GT LN 269ml",
+   "inicio": 3,
+   "compra": 2,
+   "consumo_qtd": 1,
+   "consumo_un": 1,
+   "atual": 4,
+   "minimo_segunda": 2,
+   "minimo_quinta": 5,
+   "situacao": "COMPRAR",
+   "sugestao": 1,
+   "preco": 6,
+   "consumo_dia": [
+    0,
+    1.33333333333333,
+    1.66666666666667,
+    1.75,
+    0.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Beats Red Mix LN 269ml",
+   "inicio": 27,
+   "compra": 4,
+   "consumo_qtd": 7,
+   "consumo_un": 7,
+   "atual": 24,
+   "minimo_segunda": 4,
+   "minimo_quinta": 11,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6,
+   "consumo_dia": [
+    1,
+    2.33333333333333,
+    3.33333333333333,
+    3.25,
+    2.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Beats Senses LN 269ml",
+   "inicio": 46,
+   "compra": 3,
+   "consumo_qtd": 15,
+   "consumo_un": 15,
+   "atual": 34,
+   "minimo_segunda": 3,
+   "minimo_quinta": 17,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6,
+   "consumo_dia": [
+    0.75,
+    1.66666666666667,
+    4.66666666666667,
+    5.5,
+    3,
+    1
+   ]
+  },
+  {
+   "insumo": "Beats Pink Lemonade LN 269ml",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Brahma Chopp litrão 1L",
+   "inicio": 132,
+   "compra": 47,
+   "consumo_qtd": 40,
+   "consumo_un": 40,
+   "atual": 139,
+   "minimo_segunda": 47,
+   "minimo_quinta": 81,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7.5,
+   "consumo_dia": [
+    28.25,
+    10.3333333333333,
+    20.6666666666667,
+    23.25,
+    18,
+    5
+   ]
+  },
+  {
+   "insumo": "Corona LN 330ml",
+   "inicio": 16,
+   "compra": 1,
+   "consumo_qtd": 6,
+   "consumo_un": 6,
+   "atual": 11,
+   "minimo_segunda": 1,
+   "minimo_quinta": 9,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7,
+   "consumo_dia": [
+    0.5,
+    0,
+    2,
+    2,
+    3.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Heineken 0,0% LN 330ml",
+   "inicio": 16,
+   "compra": 3,
+   "consumo_qtd": 4,
+   "consumo_un": 4,
+   "atual": 15,
+   "minimo_segunda": 3,
+   "minimo_quinta": 8,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6.3,
+   "consumo_dia": [
+    0.75,
+    1,
+    0.333333333333333,
+    1.25,
+    3.5,
+    1
+   ]
+  },
+  {
+   "insumo": "Heineken 600ml",
+   "inicio": 77,
+   "compra": 37,
+   "consumo_qtd": 23,
+   "consumo_un": 23,
+   "atual": 91,
+   "minimo_segunda": 37,
+   "minimo_quinta": 55,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 9.5,
+   "consumo_dia": [
+    20,
+    10.3333333333333,
+    16,
+    10,
+    6.5,
+    13
+   ]
+  },
+  {
+   "insumo": "Heineken lata 473ml",
+   "inicio": 69,
+   "compra": 7,
+   "consumo_qtd": 18,
+   "consumo_un": 18,
+   "atual": 58,
+   "minimo_segunda": 7,
+   "minimo_quinta": 18,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6.5,
+   "consumo_dia": [
+    2.25,
+    3.33333333333333,
+    2.33333333333333,
+    3.5,
+    4,
+    5
+   ]
+  },
+  {
+   "insumo": "Heineken LN 330ml",
+   "inicio": 133,
+   "compra": 18,
+   "consumo_qtd": 36,
+   "consumo_un": 36,
+   "atual": 115,
+   "minimo_segunda": 18,
+   "minimo_quinta": 43,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6.3,
+   "consumo_dia": [
+    5.5,
+    9.33333333333333,
+    6.66666666666667,
+    6.5,
+    21.5,
+    1
+   ]
+  },
+  {
+   "insumo": "Heineken Ultimate LN",
+   "inicio": 6,
+   "compra": 3,
+   "consumo_qtd": 2,
+   "consumo_un": 2,
+   "atual": 7,
+   "minimo_segunda": 3,
+   "minimo_quinta": 2,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7.5,
+   "consumo_dia": [
+    1.5,
+    1,
+    0.333333333333333,
+    1,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Original garrafa 1L",
+   "inicio": 89,
+   "compra": 30,
+   "consumo_qtd": 32,
+   "consumo_un": 32,
+   "atual": 87,
+   "minimo_segunda": 30,
+   "minimo_quinta": 63,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 8,
+   "consumo_dia": [
+    14.5,
+    10.3333333333333,
+    13.3333333333333,
+    11.5,
+    17.5,
+    10
+   ]
+  },
+  {
+   "insumo": "Original lata 473ml",
+   "inicio": 5,
+   "compra": 2,
+   "consumo_qtd": 2,
+   "consumo_un": 2,
+   "atual": 5,
+   "minimo_segunda": 2,
+   "minimo_quinta": 7,
+   "situacao": "COMPRAR",
+   "sugestao": 2,
+   "preco": 5,
+   "consumo_dia": [
+    0.25,
+    1,
+    0.666666666666667,
+    0.5,
+    1,
+    3
+   ]
+  },
+  {
+   "insumo": "Stella Artois LN 330ml",
+   "inicio": 8,
+   "compra": 1,
+   "consumo_qtd": 3,
+   "consumo_un": 3,
+   "atual": 6,
+   "minimo_segunda": 1,
+   "minimo_quinta": 4,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 5.6,
+   "consumo_dia": [
+    0.25,
+    0,
+    0.666666666666667,
+    0,
+    2,
+    0
+   ]
+  },
+  {
+   "insumo": "Stella Gold s/ glúten LN",
+   "inicio": 23,
+   "compra": 3,
+   "consumo_qtd": 10,
+   "consumo_un": 10,
+   "atual": 16,
+   "minimo_segunda": 3,
+   "minimo_quinta": 13,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6.5,
+   "consumo_dia": [
+    1.25,
+    0.666666666666667,
+    4,
+    1.75,
+    5,
+    0
+   ]
+  },
+  {
+   "insumo": "Água com gás",
+   "inicio": 40,
+   "compra": 12,
+   "consumo_qtd": 7.21,
+   "consumo_un": 15,
+   "atual": 37,
+   "minimo_segunda": 12,
+   "minimo_quinta": 23,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 2,
+   "consumo_dia": [
+    4.085,
+    5.21,
+    5.49,
+    8.345,
+    4.64,
+    0
+   ]
+  },
+  {
+   "insumo": "Água sem gás",
+   "inicio": 54,
+   "compra": 13,
+   "consumo_qtd": 17,
+   "consumo_un": 17,
+   "atual": 50,
+   "minimo_segunda": 13,
+   "minimo_quinta": 31,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 1.5,
+   "consumo_dia": [
+    6.75,
+    4,
+    4,
+    10.25,
+    8,
+    3
+   ]
+  },
+  {
+   "insumo": "Coca-Cola lata 350ml",
+   "inicio": 42,
+   "compra": 13,
+   "consumo_qtd": 6.45,
+   "consumo_un": 19,
+   "atual": 36,
+   "minimo_segunda": 13,
+   "minimo_quinta": 37,
+   "situacao": "COMPRAR",
+   "sugestao": 1,
+   "preco": 3.5,
+   "consumo_dia": [
+    2.53571428571429,
+    7.85714285714286,
+    12.3809523809524,
+    11.9642857142857,
+    5.42857142857143,
+    1
+   ]
+  },
+  {
+   "insumo": "Coca-Cola Zero lata 350ml",
+   "inicio": 16,
+   "compra": 2,
+   "consumo_qtd": 5,
+   "consumo_un": 5,
+   "atual": 13,
+   "minimo_segunda": 2,
+   "minimo_quinta": 6,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 3.5,
+   "consumo_dia": [
+    1.25,
+    0.333333333333333,
+    1.66666666666667,
+    2,
+    1,
+    0
+   ]
+  },
+  {
+   "insumo": "Sprite lata 350ml",
+   "inicio": 3,
+   "compra": 1,
+   "consumo_qtd": 1,
+   "consumo_un": 1,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 3,
+   "consumo_dia": [
+    0.5,
+    0.333333333333333,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Água tônica",
+   "inicio": 6,
+   "compra": 1,
+   "consumo_qtd": 0.6,
+   "consumo_un": 2,
+   "atual": 5,
+   "minimo_segunda": 1,
+   "minimo_quinta": 4,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 3.2,
+   "consumo_dia": [
+    0,
+    0,
+    0.857142857142857,
+    1.03571428571429,
+    0.857142857142857,
+    0.571428571428572
+   ]
+  },
+  {
+   "insumo": "Baly tradicional",
+   "inicio": 12,
+   "compra": 1,
+   "consumo_qtd": 4.5,
+   "consumo_un": 3,
+   "atual": 10,
+   "minimo_segunda": 1,
+   "minimo_quinta": 5,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 9,
+   "consumo_dia": [
+    0.0625,
+    0.208333333333333,
+    0.583333333333333,
+    2.0625,
+    0.625,
+    0.125
+   ]
+  },
+  {
+   "insumo": "Red Bull 250ml",
+   "inicio": 146,
+   "compra": 11,
+   "consumo_qtd": 12.25,
+   "consumo_un": 49,
+   "atual": 108,
+   "minimo_segunda": 11,
+   "minimo_quinta": 69,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 8,
+   "consumo_dia": [
+    2,
+    6.66666666666667,
+    13.6666666666667,
+    14.75,
+    22.5,
+    6
+   ]
+  },
+  {
+   "insumo": "Red Bull Melancia 250ml",
+   "inicio": 3,
+   "compra": 1,
+   "consumo_qtd": 1,
+   "consumo_un": 1,
+   "atual": 3,
+   "minimo_segunda": 1,
+   "minimo_quinta": 3,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 8,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "insumo": "Red Bull Tropical 250ml",
+   "inicio": 4,
+   "compra": 2,
+   "consumo_qtd": 0.25,
+   "consumo_un": 1,
+   "atual": 5,
+   "minimo_segunda": 2,
+   "minimo_quinta": 5,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 8,
+   "consumo_dia": [
+    1,
+    0.666666666666667,
+    0.333333333333333,
+    0.75,
+    2.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Monster Mango Loco 473ml",
+   "inicio": 38,
+   "compra": 4,
+   "consumo_qtd": 5.193,
+   "consumo_un": 11,
+   "atual": 31,
+   "minimo_segunda": 4,
+   "minimo_quinta": 27,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7.5,
+   "consumo_dia": [
+    1.87262156448203,
+    0.998590556730092,
+    7.15292459478506,
+    9.98044397463002,
+    2.74524312896406,
+    1.99577167019027
+   ]
+  },
+  {
+   "insumo": "Monster Original 473ml",
+   "inicio": 19,
+   "compra": 3,
+   "consumo_qtd": 3.54,
+   "consumo_un": 8,
+   "atual": 14,
+   "minimo_segunda": 3,
+   "minimo_quinta": 10,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7.5,
+   "consumo_dia": [
+    1.37262156448203,
+    0.666666666666667,
+    0.997885835095137,
+    3.61786469344609,
+    2.99471458773784,
+    0
+   ]
+  },
+  {
+   "insumo": "Monster Zero 473ml",
+   "inicio": 5,
+   "compra": 1,
+   "consumo_qtd": 1,
+   "consumo_un": 1,
+   "atual": 5,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 7.5,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0.25,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Matito (drink pronto 1 L)",
+   "inicio": 55,
+   "compra": 8,
+   "consumo_qtd": 25,
+   "consumo_un": 25,
+   "atual": 38,
+   "minimo_segunda": 8,
+   "minimo_quinta": 59,
+   "situacao": "COMPRAR",
+   "sugestao": 21,
+   "preco": 12,
+   "consumo_dia": [
+    2.75,
+    3.33333333333333,
+    11.3333333333333,
+    19.25,
+    18.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Xarope de açúcar (simples)",
+   "inicio": 0.5,
+   "compra": 2,
+   "consumo_qtd": 4.64,
+   "consumo_un": 4.64,
+   "atual": -2.14,
+   "minimo_segunda": 0.5,
+   "minimo_quinta": 8.5,
+   "situacao": "SEM ESTOQUE",
+   "sugestao": 11,
+   "preco": 4,
+   "consumo_dia": [
+    0.14875,
+    0.146666666666667,
+    0.623333333333333,
+    4.65625,
+    1.0725,
+    0.335
+   ]
+  },
+  {
+   "insumo": "Xarope de mel",
+   "inicio": 0.5,
+   "compra": 2,
+   "consumo_qtd": 0.17,
+   "consumo_un": 0.17,
+   "atual": 2.33,
+   "minimo_segunda": 0.5,
+   "minimo_quinta": 0.5,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 30,
+   "consumo_dia": [
+    0.035,
+    0.025,
+    0.05,
+    0.08,
+    0.12,
+    0.035
+   ]
+  },
+  {
+   "insumo": "Xarope de gengibre",
+   "inicio": 0.5,
+   "compra": 2,
+   "consumo_qtd": 0.1,
+   "consumo_un": 0.1,
+   "atual": 2.4,
+   "minimo_segunda": 0.5,
+   "minimo_quinta": 0.5,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 15,
+   "consumo_dia": [
+    0.02,
+    0,
+    0.06,
+    0.04,
+    0.03,
+    0.02
+   ]
+  },
+  {
+   "insumo": "Xarope de cranberry Monin",
+   "inicio": 0.5,
+   "compra": 2,
+   "consumo_qtd": 0.4,
+   "consumo_un": 0.571428571428572,
+   "atual": 1.92857142857143,
+   "minimo_segunda": 1,
+   "minimo_quinta": 2,
+   "situacao": "COMPRAR",
+   "sugestao": 1,
+   "preco": 55,
+   "consumo_dia": [
+    0.0642857142857143,
+    0.0380952380952381,
+    0.371428571428571,
+    0.528571428571429,
+    0.128571428571429,
+    0.114285714285714
+   ]
+  },
+  {
+   "insumo": "Suco de maracujá concentrado",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0.06,
+   "consumo_un": 0.12,
+   "atual": 1.88,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 12,
+   "consumo_dia": [
+    0.03,
+    0.02,
+    0.02,
+    0.075,
+    0.09,
+    0
+   ]
+  },
+  {
+   "insumo": "Espuma cítrica de gengibre",
+   "inicio": 2,
+   "compra": 5,
+   "consumo_qtd": 2,
+   "consumo_un": 2,
+   "atual": 5,
+   "minimo_segunda": 3,
+   "minimo_quinta": 3,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 0.8,
+   "consumo_dia": [
+    0.25,
+    2,
+    0,
+    1.5,
+    0.5,
+    0
+   ]
+  },
+  {
+   "insumo": "Limão Taiti",
+   "inicio": 32,
+   "compra": 1,
+   "consumo_qtd": 11.95,
+   "consumo_un": 11.95,
+   "atual": 21.05,
+   "minimo_segunda": 1,
+   "minimo_quinta": 21,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 6,
+   "consumo_dia": [
+    0.384375,
+    0.4375,
+    1.60833333333333,
+    11.85,
+    2.8125,
+    0.9
+   ]
+  },
+  {
+   "insumo": "Limão Siciliano",
+   "inicio": 1,
+   "compra": 0.5,
+   "consumo_qtd": 0.3428,
+   "consumo_un": 0.3428,
+   "atual": 1.1572,
+   "minimo_segunda": 0.5,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 15,
+   "consumo_dia": [
+    0.128525,
+    0.152266666666667,
+    0.238033333333333,
+    0.16425,
+    0.1571,
+    0.1428
+   ]
+  },
+  {
+   "insumo": "Laranja",
+   "inicio": 5,
+   "compra": 1,
+   "consumo_qtd": 1.75,
+   "consumo_un": 1.75,
+   "atual": 4.25,
+   "minimo_segunda": 1,
+   "minimo_quinta": 3,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 1,
+   "consumo_dia": [
+    0.046875,
+    0.3125,
+    0.5625,
+    0.40625,
+    0.9375,
+    0.3125
+   ]
+  },
+  {
+   "insumo": "Manjericão",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 0.4,
+   "consumo_un": 0.4,
+   "atual": 2.6,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 4,
+   "consumo_dia": [
+    0.1,
+    0.0666666666666667,
+    0.0666666666666667,
+    0.25,
+    0.3,
+    0
+   ]
+  },
+  {
+   "insumo": "Hortelã",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 0,
+   "consumo_un": 0,
+   "atual": 2,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 4,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0.12,
+    0,
+    0
+   ]
+  },
+  {
+   "insumo": "Pimenta rosa",
+   "inicio": 1,
+   "compra": 1,
+   "consumo_qtd": 20,
+   "consumo_un": 0.2,
+   "atual": 1.8,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 25,
+   "consumo_dia": [
+    0.0225,
+    0.0133333333333333,
+    0.13,
+    0.185,
+    0.045,
+    0.04
+   ]
+  },
+  {
+   "insumo": "Ovo",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 2,
+   "consumo_un": 0.166666666666667,
+   "atual": 2.83333333333333,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 12,
+   "consumo_dia": [
+    0,
+    0,
+    0.0555555555555556,
+    0.125,
+    0.166666666666667,
+    0
+   ]
+  },
+  {
+   "insumo": "Copo descartável 400ml",
+   "inicio": 9,
+   "compra": 1,
+   "consumo_qtd": 109,
+   "consumo_un": 2.18,
+   "atual": 7.82,
+   "minimo_segunda": 1,
+   "minimo_quinta": 4,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 15,
+   "consumo_dia": [
+    0.16,
+    0.146666666666667,
+    0.42,
+    2.13,
+    0.45,
+    0.1
+   ]
+  },
+  {
+   "insumo": "Copo descartável 700ml",
+   "inicio": 7,
+   "compra": 1,
+   "consumo_qtd": 112,
+   "consumo_un": 2.24,
+   "atual": 5.76,
+   "minimo_segunda": 1,
+   "minimo_quinta": 4,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 22,
+   "consumo_dia": [
+    0.17,
+    0.266666666666667,
+    0.806666666666667,
+    1.275,
+    0.88,
+    0.28
+   ]
+  },
+  {
+   "insumo": "Batata congelada para fritar",
+   "inicio": 2,
+   "compra": 1,
+   "consumo_qtd": 1500,
+   "consumo_un": 0.75,
+   "atual": 2.25,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 30,
+   "consumo_dia": [
+    0.125,
+    0.333333333333333,
+    0.0833333333333333,
+    0.1875,
+    0.125,
+    0.25
+   ]
+  },
+  {
+   "insumo": "Seda",
+   "inicio": 4,
+   "compra": 1,
+   "consumo_qtd": 1,
+   "consumo_un": 1,
+   "atual": 4,
+   "minimo_segunda": 1,
+   "minimo_quinta": 1,
+   "situacao": "OK",
+   "sugestao": 0,
+   "preco": 2.5,
+   "consumo_dia": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "fichas": [
+  {
+   "produto": "CAIPIRINHA CACHAÇA",
+   "cmv": 3.21891191709845,
+   "preco": 20,
+   "vendidos": 10
+  },
+  {
+   "produto": "CAIPIROSKA VODKA",
+   "cmv": 3.15380761523046,
+   "preco": 20,
+   "vendidos": 8
+  },
+  {
+   "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+   "cmv": 6.43782383419689,
+   "preco": 20,
+   "vendidos": 33
+  },
+  {
+   "produto": "CAIPA COPÃO PROMO",
+   "cmv": 4.31802197802198,
+   "preco": 25,
+   "vendidos": 4
+  },
+  {
+   "produto": "MUKIFO",
+   "cmv": 9.37850045303534,
+   "preco": 27.85,
+   "vendidos": 20
+  },
+  {
+   "produto": "KIT DOS GURI",
+   "cmv": 4.94,
+   "preco": 28,
+   "vendidos": 18
+  },
+  {
+   "produto": "Kit maki",
+   "cmv": 9.80707188160677,
+   "preco": 28,
+   "vendidos": 15
+  },
+  {
+   "produto": "FERNET COLA 400ML",
+   "cmv": 7.3,
+   "preco": 28,
+   "vendidos": 6
+  },
+  {
+   "produto": "FERNET COLA 700ML",
+   "cmv": 11.44,
+   "preco": 40,
+   "vendidos": 10
+  },
+  {
+   "produto": "WHISKY & REDBULL",
+   "cmv": 15.19,
+   "preco": 40,
+   "vendidos": 7
+  },
+  {
+   "produto": "VODKA & REDBULL",
+   "cmv": 15.19,
+   "preco": 40,
+   "vendidos": 2
+  },
+  {
+   "produto": "JACK COM ENERGETICO",
+   "cmv": 19.69,
+   "preco": 45,
+   "vendidos": 4
+  },
+  {
+   "produto": "JAGERBOMB 700ML",
+   "cmv": 18.6810714285714,
+   "preco": 40,
+   "vendidos": 28
+  },
+  {
+   "produto": "PENICILIN",
+   "cmv": 6.37438888888889,
+   "preco": 32,
+   "vendidos": 4
+  },
+  {
+   "produto": "APEROL SPRITZ",
+   "cmv": 8.96,
+   "preco": 28,
+   "vendidos": 4
+  },
+  {
+   "produto": "GIN TONICA",
+   "cmv": 6.20357142857143,
+   "preco": 26,
+   "vendidos": 3
+  },
+  {
+   "produto": "KURTZ N' COKE 700ML",
+   "cmv": 14.1185714285714,
+   "preco": 35,
+   "vendidos": 2
+  },
+  {
+   "produto": "MOSCOW MULE",
+   "cmv": 3.95956913827655,
+   "preco": 32,
+   "vendidos": 2
+  },
+  {
+   "produto": "WHISKY SOUR",
+   "cmv": 7.2075,
+   "preco": 32,
+   "vendidos": 2
+  },
+  {
+   "produto": "AMANSA LOUCO",
+   "cmv": 5.90456913827655,
+   "preco": 28,
+   "vendidos": 2
+  },
+  {
+   "produto": "TROPICAL GIN",
+   "cmv": 14.44,
+   "preco": 40,
+   "vendidos": 1
+  },
+  {
+   "produto": "JÄGER BUCK",
+   "cmv": 11.4935714285714,
+   "preco": 35,
+   "vendidos": 1
+  },
+  {
+   "produto": "NEGRONI",
+   "cmv": 5.70330661322645,
+   "preco": 32,
+   "vendidos": 1
+  },
+  {
+   "produto": "KARIREL",
+   "cmv": 4.8031746031746,
+   "preco": 26,
+   "vendidos": 1
+  },
+  {
+   "produto": "MATITO",
+   "cmv": 12,
+   "preco": 28,
+   "vendidos": 25
+  },
+  {
+   "produto": "BATATA FRITA G",
+   "cmv": 7.5,
+   "preco": 30,
+   "vendidos": 3
+  },
+  {
+   "produto": "DOSE GIN GORDONS",
+   "cmv": 4,
+   "preco": 25,
+   "vendidos": 1
+  },
+  {
+   "produto": "DOSE JOHNNIE BLONDE",
+   "cmv": 7.33333333333333,
+   "preco": 25,
+   "vendidos": 1
+  },
+  {
+   "produto": "DOSE TANQUERAY GIN",
+   "cmv": 8,
+   "preco": 35,
+   "vendidos": 1
+  },
+  {
+   "produto": "DOSE TEQUILA",
+   "cmv": 7.33333333333333,
+   "preco": 32,
+   "vendidos": 1
+  },
+  {
+   "produto": "ÁGUA C/ GÁS",
+   "cmv": 2,
+   "preco": 5,
+   "vendidos": 14
+  },
+  {
+   "produto": "ÁGUA S/ GÁS",
+   "cmv": 1.5,
+   "preco": 5,
+   "vendidos": 17
+  },
+  {
+   "produto": "BEATS GREEN MIX LONG NECK 269ML",
+   "cmv": 6,
+   "preco": 15,
+   "vendidos": 2
+  },
+  {
+   "produto": "BEATS GT LONG NECK 269ML",
+   "cmv": 6,
+   "preco": 15,
+   "vendidos": 1
+  },
+  {
+   "produto": "BEATS RED MIX LONG NECK 269ML",
+   "cmv": 6,
+   "preco": 15,
+   "vendidos": 7
+  },
+  {
+   "produto": "BEATS SENSES LONG NECK 269ML",
+   "cmv": 6,
+   "preco": 15,
+   "vendidos": 15
+  },
+  {
+   "produto": "BRAHMA CHOPP LITRAO 1L",
+   "cmv": 7.5,
+   "preco": 16,
+   "vendidos": 40
+  },
+  {
+   "produto": "COCA COLA 350ML",
+   "cmv": 3.5,
+   "preco": 7,
+   "vendidos": 3
+  },
+  {
+   "produto": "COCA COLA ZERO 350ML",
+   "cmv": 3.5,
+   "preco": 7,
+   "vendidos": 5
+  },
+  {
+   "produto": "CORONA LN 355ML/330ML",
+   "cmv": 7,
+   "preco": 15,
+   "vendidos": 6
+  },
+  {
+   "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+   "cmv": 7.5,
+   "preco": 15,
+   "vendidos": 1
+  },
+  {
+   "produto": "ENERGÉTICO MONSTER ZERO",
+   "cmv": 7.5,
+   "preco": 15,
+   "vendidos": 1
+  },
+  {
+   "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+   "cmv": 6.3,
+   "preco": 14,
+   "vendidos": 4
+  },
+  {
+   "produto": "HEINEKEN 600ML",
+   "cmv": 9.5,
+   "preco": 18,
+   "vendidos": 21
+  },
+  {
+   "produto": "HEINEKEN LATA 473ML",
+   "cmv": 6.5,
+   "preco": 14,
+   "vendidos": 15
+  },
+  {
+   "produto": "HEINEKEN LONG NECK 330ML",
+   "cmv": 6.3,
+   "preco": 14,
+   "vendidos": 12
+  },
+  {
+   "produto": "HEINEKEN ULTIMATE LONG NECK",
+   "cmv": 7.5,
+   "preco": 15,
+   "vendidos": 2
+  },
+  {
+   "produto": "ORIGINAL GARRAFA 1L",
+   "cmv": 8,
+   "preco": 20,
+   "vendidos": 32
+  },
+  {
+   "produto": "ORIGINAL LATA 473ML",
+   "cmv": 5,
+   "preco": 12,
+   "vendidos": 2
+  },
+  {
+   "produto": "RED BULL 250ML",
+   "cmv": 8,
+   "preco": 15,
+   "vendidos": 8
+  },
+  {
+   "produto": "RED BULL MELANCIA 250ML",
+   "cmv": 8,
+   "preco": 15,
+   "vendidos": 1
+  },
+  {
+   "produto": "SPRITE LATA 350ML",
+   "cmv": 3,
+   "preco": 7,
+   "vendidos": 1
+  },
+  {
+   "produto": "STELLA ARTOIS LONG NECK 330ML",
+   "cmv": 5.6,
+   "preco": 14,
+   "vendidos": 3
+  },
+  {
+   "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+   "cmv": 6.5,
+   "preco": 14,
+   "vendidos": 10
+  },
+  {
+   "produto": "Seda",
+   "cmv": 2.5,
+   "preco": 8,
+   "vendidos": 1
+  },
+  {
+   "produto": "PROMO HEINEKEN 600ML",
+   "cmv": 19,
+   "preco": 35,
+   "vendidos": 1
+  },
+  {
+   "produto": "PROMO HEINEKEN LATÃO",
+   "cmv": 19.5,
+   "preco": 35,
+   "vendidos": 1
+  },
+  {
+   "produto": "PROMO HEINEKEN LONGNECK",
+   "cmv": 18.9,
+   "preco": 35,
+   "vendidos": 8
+  },
+  {
+   "produto": "MUKIFO PROMO",
+   "cmv": 9.37850045303534,
+   "preco": 22,
+   "vendidos": 0
+  },
+  {
+   "produto": "JAGERBOMB PROMO JAGERDAY",
+   "cmv": 18.6810714285714,
+   "preco": 35,
+   "vendidos": 0
+  },
+  {
+   "produto": "KURTZ N COKE PROMO JAGERDAY",
+   "cmv": 14.1185714285714,
+   "preco": 30,
+   "vendidos": 0
+  },
+  {
+   "produto": "KIT DOS GURI PROMO",
+   "cmv": 4.94,
+   "preco": 22,
+   "vendidos": 0
+  },
+  {
+   "produto": "LITRÃO BRAHMA PROMO",
+   "cmv": 7.5,
+   "preco": 14,
+   "vendidos": 0
+  },
+  {
+   "produto": "LITRÃO ORIGINAL PROMO",
+   "cmv": 8,
+   "preco": 18,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE JAGER",
+   "cmv": 6.78571428571429,
+   "preco": 28,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE SMIRNOFF",
+   "cmv": 1.90380761523046,
+   "preco": 15,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE CAMPARI",
+   "cmv": 2.75551102204409,
+   "preco": 18,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE JACK DANIEL'S",
+   "cmv": 7.5,
+   "preco": 40,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE PASSPORT",
+   "cmv": 2.25,
+   "preco": 18,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE FIREBALL",
+   "cmv": 6,
+   "preco": 25,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE RED LABEL",
+   "cmv": 4.5,
+   "preco": 28,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE VELHO BARREIRO",
+   "cmv": 0.989010989010989,
+   "preco": 12,
+   "vendidos": 0
+  },
+  {
+   "produto": "DOSE FERNET",
+   "cmv": 5,
+   "preco": 30,
+   "vendidos": 0
+  },
+  {
+   "produto": "REDBULL TROPICAL 250ML",
+   "cmv": 8,
+   "preco": 15,
+   "vendidos": 0
+  },
+  {
+   "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+   "cmv": 7.5,
+   "preco": 15,
+   "vendidos": 0
+  },
+  {
+   "produto": "WHITE HORSE CM BALY",
+   "cmv": 7.19,
+   "preco": 30,
+   "vendidos": 0
+  },
+  {
+   "produto": "JÄGER TONIC",
+   "cmv": 8.91428571428572,
+   "preco": 35,
+   "vendidos": 0
+  },
+  {
+   "produto": "FICHA DE SINUCA DEB/CRED",
+   "cmv": 0,
+   "preco": 6,
+   "vendidos": 23
+  },
+  {
+   "produto": "FICHA DE SINUCA PIX",
+   "cmv": 0,
+   "preco": 5,
+   "vendidos": 3
+  },
+  {
+   "produto": "MACACO LOCO",
+   "cmv": 7.6665,
+   "preco": 32,
+   "vendidos": 0
+  },
+  {
+   "produto": "PINK GT",
+   "cmv": 5.87142857142857,
+   "preco": 26,
+   "vendidos": 0
+  },
+  {
+   "produto": "SOU EU BOLA DE FOGO",
+   "cmv": 8.5,
+   "preco": 32,
+   "vendidos": 0
+  },
+  {
+   "produto": "MOJITO",
+   "cmv": 4.26,
+   "preco": 28,
+   "vendidos": 0
+  },
+  {
+   "produto": "FITZGERALD",
+   "cmv": 6.0565,
+   "preco": 28,
+   "vendidos": 0
+  },
+  {
+   "produto": "MACUNAIMA",
+   "cmv": 2.58,
+   "preco": 26,
+   "vendidos": 0
+  },
+  {
+   "produto": "NEGRITO",
+   "cmv": 13.2,
+   "preco": 30,
+   "vendidos": 0
+  },
+  {
+   "produto": "JAGERINHA",
+   "cmv": 9.35285714285714,
+   "preco": 35,
+   "vendidos": 0
+  }
+ ],
+ "medias": {
+  "CAIPIRINHA CACHAÇA": [
+   0.75,
+   0.666666666666667,
+   5,
+   10,
+   4,
+   0
+  ],
+  "CAIPIROSKA VODKA": [
+   1.5,
+   0,
+   3,
+   1,
+   3.5,
+   0
+  ],
+  "PROMO CAIPIRINHA DOSE DUPLA": [
+   0,
+   0,
+   0,
+   39,
+   0,
+   0
+  ],
+  "CAIPA COPÃO PROMO": [
+   0.25,
+   0.666666666666667,
+   2,
+   1.5,
+   6.5,
+   3
+  ],
+  "MUKIFO": [
+   2.25,
+   1.33333333333333,
+   5.66666666666667,
+   18.5,
+   4.5,
+   4
+  ],
+  "KIT DOS GURI": [
+   0.5,
+   1.33333333333333,
+   4.33333333333333,
+   16,
+   5,
+   1
+  ],
+  "Kit maki": [
+   2.25,
+   0,
+   2,
+   6.75,
+   5,
+   0
+  ],
+  "FERNET COLA 400ML": [
+   0.5,
+   0.333333333333333,
+   3,
+   3,
+   2.5,
+   0
+  ],
+  "FERNET COLA 700ML": [
+   0.75,
+   0.333333333333333,
+   4.66666666666667,
+   5.75,
+   2.5,
+   1
+  ],
+  "WHISKY & REDBULL": [
+   0,
+   0,
+   0.333333333333333,
+   2.5,
+   1.5,
+   0
+  ],
+  "VODKA & REDBULL": [
+   0,
+   0,
+   1,
+   1.75,
+   0.5,
+   0
+  ],
+  "JACK COM ENERGETICO": [
+   0.5,
+   0,
+   1.33333333333333,
+   1,
+   0.5,
+   0
+  ],
+  "JAGERBOMB 700ML": [
+   0.75,
+   0.333333333333333,
+   9,
+   6.25,
+   15,
+   5
+  ],
+  "PENICILIN": [
+   1,
+   0,
+   2.33333333333333,
+   1.75,
+   1.5,
+   1
+  ],
+  "APEROL SPRITZ": [
+   2,
+   0.333333333333333,
+   3,
+   4,
+   3,
+   0
+  ],
+  "GIN TONICA": [
+   0,
+   0,
+   0.666666666666667,
+   1.25,
+   1.5,
+   1
+  ],
+  "KURTZ N' COKE 700ML": [
+   0.25,
+   0,
+   1.33333333333333,
+   2.5,
+   1,
+   0
+  ],
+  "MOSCOW MULE": [
+   0.25,
+   2,
+   0,
+   1.5,
+   0.5,
+   0
+  ],
+  "WHISKY SOUR": [
+   0,
+   0,
+   0.666666666666667,
+   1.5,
+   2,
+   0
+  ],
+  "AMANSA LOUCO": [
+   0.5,
+   0.333333333333333,
+   0.333333333333333,
+   1.25,
+   1.5,
+   0
+  ],
+  "TROPICAL GIN": [
+   1,
+   0.666666666666667,
+   0.333333333333333,
+   0.25,
+   2,
+   0
+  ],
+  "JÄGER BUCK": [
+   0,
+   0,
+   0.666666666666667,
+   0.25,
+   0,
+   0
+  ],
+  "NEGRONI": [
+   0.75,
+   0.333333333333333,
+   1,
+   1.25,
+   1,
+   0
+  ],
+  "KARIREL": [
+   0,
+   0,
+   0.333333333333333,
+   0,
+   1,
+   0
+  ],
+  "MATITO": [
+   2.75,
+   3.33333333333333,
+   11.3333333333333,
+   19.25,
+   18.5,
+   0
+  ],
+  "BATATA FRITA G": [
+   0.5,
+   1.33333333333333,
+   0.333333333333333,
+   0.75,
+   0.5,
+   1
+  ],
+  "DOSE GIN GORDONS": [
+   0,
+   0,
+   0,
+   0,
+   0.5,
+   2
+  ],
+  "DOSE JOHNNIE BLONDE": [
+   0,
+   0.333333333333333,
+   0,
+   0.25,
+   0,
+   0
+  ],
+  "DOSE TANQUERAY GIN": [
+   0.25,
+   0,
+   0,
+   0.75,
+   0.5,
+   0
+  ],
+  "DOSE TEQUILA": [
+   0,
+   0,
+   0.666666666666667,
+   0,
+   0.5,
+   0
+  ],
+  "ÁGUA C/ GÁS": [
+   4,
+   5,
+   5.33333333333333,
+   8,
+   4.5,
+   0
+  ],
+  "ÁGUA S/ GÁS": [
+   6.75,
+   4,
+   4,
+   10.25,
+   8,
+   3
+  ],
+  "BEATS GREEN MIX LONG NECK 269ML": [
+   0,
+   0,
+   0.666666666666667,
+   0.75,
+   0,
+   0
+  ],
+  "BEATS GT LONG NECK 269ML": [
+   0,
+   1.33333333333333,
+   1.66666666666667,
+   1.75,
+   0.5,
+   0
+  ],
+  "BEATS RED MIX LONG NECK 269ML": [
+   1,
+   2.33333333333333,
+   3.33333333333333,
+   3.25,
+   2.5,
+   0
+  ],
+  "BEATS SENSES LONG NECK 269ML": [
+   0.75,
+   1.66666666666667,
+   4.66666666666667,
+   5.5,
+   3,
+   1
+  ],
+  "BRAHMA CHOPP LITRAO 1L": [
+   27.5,
+   10.3333333333333,
+   20.6666666666667,
+   23.25,
+   18,
+   5
+  ],
+  "COCA COLA 350ML": [
+   1.25,
+   3.66666666666667,
+   4.66666666666667,
+   2,
+   0.5,
+   0
+  ],
+  "COCA COLA ZERO 350ML": [
+   1.25,
+   0.333333333333333,
+   1.66666666666667,
+   2,
+   1,
+   0
+  ],
+  "CORONA LN 355ML/330ML": [
+   0.5,
+   0,
+   2,
+   2,
+   3.5,
+   0
+  ],
+  "ENERGETICO MONSTER 473ML LT MANGO LOCO": [
+   0.75,
+   0.333333333333333,
+   0.666666666666667,
+   0.75,
+   0.5,
+   0
+  ],
+  "ENERGÉTICO MONSTER ZERO": [
+   0,
+   0,
+   0,
+   0.25,
+   0,
+   0
+  ],
+  "HEINEKEN 0,0% LONG NECK 330ML": [
+   0.75,
+   1,
+   0.333333333333333,
+   1.25,
+   3.5,
+   1
+  ],
+  "HEINEKEN 600ML": [
+   20,
+   9.66666666666667,
+   16,
+   10,
+   5.5,
+   9
+  ],
+  "HEINEKEN LATA 473ML": [
+   2.25,
+   2.33333333333333,
+   2.33333333333333,
+   3.5,
+   2.5,
+   2
+  ],
+  "HEINEKEN LONG NECK 330ML": [
+   5.5,
+   7.33333333333333,
+   6.66666666666667,
+   6.5,
+   8,
+   1
+  ],
+  "HEINEKEN ULTIMATE LONG NECK": [
+   1.5,
+   1,
+   0.333333333333333,
+   1,
+   0,
+   0
+  ],
+  "ORIGINAL GARRAFA 1L": [
+   14.5,
+   9.66666666666667,
+   13.3333333333333,
+   11.5,
+   17.5,
+   10
+  ],
+  "ORIGINAL LATA 473ML": [
+   0.25,
+   1,
+   0.666666666666667,
+   0.5,
+   1,
+   3
+  ],
+  "RED BULL 250ML": [
+   0.75,
+   1.66666666666667,
+   2,
+   3,
+   5,
+   1
+  ],
+  "RED BULL MELANCIA 250ML": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   2
+  ],
+  "SPRITE LATA 350ML": [
+   0.5,
+   0.333333333333333,
+   0,
+   0,
+   0,
+   0
+  ],
+  "STELLA ARTOIS LONG NECK 330ML": [
+   0.25,
+   0,
+   0.666666666666667,
+   0,
+   2,
+   0
+  ],
+  "STELLA GOLD S/ GLUTEN LONG NECK": [
+   1.25,
+   0.666666666666667,
+   4,
+   1.75,
+   5,
+   0
+  ],
+  "Seda": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "PROMO HEINEKEN 600ML": [
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0.5,
+   2
+  ],
+  "PROMO HEINEKEN LATÃO": [
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0.5,
+   1
+  ],
+  "PROMO HEINEKEN LONGNECK": [
+   0,
+   0.666666666666667,
+   0,
+   0,
+   4.5,
+   0
+  ],
+  "MUKIFO PROMO": [
+   0,
+   0,
+   7.33333333333333,
+   0,
+   0,
+   0
+  ],
+  "JAGERBOMB PROMO JAGERDAY": [
+   0,
+   4.66666666666667,
+   0,
+   0.25,
+   0,
+   0
+  ],
+  "KURTZ N COKE PROMO JAGERDAY": [
+   0,
+   3.66666666666667,
+   0,
+   0,
+   0,
+   0
+  ],
+  "KIT DOS GURI PROMO": [
+   0,
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0
+  ],
+  "LITRÃO BRAHMA PROMO": [
+   0.75,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "LITRÃO ORIGINAL PROMO": [
+   0,
+   0.666666666666667,
+   0,
+   0,
+   0,
+   0
+  ],
+  "DOSE JAGER": [
+   0.25,
+   0,
+   0,
+   2.25,
+   0,
+   0
+  ],
+  "DOSE SMIRNOFF": [
+   0,
+   0.333333333333333,
+   0,
+   0.25,
+   1.5,
+   0
+  ],
+  "DOSE CAMPARI": [
+   0,
+   0.333333333333333,
+   0.666666666666667,
+   0.25,
+   0,
+   0
+  ],
+  "DOSE JACK DANIEL'S": [
+   0,
+   0,
+   0.666666666666667,
+   0.5,
+   0.5,
+   0
+  ],
+  "DOSE PASSPORT": [
+   0.75,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "DOSE FIREBALL": [
+   0,
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "DOSE RED LABEL": [
+   0,
+   0.333333333333333,
+   0.333333333333333,
+   0,
+   0,
+   0
+  ],
+  "DOSE VELHO BARREIRO": [
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0,
+   0
+  ],
+  "DOSE FERNET": [
+   0.25,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "REDBULL TROPICAL 250ML": [
+   0,
+   0,
+   0,
+   0.5,
+   0.5,
+   0
+  ],
+  "ENERGETICO MONSTER ENERGY LT 473ML": [
+   0.25,
+   0.666666666666667,
+   0,
+   0.25,
+   0.5,
+   0
+  ],
+  "WHITE HORSE CM BALY": [
+   0,
+   0.333333333333333,
+   0,
+   0.5,
+   0,
+   0
+  ],
+  "JÄGER TONIC": [
+   0,
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0
+  ],
+  "FICHA DE SINUCA DEB/CRED": [
+   5.25,
+   0.333333333333333,
+   5.33333333333333,
+   17.75,
+   13.5,
+   13
+  ],
+  "FICHA DE SINUCA PIX": [
+   0,
+   1.33333333333333,
+   0,
+   0.5,
+   1.5,
+   0
+  ],
+  "MACACO LOCO": [
+   0.25,
+   0.666666666666667,
+   0.333333333333333,
+   0.25,
+   0.5,
+   1
+  ],
+  "PINK GT": [
+   0,
+   0,
+   0.666666666666667,
+   0.75,
+   0,
+   0
+  ],
+  "SOU EU BOLA DE FOGO": [
+   0,
+   0.333333333333333,
+   0,
+   0,
+   0,
+   1
+  ],
+  "MOJITO": [
+   0,
+   0,
+   0,
+   0.5,
+   0,
+   0
+  ],
+  "FITZGERALD": [
+   0.5,
+   2,
+   0.333333333333333,
+   0,
+   0,
+   0
+  ],
+  "MACUNAIMA": [
+   0,
+   0.333333333333333,
+   0,
+   0.5,
+   0,
+   1
+  ],
+  "NEGRITO": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "JAGERINHA": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ }
+}

@@ -2,6 +2,24 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-23 (2ª sessão) — fase 2
+**Feito**
+- Dados da planilha extraídos (`scripts/extrair_planilha.py` → `seed/planilha.json`): 78 insumos, 87 fichas, 19 fornecedores, 31 dias de vendas.
+- Regras de cálculo em `src/dominio/estoque.js`. **14 testes passando**: médias, consumo por dia, mínimos de segunda/quinta, baixa pela ficha, sugestão, situação e CMV batem com a planilha recalculada (78 itens).
+- `seed/seed.sql` (149 produtos: 87 com ficha + 62 vendidos sem ficha).
+- API: estoque, lista de compras, produtos/CMV, importar relatório, contagem, compras (escritas com senha).
+- Página `/gestao.html`: estoque, lista de compras (imprime em 58 mm e copia para WhatsApp), produtos e lucro, registrar relatório e contagem.
+
+**Próximo**
+- No PC: criar o D1, migrar, `npm run seed`, `wrangler secret put ADMIN_TOKEN`, deploy (README → "Banco de dados").
+- Primeira contagem real do estoque pela página.
+- Importar o extrato da adquirente (depende de saber qual é e do acesso).
+- Fase 3: app Android da DX8000.
+
+**Atenção**
+- Preços dos insumos ainda são as ESTIMATIVAS da planilha; o CMV só fica real depois de registrar compras com valor.
+- `npm run seed` apaga tudo: só para carga inicial.
+
 ## 2026-11-23
 **Feito**
 - Repositório criado: Worker + página inicial + `/api/saude`, modelo de dados D1 (`migrations/0001_inicial.sql`), planilha antiga em `legado/planilha/`.

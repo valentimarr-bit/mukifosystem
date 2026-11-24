@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mukifo — Gestão</title>
+<style>
+  :root { --bg:#111; --card:#1b1b1b; --line:#2c2c2c; --txt:#f2f2f2; --mut:#a8a8a8; --ok:#7ddc8a; --warn:#ffd166; --bad:#ff8a80; --acc:#ffb347; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { position:sticky; top:0; background:#000; padding:12px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; z-index:2; border-bottom:1px solid var(--line); }
+  header b { letter-spacing:.08em; font-size:20px; margin-right:8px; }
+  nav button, .btn { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:10px 14px; font-size:16px; cursor:pointer; }
+  nav button[aria-pressed=true] { background:var(--acc); color:#111; border-color:var(--acc); font-weight:600; }
+  .btn.prim { background:var(--acc); color:#111; border-color:var(--acc); font-weight:600; }
+  main { padding:16px; max-width:1100px; margin:0 auto; }
+  .bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  select, input, textarea { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:10px; font-size:16px; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th, td { padding:8px 6px; border-bottom:1px solid var(--line); text-align:center; }
+  th { color:var(--mut); font-weight:500; position:sticky; top:62px; background:var(--bg); }
+  td:first-child, th:first-child { text-align:left; }
+  .COMPRAR { color:var(--warn); font-weight:600; } .OK { color:var(--ok); } .SEM { color:var(--bad); font-weight:600; }
+  .mut { color:var(--mut); font-size:14px; }
+  .forn { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+  .forn h3 { margin:0 0 6px; font-size:17px; }
+  .msg { padding:10px 12px; border-radius:8px; margin:10px 0; background:var(--card); border:1px solid var(--line); }
+  .neg { color:var(--bad); } .pos { color:var(--ok); }
+  .larga { display:table-cell; }
+  @media (max-width: 520px) {
+    table { font-size:14px; } th, td { padding:7px 3px; } th { top:118px; }
+    .larga { display:none; }
+  }
+  #cupom { display:none; }
+  @media print {
+    body { background:#fff; color:#000; } header, main > *:not(#cupom) { display:none !important; }
+    #cupom { display:block; width:58mm; font:12px/1.3 "Courier New",monospace; white-space:pre-wrap; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <b>MUKIFO</b>
+  <nav>
+    <button data-aba="estoque" aria-pressed="true">Estoque</button>
+    <button data-aba="lista">Lista de compras</button>
+    <button data-aba="produtos">Produtos e lucro</button>
+    <button data-aba="registrar">Registrar</button>
+  </nav>
+</header>
+<main>
+  <section id="estoque">
+    <div class="bar">
+      <label>Compra de <select id="dia"><option value="segunda">Segunda</option><option value="quinta">Quinta</option></select></label>
+      <input id="busca" placeholder="Buscar item" style="flex:1;min-width:160px">
+    </div>
+    <table><thead><tr><th>Item</th><th>Tem</th><th>Mínimo</th><th>Comprar</th><th>Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
+  </section>
+
+  <section id="lista" hidden>
+    <div class="bar">
+      <span id="listaDia" class="mut"></span>
+      <button class="btn prim" onclick="window.print()">Imprimir (58 mm)</button>
+      <button class="btn" id="copiarZap">Copiar texto para WhatsApp</button>
+    </div>
+    <div id="listaCorpo"></div>
+  </section>
+
+  <section id="produtos" hidden>
+    <p class="mut">CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
+    <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th></tr></thead><tbody id="tbProdutos"></tbody></table>
+  </section>
+
+  <section id="registrar" hidden>
+    <div class="bar"><label>Senha de gerente <input id="token" type="password" autocomplete="current-password"></label></div>
+
+    <h3>Relatório de vendas do dia</h3>
+    <p class="mut">Cole o relatório do sistema de vendas (com a linha de cabeçalho). Dá baixa no estoque pela ficha.</p>
+    <div class="bar"><input id="relDia" type="date"></div>
+    <textarea id="relCsv" rows="6" style="width:100%" placeholder="Produto,UN,Estoque,Qtd. vendida,Total vendas"></textarea>
+    <div class="bar"><button class="btn prim" id="enviarRel">Importar relatório</button></div>
+
+    <h3>Contagem de fechamento</h3>
+    <p class="mut">Digite só os itens que contou, em embalagens (garrafas, latas, kg...). A diferença vira perda ou sobra.</p>
+    <div id="contagemLista"></div>
+    <div class="bar"><button class="btn prim" id="enviarCont">Salvar contagem</button></div>
+    <div id="retorno"></div>
+  </section>
+
+  <pre id="cupom"></pre>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const fmt = (n, d = 1) => (n == null ? '—' : Number(n).toLocaleString('pt-BR', { maximumFractionDigits: d }));
+const brl = (n) => (n == null ? '—' : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let estoque = [], lista = null;
+
+// Senha: guardada só neste navegador (se o navegador permitir).
+try { $('#token').value = localStorage.getItem('mukifo_token') || ''; } catch {}
+$('#token').addEventListener('change', () => { try { localStorage.setItem('mukifo_token', $('#token').value); } catch {} });
+
+// Dia da compra: segunda se hoje for sex..seg, senão quinta.
+const hoje = new Date().getDay();
+$('#dia').value = [5, 6, 0, 1].includes(hoje) ? 'segunda' : 'quinta';
+$('#relDia').value = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== b.dataset.aba));
+  if (b.dataset.aba === 'lista') carregarLista();
+  if (b.dataset.aba === 'produtos') carregarProdutos();
+}));
+
+async function api(caminho, corpo) {
+  const op = corpo ? { method: 'POST', body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + $('#token').value } } : {};
+  const r = await fetch(caminho, op);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+  return j;
+}
+
+async function carregarEstoque() {
+  try {
+    estoque = (await api('/api/estoque?dia=' + $('#dia').value)).itens;
+    desenharEstoque();
+    desenharContagem();
+  } catch (e) { $('#tbEstoque').innerHTML = `<tr><td colspan="5" class="neg">${esc(e.message)}</td></tr>`; }
+}
+function desenharEstoque() {
+  const b = $('#busca').value.toLowerCase(), dia = $('#dia').value;
+  $('#tbEstoque').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(b)).map((i) => `
+    <tr><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></td>
+    <td>${fmt(i.atual, 2)}</td><td>${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
+    <td><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
+    <td class="${i.situacao.split(' ')[0]}">${esc(i.situacao)}</td></tr>`).join('');
+}
+$('#dia').addEventListener('change', () => { carregarEstoque(); lista = null; });
+$('#busca').addEventListener('input', desenharEstoque);
+
+async function carregarLista() {
+  lista = await api('/api/lista-compras?dia=' + $('#dia').value);
+  $('#listaDia').textContent = `Compra de ${lista.dia === 'segunda' ? 'segunda' : 'quinta'} · total estimado ${brl(lista.total_estimado)}`;
+  $('#listaCorpo').innerHTML = lista.fornecedores.map((f) => `
+    <div class="forn"><h3>${esc(f.fornecedor)} <span class="mut">${esc(f.como_recebe || '')}</span></h3>
+    ${f.itens.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)} <span class="mut">(${esc(i.embalagem)})</span></div>`).join('')}
+    <div class="mut">Estimado: ${brl(f.total_estimado)}${f.tem_preco_estimado ? ' (preços estimados)' : ''}</div></div>`).join('')
+    + (lista.producao.length ? `<div class="forn"><h3>Produção da casa (não comprar)</h3>${lista.producao.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)}</div>`).join('')}</div>` : '');
+  $('#cupom').textContent = cupom(lista);
+}
+// Cupom de 32 colunas — o mesmo formato que a DX8000 vai imprimir.
+function cupom(l) {
+  const L = 32, linha = '-'.repeat(L), centro = (s) => s.padStart(Math.floor((L + s.length) / 2)).padEnd(L);
+  const quebra = (s, rec) => { const out = []; let a = s; while (a.length > L) { out.push(a.slice(0, L)); a = ' '.repeat(rec) + a.slice(L); } out.push(a); return out.join('\n'); };
+  const d = new Date();
+  let t = `${centro('MUKIFO')}\n${centro('LISTA DE COMPRAS')}\n${centro((l.dia === 'segunda' ? 'SEGUNDA' : 'QUINTA') + ' ' + d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR').slice(0, 5))}\n${linha}\n`;
+  for (const f of l.fornecedores) {
+    t += `${f.fornecedor.toUpperCase()}\n`;
+    for (const i of f.itens) t += quebra(`[ ] ${fmt(i.quantidade)} ${i.insumo}`, 6) + '\n';
+    t += `${('~ ' + brl(f.total_estimado)).padStart(L)}\n${linha}\n`;
+  }
+  return t + `TOTAL ESTIMADO ${brl(l.total_estimado).padStart(L - 15)}\n`;
+}
+$('#copiarZap').addEventListener('click', async () => {
+  if (!lista) await carregarLista();
+  const txt = lista.fornecedores.map((f) => `*${f.fornecedor}*\n` + f.itens.map((i) => `• ${fmt(i.quantidade)} ${i.insumo}`).join('\n')).join('\n\n');
+  try { await navigator.clipboard.writeText(txt); alertar('Texto copiado.'); } catch { alertar('Não consegui copiar automaticamente.'); }
+});
+
+async function carregarProdutos() {
+  const p = await api('/api/produtos');
+  p.sort((a, b) => (b.tem_ficha - a.tem_ficha) || ((a.lucro_pct ?? 999) - (b.lucro_pct ?? 999)));
+  $('#tbProdutos').innerHTML = p.map((x) => `<tr><td>${esc(x.produto)}${x.tem_ficha ? '' : ' <span class="mut">· sem ficha</span>'}</td>
+    <td>${brl(x.preco_venda)}</td><td>${x.tem_ficha ? brl(x.cmv) : '—'}</td><td class="larga">${x.tem_ficha ? brl(x.lucro) : '—'}</td>
+    <td class="${x.lucro_pct != null && x.lucro_pct < 60 ? 'neg' : ''}">${x.tem_ficha && x.lucro_pct != null ? fmt(x.lucro_pct) + '%' : '—'}</td></tr>`).join('');
+}
+
+function desenharContagem() {
+  $('#contagemLista').innerHTML = `<table><tbody>${estoque.map((i, k) => `
+    <tr><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)} · sistema: ${fmt(i.atual, 2)}</div></td>
+    <td><input data-k="${k}" inputmode="decimal" style="width:90px" placeholder="contado"></td></tr>`).join('')}</tbody></table>`;
+}
+function alertar(msg, classe = '') { $('#retorno').innerHTML = `<div class="msg ${classe}">${esc(msg)}</div>`; $('#retorno').scrollIntoView({ behavior: 'smooth' }); }
+
+$('#enviarRel').addEventListener('click', async () => {
+  try {
+    const r = await api('/api/vendas/relatorio', { dia: $('#relDia').value, csv: $('#relCsv').value });
+    alertar(`Relatório de ${r.dia} importado: ${r.linhas} linhas.` + (r.sem_ficha.length ? ` Sem ficha (não deram baixa): ${r.sem_ficha.map((s) => s.produto).join(', ')}.` : ''), 'pos');
+    $('#relCsv').value = ''; carregarEstoque();
+  } catch (e) { alertar(e.message, 'neg'); }
+});
+$('#enviarCont').addEventListener('click', async () => {
+  const itens = [...document.querySelectorAll('#contagemLista input')].filter((x) => x.value.trim() !== '')
+    .map((x) => ({ insumo: estoque[x.dataset.k].insumo, contado: Number(x.value.replace(',', '.')) }));
+  if (!itens.length) return alertar('Nenhum item preenchido.', 'neg');
+  try {
+    const r = await api('/api/contagem', { itens });
+    const perda = r.diferencas.reduce((s, d) => s + (d.valor || 0), 0);
+    alertar(`Contagem salva (${r.itens} itens). Diferença total: ${brl(perda)}.`, perda < 0 ? 'neg' : 'pos');
+    carregarEstoque();
+  } catch (e) { alertar(e.message, 'neg'); }
+});
+
+carregarEstoque();
+</script>
+</body>
+</html>

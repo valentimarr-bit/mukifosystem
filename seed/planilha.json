@@ -1,0 +1,9167 @@
+{
+ "gerado_de": "legado/planilha/gerar_planilha.py",
+ "folga_minimo": 0.2,
+ "fornecedores": [
+  {
+   "nome": "Tomazoni",
+   "como_recebe": "Retirar no local",
+   "observacao": null
+  },
+  {
+   "nome": "NW",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Sanguiné",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Ambev",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Fensa (Coca-Cola)",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Desco",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Gabriel",
+   "como_recebe": null,
+   "observacao": "Fornecedor adicional da linha Red Bull"
+  },
+  {
+   "nome": "Marcelo (importador)",
+   "como_recebe": "Entrega no bar",
+   "observacao": null
+  },
+  {
+   "nome": "GW",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Leandro (Bar Metz)",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Crestani (hortifruti)",
+   "como_recebe": "Encomenda (pedir antes)",
+   "observacao": null
+  },
+  {
+   "nome": "Ceasa",
+   "como_recebe": "Retirar",
+   "observacao": null
+  },
+  {
+   "nome": "Supermercado",
+   "como_recebe": "Retirar",
+   "observacao": null
+  },
+  {
+   "nome": "Zaffari",
+   "como_recebe": "Retirar",
+   "observacao": null
+  },
+  {
+   "nome": "Altas Horas",
+   "como_recebe": "Entrega no bar",
+   "observacao": null
+  },
+  {
+   "nome": "SOS Alimentos",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Vinícola De Cesaro",
+   "como_recebe": null,
+   "observacao": null
+  },
+  {
+   "nome": "Mercado Livre",
+   "como_recebe": "Compra online (pedir com antecedência)",
+   "observacao": "Demora alguns dias para chegar"
+  },
+  {
+   "nome": "Produção própria",
+   "como_recebe": "Feito no bar",
+   "observacao": "Aparece na aba Produção, não na Lista de Compras"
+  }
+ ],
+ "insumos": [
+  {
+   "nome": "Cachaça Ypióca Ouro",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 965 ml",
+   "conteudo": 965,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 38,
+   "consumo_sabado_ref": 3.937824
+  },
+  {
+   "nome": "Cachaça Velho Barreiro",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 910 ml",
+   "conteudo": 910,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 18,
+   "consumo_sabado_ref": 0.43956
+  },
+  {
+   "nome": "Cachaça Kariri",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 700 ml",
+   "conteudo": 700,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Mercado Livre",
+   "outros_fornecedores": [],
+   "preco_referencia": 45,
+   "consumo_sabado_ref": 0.071429
+  },
+  {
+   "nome": "Cachaça Ypióca Branca",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 25,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Vodka Smirnoff",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 998 ml",
+   "conteudo": 998,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 38,
+   "consumo_sabado_ref": 0.641283
+  },
+  {
+   "nome": "Vodka Absolut",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW",
+    "Tomazoni"
+   ],
+   "preco_referencia": 90,
+   "consumo_sabado_ref": 0.15
+  },
+  {
+   "nome": "Whisky Passport",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 45,
+   "consumo_sabado_ref": 1.35
+  },
+  {
+   "nome": "Whisky White Horse",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 75,
+   "consumo_sabado_ref": 1.125
+  },
+  {
+   "nome": "Whisky Red Label",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 90,
+   "consumo_sabado_ref": 0.825
+  },
+  {
+   "nome": "Whisky Jack Daniel's",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 150,
+   "consumo_sabado_ref": 0.3
+  },
+  {
+   "nome": "Whisky Johnnie Walker Blonde",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 110,
+   "consumo_sabado_ref": 0.066667
+  },
+  {
+   "nome": "Gin Gordon's",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 60,
+   "consumo_sabado_ref": 0.406667
+  },
+  {
+   "nome": "Gin Tanqueray",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [],
+   "preco_referencia": 120,
+   "consumo_sabado_ref": 0.066667
+  },
+  {
+   "nome": "Infusão gin + hibisco + pimenta rosa",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Litro (produção)",
+   "conteudo": 1000,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": true,
+   "fornecedor": "Produção própria",
+   "outros_fornecedores": [],
+   "preco_referencia": 70,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Tequila Tequisla",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 45,
+   "consumo_sabado_ref": 1.5
+  },
+  {
+   "nome": "Tequila José Cuervo",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "GW",
+   "outros_fornecedores": [],
+   "preco_referencia": 110,
+   "consumo_sabado_ref": 0.066667
+  },
+  {
+   "nome": "Rum Montilla Ouro",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 50,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Rum Montilla Prata",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 45,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Fireball",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "GW",
+   "outros_fornecedores": [],
+   "preco_referencia": 90,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Howler Head",
+   "tipo": "Destilados",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Zaffari",
+   "outros_fornecedores": [],
+   "preco_referencia": 150,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Jägermeister",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 700 ml",
+   "conteudo": 700,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Marcelo (importador)",
+   "outros_fornecedores": [],
+   "preco_referencia": 95,
+   "consumo_sabado_ref": 3.321429
+  },
+  {
+   "nome": "Aperol",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Tomazoni"
+   ],
+   "preco_referencia": 55,
+   "consumo_sabado_ref": 0.32
+  },
+  {
+   "nome": "Campari",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 998 ml",
+   "conteudo": 998,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Tomazoni"
+   ],
+   "preco_referencia": 55,
+   "consumo_sabado_ref": 0.03006
+  },
+  {
+   "nome": "Vermute rosso",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 1 L",
+   "conteudo": 1000,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "NW",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Tomazoni"
+   ],
+   "preco_referencia": 45,
+   "consumo_sabado_ref": 0.03
+  },
+  {
+   "nome": "Cynar",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 900 ml",
+   "conteudo": 900,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Mercado Livre",
+   "outros_fornecedores": [],
+   "preco_referencia": 35,
+   "consumo_sabado_ref": 0.011111
+  },
+  {
+   "nome": "Cointreau",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 700 ml",
+   "conteudo": 700,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 150,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Fernet",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Marcelo (importador)",
+   "outros_fornecedores": [],
+   "preco_referencia": 75,
+   "consumo_sabado_ref": 1.4
+  },
+  {
+   "nome": "Conhaque de alcatrão São João da Barra",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 900 ml",
+   "conteudo": 900,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Mercado Livre",
+   "outros_fornecedores": [],
+   "preco_referencia": 25,
+   "consumo_sabado_ref": 0.022222
+  },
+  {
+   "nome": "Angostura",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Frasco 200 ml",
+   "conteudo": 200,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "GW",
+   "outros_fornecedores": [],
+   "preco_referencia": 70,
+   "consumo_sabado_ref": 0.0015
+  },
+  {
+   "nome": "Espumante brut Salton Séries",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Sanguiné",
+   "outros_fornecedores": [
+    "Zaffari"
+   ],
+   "preco_referencia": 35,
+   "consumo_sabado_ref": 0.48
+  },
+  {
+   "nome": "Vinho tinto De Cesaro",
+   "tipo": "Licores e aperitivos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 750 ml",
+   "conteudo": 750,
+   "arredondamento": "garrafa_proxima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Vinícola De Cesaro",
+   "outros_fornecedores": [],
+   "preco_referencia": 30,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Beats Green Mix LN 269ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 2.0
+  },
+  {
+   "nome": "Beats GT LN 269ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 1.0
+  },
+  {
+   "nome": "Beats Red Mix LN 269ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 7.0
+  },
+  {
+   "nome": "Beats Senses LN 269ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 15.0
+  },
+  {
+   "nome": "Beats Pink Lemonade LN 269ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Brahma Chopp litrão 1L",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 7.5,
+   "consumo_sabado_ref": 40.0
+  },
+  {
+   "nome": "Corona LN 330ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 7,
+   "consumo_sabado_ref": 6.0
+  },
+  {
+   "nome": "Heineken 0,0% LN 330ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6.3,
+   "consumo_sabado_ref": 4.0
+  },
+  {
+   "nome": "Heineken 600ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 9.5,
+   "consumo_sabado_ref": 23.0
+  },
+  {
+   "nome": "Heineken lata 473ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 6.5,
+   "consumo_sabado_ref": 18.0
+  },
+  {
+   "nome": "Heineken LN 330ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 6.3,
+   "consumo_sabado_ref": 36.0
+  },
+  {
+   "nome": "Heineken Ultimate LN",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 7.5,
+   "consumo_sabado_ref": 2.0
+  },
+  {
+   "nome": "Original garrafa 1L",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 8,
+   "consumo_sabado_ref": 32.0
+  },
+  {
+   "nome": "Original lata 473ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 5,
+   "consumo_sabado_ref": 2.0
+  },
+  {
+   "nome": "Stella Artois LN 330ml",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 5.6,
+   "consumo_sabado_ref": 3.0
+  },
+  {
+   "nome": "Stella Gold s/ glúten LN",
+   "tipo": "Cervejas",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ambev",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 6.5,
+   "consumo_sabado_ref": 10.0
+  },
+  {
+   "nome": "Água com gás",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 500 ml",
+   "conteudo": 500,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Desco",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 2,
+   "consumo_sabado_ref": 14.42
+  },
+  {
+   "nome": "Água sem gás",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Desco",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 1.5,
+   "consumo_sabado_ref": 17.0
+  },
+  {
+   "nome": "Coca-Cola lata 350ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 350 ml",
+   "conteudo": 350,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Supermercado",
+    "Tomazoni"
+   ],
+   "preco_referencia": 3.5,
+   "consumo_sabado_ref": 18.428571
+  },
+  {
+   "nome": "Coca-Cola Zero lata 350ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Supermercado",
+    "Tomazoni"
+   ],
+   "preco_referencia": 3.5,
+   "consumo_sabado_ref": 5.0
+  },
+  {
+   "nome": "Sprite lata 350ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Supermercado",
+    "Tomazoni"
+   ],
+   "preco_referencia": 3,
+   "consumo_sabado_ref": 1.0
+  },
+  {
+   "nome": "Água tônica",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 350 ml",
+   "conteudo": 350,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Supermercado",
+    "Tomazoni"
+   ],
+   "preco_referencia": 3.2,
+   "consumo_sabado_ref": 1.714286
+  },
+  {
+   "nome": "Baly tradicional",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 2 L",
+   "conteudo": 2000,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 9,
+   "consumo_sabado_ref": 2.25
+  },
+  {
+   "nome": "Red Bull 250ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 250 ml",
+   "conteudo": 250,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Gabriel"
+   ],
+   "preco_referencia": 8,
+   "consumo_sabado_ref": 49.0
+  },
+  {
+   "nome": "Red Bull Melancia 250ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Gabriel"
+   ],
+   "preco_referencia": 8,
+   "consumo_sabado_ref": 1.0
+  },
+  {
+   "nome": "Red Bull Tropical 250ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 250 ml",
+   "conteudo": 250,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [
+    "Sanguiné",
+    "Gabriel"
+   ],
+   "preco_referencia": 8,
+   "consumo_sabado_ref": 1.0
+  },
+  {
+   "nome": "Monster Mango Loco 473ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 473 ml",
+   "conteudo": 473,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Desco"
+   ],
+   "preco_referencia": 7.5,
+   "consumo_sabado_ref": 10.978858
+  },
+  {
+   "nome": "Monster Original 473ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "ml",
+   "embalagem": "Lata 473 ml",
+   "conteudo": 473,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Desco"
+   ],
+   "preco_referencia": 7.5,
+   "consumo_sabado_ref": 7.484144
+  },
+  {
+   "nome": "Monster Zero 473ml",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Fensa (Coca-Cola)",
+   "outros_fornecedores": [
+    "Desco"
+   ],
+   "preco_referencia": 7.5,
+   "consumo_sabado_ref": 1.0
+  },
+  {
+   "nome": "Matito (drink pronto 1 L)",
+   "tipo": "Não alcoólicos",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": true,
+   "producao_propria": false,
+   "fornecedor": "Leandro (Bar Metz)",
+   "outros_fornecedores": [],
+   "preco_referencia": 12,
+   "consumo_sabado_ref": 25.0
+  },
+  {
+   "nome": "Xarope de açúcar (simples)",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "ml",
+   "embalagem": "Litro (produção)",
+   "conteudo": 1000,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": true,
+   "fornecedor": "Produção própria",
+   "outros_fornecedores": [],
+   "preco_referencia": 4,
+   "consumo_sabado_ref": 4.64
+  },
+  {
+   "nome": "Xarope de mel",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "ml",
+   "embalagem": "Litro (produção)",
+   "conteudo": 1000,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": true,
+   "fornecedor": "Produção própria",
+   "outros_fornecedores": [],
+   "preco_referencia": 30,
+   "consumo_sabado_ref": 0.17
+  },
+  {
+   "nome": "Xarope de gengibre",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "ml",
+   "embalagem": "Litro (produção)",
+   "conteudo": 1000,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": true,
+   "fornecedor": "Produção própria",
+   "outros_fornecedores": [],
+   "preco_referencia": 15,
+   "consumo_sabado_ref": 0.1
+  },
+  {
+   "nome": "Xarope de cranberry Monin",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 700 ml",
+   "conteudo": 700,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Zaffari",
+   "outros_fornecedores": [
+    "NW"
+   ],
+   "preco_referencia": 55,
+   "consumo_sabado_ref": 0.571429
+  },
+  {
+   "nome": "Suco de maracujá concentrado",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "ml",
+   "embalagem": "Garrafa 500 ml",
+   "conteudo": 500,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Zaffari",
+   "outros_fornecedores": [],
+   "preco_referencia": 12,
+   "consumo_sabado_ref": 0.12
+  },
+  {
+   "nome": "Espuma cítrica de gengibre",
+   "tipo": "Xaropes e sucos",
+   "unidade_ficha": "talagaço",
+   "embalagem": "Talagaço",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": true,
+   "fornecedor": "Produção própria",
+   "outros_fornecedores": [],
+   "preco_referencia": 0.8,
+   "consumo_sabado_ref": 2.0
+  },
+  {
+   "nome": "Limão Taiti",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "kg",
+   "embalagem": "kg",
+   "conteudo": 1,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Crestani (hortifruti)",
+    "Supermercado"
+   ],
+   "preco_referencia": 6,
+   "consumo_sabado_ref": 11.95
+  },
+  {
+   "nome": "Limão Siciliano",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "kg",
+   "embalagem": "kg",
+   "conteudo": 1,
+   "arredondamento": "meio",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [],
+   "preco_referencia": 15,
+   "consumo_sabado_ref": 0.3428
+  },
+  {
+   "nome": "Laranja",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Crestani (hortifruti)",
+    "Supermercado"
+   ],
+   "preco_referencia": 1,
+   "consumo_sabado_ref": 1.75
+  },
+  {
+   "nome": "Manjericão",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "maço",
+   "embalagem": "Maço",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Zaffari"
+   ],
+   "preco_referencia": 4,
+   "consumo_sabado_ref": 0.4
+  },
+  {
+   "nome": "Hortelã",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "maço",
+   "embalagem": "Maço",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Zaffari"
+   ],
+   "preco_referencia": 4,
+   "consumo_sabado_ref": 0.0
+  },
+  {
+   "nome": "Pimenta rosa",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "g",
+   "embalagem": "Pacote 100 g",
+   "conteudo": 100,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Supermercado",
+    "Desco",
+    "Zaffari"
+   ],
+   "preco_referencia": 25,
+   "consumo_sabado_ref": 0.2
+  },
+  {
+   "nome": "Ovo",
+   "tipo": "Hortifruti",
+   "unidade_ficha": "un",
+   "embalagem": "Dúzia",
+   "conteudo": 12,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Ceasa",
+   "outros_fornecedores": [
+    "Crestani (hortifruti)",
+    "Desco",
+    "Zaffari"
+   ],
+   "preco_referencia": 12,
+   "consumo_sabado_ref": 0.166667
+  },
+  {
+   "nome": "Copo descartável 400ml",
+   "tipo": "Descartáveis",
+   "unidade_ficha": "un",
+   "embalagem": "Pacote 50 un",
+   "conteudo": 50,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Altas Horas",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 15,
+   "consumo_sabado_ref": 2.18
+  },
+  {
+   "nome": "Copo descartável 700ml",
+   "tipo": "Descartáveis",
+   "unidade_ficha": "un",
+   "embalagem": "Pacote 50 un",
+   "conteudo": 50,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Altas Horas",
+   "outros_fornecedores": [
+    "Tomazoni"
+   ],
+   "preco_referencia": 22,
+   "consumo_sabado_ref": 2.24
+  },
+  {
+   "nome": "Batata congelada para fritar",
+   "tipo": "Cozinha",
+   "unidade_ficha": "g",
+   "embalagem": "Pacote 2 kg",
+   "conteudo": 2000,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "SOS Alimentos",
+   "outros_fornecedores": [],
+   "preco_referencia": 30,
+   "consumo_sabado_ref": 0.75
+  },
+  {
+   "nome": "Seda",
+   "tipo": "Outros",
+   "unidade_ficha": "un",
+   "embalagem": "Unidade",
+   "conteudo": 1,
+   "arredondamento": "inteiro_cima",
+   "consumo_inteiro": false,
+   "producao_propria": false,
+   "fornecedor": "Tomazoni",
+   "outros_fornecedores": [],
+   "preco_referencia": 2.5,
+   "consumo_sabado_ref": 1.0
+  }
+ ],
+ "produtos": [
+  {
+   "nome": "CAIPIRINHA CACHAÇA",
+   "preco_venda": 20.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Ypióca Ouro",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.125,
+     "observacao": "50 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "CAIPIROSKA VODKA",
+   "preco_venda": 20.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Vodka Smirnoff",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.125,
+     "observacao": "50 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "PROMO CAIPIRINHA DOSE DUPLA",
+   "preco_venda": 20.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Ypióca Ouro",
+     "quantidade": 100,
+     "observacao": "Equivale a 2 caipirinhas"
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.25,
+     "observacao": "100 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 100,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 2,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "CAIPA COPÃO PROMO",
+   "preco_venda": 25.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Velho Barreiro",
+     "quantidade": 100,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.25,
+     "observacao": "100 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 100,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "MUKIFO",
+   "preco_venda": 27.85,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Tequila Tequisla",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Monster Mango Loco 473ml",
+     "quantidade": 236,
+     "observacao": ""
+    },
+    {
+     "insumo": "Xarope de cranberry Monin",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Pimenta rosa",
+     "quantidade": 1,
+     "observacao": "Decoração: estimei 1 g"
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "KIT DOS GURI",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Passport",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Baly tradicional",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "Kit maki",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky White Horse",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Monster Original 473ml",
+     "quantidade": 236,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "FERNET COLA 400ML",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Fernet",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Coca-Cola lata 350ml",
+     "quantidade": 200,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "FERNET COLA 700ML",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Fernet",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Coca-Cola lata 350ml",
+     "quantidade": 350,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "WHISKY & REDBULL",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Red Label",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "VODKA & REDBULL",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Vodka Absolut",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JACK COM ENERGETICO",
+   "preco_venda": 45.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Jack Daniel's",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JAGERBOMB 700ML",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": "1 lata"
+    },
+    {
+     "insumo": "Laranja",
+     "quantidade": 0.0625,
+     "observacao": "1/2 fatia — 0,5 fatia"
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "PENICILIN",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Red Label",
+     "quantidade": 45,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Siciliano",
+     "quantidade": 0.0857,
+     "observacao": "30 ml de suco"
+    },
+    {
+     "insumo": "Xarope de gengibre",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Xarope de mel",
+     "quantidade": 10,
+     "observacao": ""
+    },
+    {
+     "insumo": "Conhaque de alcatrão São João da Barra",
+     "quantidade": 5,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "APEROL SPRITZ",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Aperol",
+     "quantidade": 60,
+     "observacao": ""
+    },
+    {
+     "insumo": "Espumante brut Salton Séries",
+     "quantidade": 90,
+     "observacao": ""
+    },
+    {
+     "insumo": "Água com gás",
+     "quantidade": 15,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "GIN TONICA",
+   "preco_venda": 26.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Água tônica",
+     "quantidade": 200,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.0125,
+     "observacao": "1 rodela ≈ 1/8 de limão — 0,125 limão"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "KURTZ N' COKE 700ML",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Coca-Cola lata 350ml",
+     "quantidade": 350,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "MOSCOW MULE",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Vodka Smirnoff",
+     "quantidade": 60,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.0625,
+     "observacao": "25 ml de suco"
+    },
+    {
+     "insumo": "Água com gás",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Espuma cítrica de gengibre",
+     "quantidade": 1,
+     "observacao": "1 talagaço"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "WHISKY SOUR",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Red Label",
+     "quantidade": 60,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.0625,
+     "observacao": "25 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Ovo",
+     "quantidade": 1,
+     "observacao": "1 clara"
+    },
+    {
+     "insumo": "Angostura",
+     "quantidade": 0.15,
+     "observacao": "3 gotas ≈ 0,15 ml"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "AMANSA LOUCO",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Vodka Smirnoff",
+     "quantidade": 60,
+     "observacao": ""
+    },
+    {
+     "insumo": "Suco de maracujá concentrado",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Xarope de mel",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.05,
+     "observacao": "20 ml de suco"
+    },
+    {
+     "insumo": "Manjericão",
+     "quantidade": 0.2,
+     "observacao": "10 folhas"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "TROPICAL GIN",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Red Bull Tropical 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JÄGER BUCK",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 75,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.0625,
+     "observacao": "25 ml de suco"
+    },
+    {
+     "insumo": "Xarope de gengibre",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Água com gás",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "NEGRONI",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Vermute rosso",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Campari",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "KARIREL",
+   "preco_venda": 26.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Kariri",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Cynar",
+     "quantidade": 10,
+     "observacao": ""
+    },
+    {
+     "insumo": "Xarope de mel",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "MATITO",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Matito (drink pronto 1 L)",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BATATA FRITA G",
+   "preco_venda": 30.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Batata congelada para fritar",
+     "quantidade": 500,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE GIN GORDONS",
+   "preco_venda": 25.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE JOHNNIE BLONDE",
+   "preco_venda": 25.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Johnnie Walker Blonde",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE TANQUERAY GIN",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Tanqueray",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE TEQUILA",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Tequila José Cuervo",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ÁGUA C/ GÁS",
+   "preco_venda": 5.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Água com gás",
+     "quantidade": 500,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ÁGUA S/ GÁS",
+   "preco_venda": 5.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Água sem gás",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BEATS GREEN MIX LONG NECK 269ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Beats Green Mix LN 269ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BEATS GT LONG NECK 269ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Beats GT LN 269ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BEATS RED MIX LONG NECK 269ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Beats Red Mix LN 269ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BEATS SENSES LONG NECK 269ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Beats Senses LN 269ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "BRAHMA CHOPP LITRAO 1L",
+   "preco_venda": 16.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Brahma Chopp litrão 1L",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "COCA COLA 350ML",
+   "preco_venda": 7.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Coca-Cola lata 350ml",
+     "quantidade": 350,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "COCA COLA ZERO 350ML",
+   "preco_venda": 7.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Coca-Cola Zero lata 350ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "CORONA LN 355ML/330ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Corona LN 330ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Monster Mango Loco 473ml",
+     "quantidade": 473,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ENERGÉTICO MONSTER ZERO",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Monster Zero 473ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "HEINEKEN 0,0% LONG NECK 330ML",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken 0,0% LN 330ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "HEINEKEN 600ML",
+   "preco_venda": 18.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken 600ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "HEINEKEN LATA 473ML",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken lata 473ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "HEINEKEN LONG NECK 330ML",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken LN 330ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "HEINEKEN ULTIMATE LONG NECK",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken Ultimate LN",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ORIGINAL GARRAFA 1L",
+   "preco_venda": 20.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Original garrafa 1L",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ORIGINAL LATA 473ML",
+   "preco_venda": 12.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Original lata 473ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "RED BULL 250ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "RED BULL MELANCIA 250ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Red Bull Melancia 250ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "SPRITE LATA 350ML",
+   "preco_venda": 7.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Sprite lata 350ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "STELLA ARTOIS LONG NECK 330ML",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Stella Artois LN 330ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "STELLA GOLD S/ GLUTEN LONG NECK",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Stella Gold s/ glúten LN",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "Seda",
+   "preco_venda": 8.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Seda",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "PROMO HEINEKEN 600ML",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken 600ml",
+     "quantidade": 2,
+     "observacao": "Promo = 2 garrafas"
+    }
+   ]
+  },
+  {
+   "nome": "PROMO HEINEKEN LATÃO",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken lata 473ml",
+     "quantidade": 3,
+     "observacao": "Promo = 3 latões"
+    }
+   ]
+  },
+  {
+   "nome": "PROMO HEINEKEN LONGNECK",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Heineken LN 330ml",
+     "quantidade": 3,
+     "observacao": "Promo = 3 long necks"
+    }
+   ]
+  },
+  {
+   "nome": "MUKIFO PROMO",
+   "preco_venda": 22.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Tequila Tequisla",
+     "quantidade": 75,
+     "observacao": "Mesma receita do Mukifo"
+    },
+    {
+     "insumo": "Monster Mango Loco 473ml",
+     "quantidade": 236,
+     "observacao": ""
+    },
+    {
+     "insumo": "Xarope de cranberry Monin",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Pimenta rosa",
+     "quantidade": 1,
+     "observacao": "Decoração: estimei 1 g"
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JAGERBOMB PROMO JAGERDAY",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 75,
+     "observacao": "Mesma receita do Jagerbomb"
+    },
+    {
+     "insumo": "Red Bull 250ml",
+     "quantidade": 250,
+     "observacao": "1 lata"
+    },
+    {
+     "insumo": "Laranja",
+     "quantidade": 0.0625,
+     "observacao": "1/2 fatia — 0,5 fatia"
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "KURTZ N COKE PROMO JAGERDAY",
+   "preco_venda": 30.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 75,
+     "observacao": "Mesma receita do Kurtz'n'coke"
+    },
+    {
+     "insumo": "Coca-Cola lata 350ml",
+     "quantidade": 350,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "KIT DOS GURI PROMO",
+   "preco_venda": 22.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Passport",
+     "quantidade": 75,
+     "observacao": "Mesma receita do Kit dos Guri"
+    },
+    {
+     "insumo": "Baly tradicional",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "LITRÃO BRAHMA PROMO",
+   "preco_venda": 14.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Brahma Chopp litrão 1L",
+     "quantidade": 1,
+     "observacao": "CONFIRMAR quantos litrões vêm na promo"
+    }
+   ]
+  },
+  {
+   "nome": "LITRÃO ORIGINAL PROMO",
+   "preco_venda": 18.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Original garrafa 1L",
+     "quantidade": 1,
+     "observacao": "CONFIRMAR quantos litrões vêm na promo"
+    }
+   ]
+  },
+  {
+   "nome": "DOSE JAGER",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE SMIRNOFF",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Vodka Smirnoff",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE CAMPARI",
+   "preco_venda": 18.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Campari",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE JACK DANIEL'S",
+   "preco_venda": 40.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Jack Daniel's",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE PASSPORT",
+   "preco_venda": 18.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Passport",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE FIREBALL",
+   "preco_venda": 25.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Fireball",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE RED LABEL",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky Red Label",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE VELHO BARREIRO",
+   "preco_venda": 12.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Velho Barreiro",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "DOSE FERNET",
+   "preco_venda": 30.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Fernet",
+     "quantidade": 50,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "REDBULL TROPICAL 250ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Red Bull Tropical 250ml",
+     "quantidade": 250,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "ENERGETICO MONSTER ENERGY LT 473ML",
+   "preco_venda": 15.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Monster Original 473ml",
+     "quantidade": 473,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "WHITE HORSE CM BALY",
+   "preco_venda": 30.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Whisky White Horse",
+     "quantidade": 75,
+     "observacao": "CONFIRMAR: montei igual ao Kit dos Guri"
+    },
+    {
+     "insumo": "Baly tradicional",
+     "quantidade": 250,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 700ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JÄGER TONIC",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 50,
+     "observacao": "CONFIRMAR: estimei 50 ml de Jäger + 200 ml de tônica"
+    },
+    {
+     "insumo": "Água tônica",
+     "quantidade": 200,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "FICHA DE SINUCA DEB/CRED",
+   "preco_venda": 6.0,
+   "baixa_estoque": false,
+   "ficha": []
+  },
+  {
+   "nome": "FICHA DE SINUCA PIX",
+   "preco_venda": 5.0,
+   "baixa_estoque": false,
+   "ficha": []
+  },
+  {
+   "nome": "MACACO LOCO",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Rum Montilla Ouro",
+     "quantidade": 40,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema"
+    },
+    {
+     "insumo": "Howler Head",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Vermute rosso",
+     "quantidade": 10,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Siciliano",
+     "quantidade": 0.0571,
+     "observacao": "20 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 15,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "PINK GT",
+   "preco_venda": 26.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Infusão gin + hibisco + pimenta rosa",
+     "quantidade": 60,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema"
+    },
+    {
+     "insumo": "Água tônica",
+     "quantidade": 150,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "SOU EU BOLA DE FOGO",
+   "preco_venda": 32.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Fireball",
+     "quantidade": 50,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema"
+    },
+    {
+     "insumo": "Xarope de mel",
+     "quantidade": 25,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.075,
+     "observacao": "30 ml de suco"
+    },
+    {
+     "insumo": "Vinho tinto De Cesaro",
+     "quantidade": 25,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "MOJITO",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Rum Montilla Prata",
+     "quantidade": 50,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema"
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.075,
+     "observacao": "30 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 25,
+     "observacao": ""
+    },
+    {
+     "insumo": "Hortelã",
+     "quantidade": 0.24,
+     "observacao": "12 folhas"
+    },
+    {
+     "insumo": "Água com gás",
+     "quantidade": 50,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "FITZGERALD",
+   "preco_venda": 28.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 50,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema (ficha diz só 'gin')"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 15,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Siciliano",
+     "quantidade": 0.0571,
+     "observacao": "20 ml de suco"
+    },
+    {
+     "insumo": "Angostura",
+     "quantidade": 2.4,
+     "observacao": "3 dashes ≈ 2,4 ml"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "MACUNAIMA",
+   "preco_venda": 26.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Cachaça Ypióca Branca",
+     "quantidade": 45,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.0625,
+     "observacao": "25 ml de suco"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 20,
+     "observacao": ""
+    },
+    {
+     "insumo": "Fernet",
+     "quantidade": 7,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": "CONFIRMAR: ficha não traz copo"
+    }
+   ]
+  },
+  {
+   "nome": "NEGRITO",
+   "preco_venda": null,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 30,
+     "observacao": "Não apareceu no relatório: o nome tem que ficar igual ao do sistema"
+    },
+    {
+     "insumo": "Cointreau",
+     "quantidade": 30,
+     "observacao": ""
+    },
+    {
+     "insumo": "Gin Gordon's",
+     "quantidade": 30,
+     "observacao": "Ficha diz só 'gin'"
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  },
+  {
+   "nome": "JAGERINHA",
+   "preco_venda": 35.0,
+   "baixa_estoque": true,
+   "ficha": [
+    {
+     "insumo": "Jägermeister",
+     "quantidade": 60,
+     "observacao": ""
+    },
+    {
+     "insumo": "Limão Taiti",
+     "quantidade": 0.125,
+     "observacao": "30 ml de suco + 0,5 limão"
+    },
+    {
+     "insumo": "Xarope de açúcar (simples)",
+     "quantidade": 40,
+     "observacao": ""
+    },
+    {
+     "insumo": "Copo descartável 400ml",
+     "quantidade": 1,
+     "observacao": ""
+    }
+   ]
+  }
+ ],
+ "historico": [
+  {
+   "dia": "2026-10-20",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 2,
+     "total": 79.8
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 2,
+     "total": 59.8
+    },
+    {
+     "produto": "A lá peixe",
+     "quantidade": 2,
+     "total": 69.8
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 5,
+     "total": 25.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 22,
+     "total": 352.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 5,
+     "total": 100.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 4,
+     "total": 24.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 21,
+     "total": 378.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 13,
+     "total": 182.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "LIMONADA MINERAL",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 12,
+     "total": 240.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 21,
+     "total": 417.9
+    },
+    {
+     "produto": "SPRITE LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-21",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá peixe",
+     "quantidade": 1,
+     "total": 34.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 12,
+     "total": 192.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 7,
+     "total": 70.0
+    },
+    {
+     "produto": "DOSE JOHNNIE BLONDE",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE THEROS GIN",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DOSE VELHO BARREIRO",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "Del vale",
+     "quantidade": 1,
+     "total": 8.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 8,
+     "total": 144.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 9,
+     "total": 126.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 9,
+     "total": 315.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "KURTZ N COKE PROMO JAGERDAY",
+     "quantidade": 7,
+     "total": 210.0
+    },
+    {
+     "produto": "MASCATE CAJU E MARACUJA 362ML",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "PROMO HEINEKEN 600ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 18,
+     "total": 358.2
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "Strogonoff de frango",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "TRIDENT",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "WHITE HORSE CM BALY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-22",
+   "fora_da_media": "Venda muito abaixo das outras quintas",
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 4,
+     "total": 119.6
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 8,
+     "total": 40.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 7,
+     "total": 112.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 4,
+     "total": 80.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "CORONA ZERO LN  330ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE CONHAQUE DOMECQ",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "DOSE PASSPORT",
+     "quantidade": 1,
+     "total": 18.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 11,
+     "total": 66.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 5,
+     "total": 25.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 8,
+     "total": 144.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "Kit dos guri promo",
+     "quantidade": 2,
+     "total": 44.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "Mukifo promo",
+     "quantidade": 7,
+     "total": 154.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 9,
+     "total": 180.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 6,
+     "total": 72.0
+    },
+    {
+     "produto": "Parmegiana carne",
+     "quantidade": 1,
+     "total": 49.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 18,
+     "total": 358.2
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "RED BULL SUGARFREE 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "TRIDENT",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 1,
+     "total": 40.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-23",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 8,
+     "total": 40.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 8,
+     "total": 40.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 23,
+     "total": 368.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 3,
+     "total": 75.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "CORONA ZERO LN  330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DADINHOS DE TAPIOCA",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "DOSE CONHAQUE DOMECQ",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE JACK DANIEL'S",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 13,
+     "total": 78.0
+    },
+    {
+     "produto": "FISH FINGERS",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 4,
+     "total": 104.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 7,
+     "total": 126.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "JÄGER BUCK",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 8,
+     "total": 224.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 10,
+     "total": 280.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 3,
+     "total": 105.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 26,
+     "total": 728.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 14,
+     "total": 392.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 3,
+     "total": 96.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 8,
+     "total": 160.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PINK GT",
+     "quantidade": 2,
+     "total": 52.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 1,
+     "total": 27.0
+    },
+    {
+     "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+     "quantidade": 39,
+     "total": 780.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 12,
+     "total": 238.8
+    },
+    {
+     "produto": "REDBULL TROPICAL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "TRIDENT",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 6,
+     "total": 192.0
+    },
+    {
+     "produto": "WHITE HORSE CM BALY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-24",
+   "fora_da_media": "Chuva forte (10 mm, 13 h) e venda baixa",
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 7,
+     "total": 35.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 3,
+     "total": 90.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 23,
+     "total": 368.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 4,
+     "total": 80.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 5,
+     "total": 30.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 9,
+     "total": 252.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "MASCATE CAJU E MARACUJA 362ML",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MASCATE MELANCIA E FRAMBOESA",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 14,
+     "total": 392.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 6,
+     "total": 120.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 2,
+     "total": 54.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "RED BULL POMELO SEM ACUCAR 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS FILÉ",
+     "quantidade": 1,
+     "total": 48.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-25",
+   "fora_da_media": "Chuva forte (6 mm, 20 h) e venda baixa",
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "BATATA COM CHEDDAR E BACON G",
+     "quantidade": 1,
+     "total": 55.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 4,
+     "total": 64.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 5,
+     "total": 30.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 1,
+     "total": 18.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "Seda",
+     "quantidade": 1,
+     "total": 8.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 2,
+     "total": 64.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-26",
+   "fora_da_media": "Segunda: bar fechado (só almoço)",
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 2,
+     "total": 59.8
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 18,
+     "total": 358.2
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-27",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 1,
+     "total": 39.9
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 2,
+     "total": 59.8
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 8,
+     "total": 40.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "ANÉIS DE CEBOLA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 25,
+     "total": 400.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DOSE CACHAÇA ESPECIAL",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "DOSE PASSPORT",
+     "quantidade": 3,
+     "total": 54.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 5,
+     "total": 30.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 24,
+     "total": 432.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "Litrão Brahma promo",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "MASCATE CAJU E MARACUJA 362ML",
+     "quantidade": 2,
+     "total": 32.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 10,
+     "total": 200.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 14,
+     "total": 278.6
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "TRIDENT",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "TROPICAL GIN",
+     "quantidade": 4,
+     "total": 160.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-28",
+   "fora_da_media": "Venda muito abaixo das outras quartas",
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 1,
+     "total": 39.9
+    },
+    {
+     "produto": "A lá peixe",
+     "quantidade": 1,
+     "total": 34.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 4,
+     "total": 64.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 1,
+     "total": 6.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 10,
+     "total": 200.0
+    },
+    {
+     "produto": "OVO",
+     "quantidade": 2,
+     "total": 8.0
+    },
+    {
+     "produto": "PAVÊ GELADO MIRACI",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 14,
+     "total": 278.6
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "TRIDENT",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "VINHO DA CASA",
+     "quantidade": 1,
+     "total": 85.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS MUKIFO",
+     "quantidade": 1,
+     "total": 48.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-29",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 2,
+     "total": 79.8
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "A milanesa",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "AIPIM FRITO GRANDE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ANÉIS DE CEBOLA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 7,
+     "total": 196.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 20,
+     "total": 320.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CHORIPÃO",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 2,
+     "total": 20.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE CAMPARI",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 22,
+     "total": 396.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 7,
+     "total": 98.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 2,
+     "total": 90.0
+    },
+    {
+     "produto": "JÄGER BUCK",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "JÄGER TONIC",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 6,
+     "total": 240.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "Mukifo promo",
+     "quantidade": 3,
+     "total": 66.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 7,
+     "total": 140.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 4,
+     "total": 128.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 26,
+     "total": 517.4
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "TROPICAL GIN",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "VODKA & REDBULL",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 5,
+     "total": 160.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-30",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 7,
+     "total": 209.3
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 12,
+     "total": 60.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "BATATA COM CHEDDAR E BACON G",
+     "quantidade": 1,
+     "total": 55.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 16,
+     "total": 256.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 1,
+     "total": 10.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 19,
+     "total": 114.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "FISH FINGERS",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 4,
+     "total": 72.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 8,
+     "total": 320.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 16,
+     "total": 448.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 13,
+     "total": 364.0
+    },
+    {
+     "produto": "MOJITO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 21,
+     "total": 588.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 20,
+     "total": 400.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "PINK GT",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+     "quantidade": 50,
+     "total": 1000.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 11,
+     "total": 218.9
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "REDBULL TROPICAL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "TÔNICA ANTARCTICA DIET LATA",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "VODKA & REDBULL",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "WHITE HORSE CM BALY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "XIS CALABRESA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 3,
+     "total": 96.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-10-31",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 7,
+     "total": 35.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 22,
+     "total": 352.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 13,
+     "total": 325.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CHORIPÃO",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "CORONA ZERO LN  330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DOSE JACK DANIEL'S",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "DOSE SMIRNOFF",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "DOSE TANQUERAY GIN",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 17,
+     "total": 102.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 4,
+     "total": 72.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 10,
+     "total": 140.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 11,
+     "total": 440.0
+    },
+    {
+     "produto": "KARIREL",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MASCATE CAJU E MARACUJA 362ML",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 22,
+     "total": 616.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 17,
+     "total": 340.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LONGNECK",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "REDBULL TROPICAL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA ARTOIS 473ML LATÃO",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 8,
+     "total": 112.0
+    },
+    {
+     "produto": "TROPICAL GIN",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "VODKA & REDBULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 3,
+     "total": 96.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 2,
+     "total": 64.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-01",
+   "fora_da_media": "Véspera de feriado (Finados 02/11)",
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 20,
+     "total": 320.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 19,
+     "total": 475.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE CACHAÇA ESPECIAL",
+     "quantidade": 3,
+     "total": 75.0
+    },
+    {
+     "produto": "DOSE SMIRNOFF",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 20,
+     "total": 120.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 3,
+     "total": 54.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 9,
+     "total": 360.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 10,
+     "total": 280.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 15,
+     "total": 420.0
+    },
+    {
+     "produto": "MOJITO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 18,
+     "total": 504.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 14,
+     "total": 280.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 2,
+     "total": 24.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LONGNECK",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 3,
+     "total": 96.0
+    },
+    {
+     "produto": "WHITE HORSE CM BALY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS VEGETARIANO",
+     "quantidade": 2,
+     "total": 64.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-03",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 25,
+     "total": 400.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 11,
+     "total": 66.0
+    },
+    {
+     "produto": "FISH FINGERS",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 17,
+     "total": 306.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 11,
+     "total": 220.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 19,
+     "total": 378.1
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "XIS MUKIFO",
+     "quantidade": 3,
+     "total": 144.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-04",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 2,
+     "total": 79.8
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 5,
+     "total": 149.5
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 9,
+     "total": 45.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 5,
+     "total": 25.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 12,
+     "total": 192.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 5,
+     "total": 35.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 8,
+     "total": 80.0
+    },
+    {
+     "produto": "DADINHOS DE TAPIOCA",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "DOSE RED LABEL",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 1,
+     "total": 6.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 5,
+     "total": 175.0
+    },
+    {
+     "produto": "KURTZ N COKE PROMO JAGERDAY",
+     "quantidade": 3,
+     "total": 90.0
+    },
+    {
+     "produto": "Litrão Original promo",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "MACUNAIMA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 6,
+     "total": 192.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 6,
+     "total": 120.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 2,
+     "total": 24.0
+    },
+    {
+     "produto": "OVO",
+     "quantidade": 1,
+     "total": 4.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 12,
+     "total": 238.8
+    },
+    {
+     "produto": "RED BULL SUGARFREE 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "SOU EU BOLA DE FOGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "VINHO DA CASA",
+     "quantidade": 1,
+     "total": 85.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-05",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 2,
+     "total": 79.8
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 4,
+     "total": 119.6
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 10,
+     "total": 50.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 25,
+     "total": 400.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 6,
+     "total": 150.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 4,
+     "total": 80.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CITRUS FRUKI",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 9,
+     "total": 63.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "DOSE CONHAQUE DOMECQ",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "DOSE JACK DANIEL'S",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "DOSE RED LABEL",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "DOSE TEQUILA",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 3,
+     "total": 18.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 11,
+     "total": 198.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 5,
+     "total": 70.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 7,
+     "total": 98.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 8,
+     "total": 320.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "Kit dos guri promo",
+     "quantidade": 1,
+     "total": 22.0
+    },
+    {
+     "produto": "MASCATE CAJU E MARACUJA 362ML",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 10,
+     "total": 280.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "Mukifo promo",
+     "quantidade": 11,
+     "total": 242.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 13,
+     "total": 260.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "OVO",
+     "quantidade": 2,
+     "total": 8.0
+    },
+    {
+     "produto": "PINK GT",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 1,
+     "total": 27.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 14,
+     "total": 278.6
+    },
+    {
+     "produto": "RED BULL MELÃO E MARACUJA",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 10,
+     "total": 140.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-06",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 1,
+     "total": 39.9
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 9,
+     "total": 45.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 10,
+     "total": 50.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 7,
+     "total": 196.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 8,
+     "total": 120.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 7,
+     "total": 105.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 30,
+     "total": 480.0
+    },
+    {
+     "produto": "Batata frita a la",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 2,
+     "total": 50.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 34,
+     "total": 680.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 27.6
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 4,
+     "total": 28.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 6,
+     "total": 42.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "DOSE CAMPARI",
+     "quantidade": 1,
+     "total": 18.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "DOSE SMIRNOFF",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 18,
+     "total": 108.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "Feijão",
+     "quantidade": 1,
+     "total": 6.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 5,
+     "total": 90.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 5,
+     "total": 70.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 10,
+     "total": 140.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "KIT DAS GURIA",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 27,
+     "total": 756.0
+    },
+    {
+     "produto": "KIT DUVIDOSO",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 5,
+     "total": 175.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 20,
+     "total": 560.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 4,
+     "total": 128.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 19,
+     "total": 532.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 6,
+     "total": 120.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+     "quantidade": 12,
+     "total": 240.0
+    },
+    {
+     "produto": "Parmegiana frango",
+     "quantidade": 2,
+     "total": 76.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 23,
+     "total": 456.11
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "RED BULL MAÇA SEM ACUCAR",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "TONICA SCHWEPPES 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 3,
+     "total": 114.0
+    },
+    {
+     "produto": "XIS FILÉ",
+     "quantidade": 1,
+     "total": 48.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-07",
+   "fora_da_media": "Chuva forte (12 mm, 21 h) e venda baixa",
+   "itens": [
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 13,
+     "total": 208.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 11,
+     "total": 275.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "DADINHOS DE TAPIOCA",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "DOSE CAMPARI",
+     "quantidade": 2,
+     "total": 36.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 19,
+     "total": 114.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 8,
+     "total": 144.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 4,
+     "total": 180.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 6,
+     "total": 240.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 10,
+     "total": 280.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 8,
+     "total": 224.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 5,
+     "total": 100.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 1,
+     "total": 27.0
+    },
+    {
+     "produto": "PROMO HEINEKEN 600ML",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "TONICA SCHWEPPES 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS VEGETARIANO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-08",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 5,
+     "total": 80.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 3,
+     "total": 75.0
+    },
+    {
+     "produto": "DOSE BAILEYS",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "DOSE CACHAÇA ESPECIAL",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE GIN GORDONS",
+     "quantidade": 2,
+     "total": 50.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 13,
+     "total": 78.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 9,
+     "total": 162.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MACUNAIMA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 10,
+     "total": 200.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 3,
+     "total": 36.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 1,
+     "total": 27.0
+    },
+    {
+     "produto": "PROMO HEINEKEN 600ML",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "RED BULL MELANCIA 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "SOU EU BOLA DE FOGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 2,
+     "total": 64.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-09",
+   "fora_da_media": "Segunda: bar fechado (só almoço)",
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 2,
+     "total": 59.8
+    },
+    {
+     "produto": "Bife Frango",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "Parmegiana carne",
+     "quantidade": 1,
+     "total": 49.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 9,
+     "total": 179.1
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-10",
+   "fora_da_media": "Venda muito acima das outras terças",
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 2,
+     "total": 79.8
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 6,
+     "total": 90.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 31,
+     "total": 496.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 5,
+     "total": 35.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DOSE CONHAQUE DOMECQ",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 2,
+     "total": 12.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "HECHO EN PERU",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 34,
+     "total": 612.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 7,
+     "total": 98.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 18,
+     "total": 252.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "KURTZ N COKE PROMO JAGERDAY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 28,
+     "total": 560.0
+    },
+    {
+     "produto": "Ovo frito",
+     "quantidade": 1,
+     "total": 3.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "Parmegiana carne",
+     "quantidade": 1,
+     "total": 49.0
+    },
+    {
+     "produto": "Parmegiana frango",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 9,
+     "total": 179.1
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "REDBULL TROPICAL 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "Strogonoff de frango",
+     "quantidade": 1,
+     "total": 35.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-11",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá peixe",
+     "quantidade": 1,
+     "total": 34.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 5,
+     "total": 25.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 3,
+     "total": 90.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 7,
+     "total": 112.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 4,
+     "total": 28.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 9,
+     "total": 90.0
+    },
+    {
+     "produto": "DOSE CAMPARI",
+     "quantidade": 1,
+     "total": 18.0
+    },
+    {
+     "produto": "DOSE FIREBALL",
+     "quantidade": 3,
+     "total": 75.0
+    },
+    {
+     "produto": "DOSE SMIRNOFF",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "HALLS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 19,
+     "total": 342.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 7,
+     "total": 98.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KURTZ N COKE PROMO JAGERDAY",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 20,
+     "total": 400.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LONGNECK",
+     "quantidade": 2,
+     "total": 70.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 18,
+     "total": 358.2
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "SPRITE LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "TROPICAL GIN",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-12",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 4,
+     "total": 20.0
+    },
+    {
+     "produto": "ANÉIS DE CEBOLA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 17,
+     "total": 272.0
+    },
+    {
+     "produto": "Batata frita a la",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 9,
+     "total": 180.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 4,
+     "total": 80.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "DADINHOS DE TAPIOCA",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "DOSE AMARULA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "DOSE JACK DANIEL'S",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 5,
+     "total": 140.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 7,
+     "total": 280.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 13,
+     "total": 78.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 15,
+     "total": 270.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 2,
+     "total": 90.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 13,
+     "total": 520.0
+    },
+    {
+     "produto": "KARIREL",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 4,
+     "total": 140.0
+    },
+    {
+     "produto": "MACACO LOCO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 18,
+     "total": 504.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 8,
+     "total": 224.0
+    },
+    {
+     "produto": "Mukifo promo",
+     "quantidade": 8,
+     "total": 176.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 20,
+     "total": 400.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 3,
+     "total": 96.0
+    },
+    {
+     "produto": "PINK GT",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 2,
+     "total": 54.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 9,
+     "total": 179.1
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-13",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 4,
+     "total": 119.6
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 9,
+     "total": 45.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 11,
+     "total": 55.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 9,
+     "total": 135.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 24,
+     "total": 384.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "DOSE JACK DANIEL'S",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "DOSE JOHNNIE BLONDE",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE TANQUERAY GIN",
+     "quantidade": 3,
+     "total": 105.0
+    },
+    {
+     "produto": "ENERGÉTICO MONSTER ZERO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 9,
+     "total": 360.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 21,
+     "total": 126.0
+    },
+    {
+     "produto": "FISH FINGERS",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "GUARANA ANTARCTICA ZERO LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 24,
+     "total": 432.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 8,
+     "total": 112.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 9,
+     "total": 126.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 4,
+     "total": 180.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 9,
+     "total": 360.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 13,
+     "total": 364.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "MACUNAIMA",
+     "quantidade": 2,
+     "total": 52.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 18,
+     "total": 504.0
+    },
+    {
+     "produto": "MOJITO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 20,
+     "total": 560.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 12,
+     "total": 240.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 4,
+     "total": 128.0
+    },
+    {
+     "produto": "POLENTA FRITA G",
+     "quantidade": 1,
+     "total": 27.0
+    },
+    {
+     "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+     "quantidade": 55,
+     "total": 1100.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 13,
+     "total": 258.7
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 4,
+     "total": 56.0
+    },
+    {
+     "produto": "TROPICAL GIN",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "VINHO DA CASA",
+     "quantidade": 2,
+     "total": 170.0
+    },
+    {
+     "produto": "VODKA & REDBULL",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 8,
+     "total": 320.0
+    },
+    {
+     "produto": "XIS BACON",
+     "quantidade": 1,
+     "total": 38.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-14",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 5,
+     "total": 25.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 9,
+     "total": 45.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS GT LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 14,
+     "total": 224.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 8,
+     "total": 160.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 7,
+     "total": 140.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE GIN GORDONS",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE TEQUILA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 10,
+     "total": 60.0
+    },
+    {
+     "produto": "FICHA DE SINUCA PIX",
+     "quantidade": 3,
+     "total": 15.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 3,
+     "total": 78.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 7,
+     "total": 126.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 5,
+     "total": 70.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 1,
+     "total": 45.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 19,
+     "total": 760.0
+    },
+    {
+     "produto": "KARIREL",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 7,
+     "total": 196.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 9,
+     "total": 252.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 15,
+     "total": 420.0
+    },
+    {
+     "produto": "MOSCOW MULE",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 6,
+     "total": 165.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 18,
+     "total": 360.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 2,
+     "total": 24.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 3,
+     "total": 96.0
+    },
+    {
+     "produto": "PROMO HEINEKEN 600ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LONGNECK",
+     "quantidade": 7,
+     "total": 245.0
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS BACON",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS MUKIFO",
+     "quantidade": 1,
+     "total": 48.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS VEGETARIANO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-15",
+   "fora_da_media": "Feriado (Proclamação da República)",
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 3,
+     "total": 45.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 5,
+     "total": 75.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 10,
+     "total": 160.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 4,
+     "total": 100.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 3,
+     "total": 21.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "CROQUETE DE CARNE",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 5,
+     "total": 30.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 3,
+     "total": 54.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "HEINEKEN ULTIMATE LONG NECK",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 9,
+     "total": 180.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LONGNECK",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "RED BULL MELANCIA 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "SPRITE LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "Seda",
+     "quantidade": 1,
+     "total": 8.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-16",
+   "fora_da_media": "Segunda: bar fechado (só almoço)",
+   "itens": [
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 2,
+     "total": 10.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 1,
+     "total": 18.0
+    },
+    {
+     "produto": "JÄGER BUCK",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 10,
+     "total": 199.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-17",
+   "fora_da_media": null,
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 12,
+     "total": 60.0
+    },
+    {
+     "produto": "ANÉIS DE CEBOLA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 38,
+     "total": 608.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CHORIPÃO",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "CORONA LN 355ML/330ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "DOSE BLACK LABEL",
+     "quantidade": 1,
+     "total": 45.0
+    },
+    {
+     "produto": "DOSE FERNET",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "DOSE TANQUERAY GIN",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 1,
+     "total": 6.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "HALLS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 18,
+     "total": 324.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 2,
+     "total": 90.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "NEGRONI",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 25,
+     "total": 500.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PAVÊ GELADO MIRACI",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "PENICILIN",
+     "quantidade": 2,
+     "total": 64.0
+    },
+    {
+     "produto": "Parmegiana carne",
+     "quantidade": 1,
+     "total": 49.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 12,
+     "total": 238.8
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "SPRITE LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "TONICA SCHWEPPES 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-18",
+   "fora_da_media": "Venda muito acima das outras quartas",
+   "itens": [
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 3,
+     "total": 89.7
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 13,
+     "total": 65.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 13,
+     "total": 65.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 16,
+     "total": 256.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 3,
+     "total": 60.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 5,
+     "total": 35.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COPO GELO G",
+     "quantidade": 4,
+     "total": 40.0
+    },
+    {
+     "produto": "DOSE BLACK LABEL",
+     "quantidade": 2,
+     "total": 90.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "GIN TONICA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 14,
+     "total": 252.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 9,
+     "total": 126.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 2,
+     "total": 90.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "JAGERBOMB PROMO JAGERDAY",
+     "quantidade": 16,
+     "total": 560.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "KIT RED BULL",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "KURTZ N COKE PROMO JAGERDAY",
+     "quantidade": 2,
+     "total": 60.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 6,
+     "total": 168.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 11,
+     "total": 308.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 8,
+     "total": 160.0
+    },
+    {
+     "produto": "PROMO HEINEKEN LATÃO",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "Parmegiana carne",
+     "quantidade": 1,
+     "total": 49.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 26,
+     "total": 517.4
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 10,
+     "total": 150.0
+    },
+    {
+     "produto": "SOU EU BOLA DE FOGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "SPRITE LATA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 4,
+     "total": 160.0
+    },
+    {
+     "produto": "XIS BACON",
+     "quantidade": 1,
+     "total": 38.0
+    },
+    {
+     "produto": "XIS CORAÇÃO",
+     "quantidade": 1,
+     "total": 38.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-19",
+   "fora_da_media": "Véspera de feriado (20/11)",
+   "itens": [
+    {
+     "produto": "A lá minuta carne",
+     "quantidade": 1,
+     "total": 39.9
+    },
+    {
+     "produto": "A lá minuta frango",
+     "quantidade": 1,
+     "total": 29.9
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 8,
+     "total": 40.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "APEROL SPRITZ",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "BEATS GREEN MIX LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS RED MIX LONG NECK 269ML",
+     "quantidade": 7,
+     "total": 105.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 2,
+     "total": 30.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 19,
+     "total": 304.0
+    },
+    {
+     "produto": "CAIPA COPÃO PROMO",
+     "quantidade": 2,
+     "total": 50.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 14,
+     "total": 280.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 10,
+     "total": 200.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "DOSE BLACK LABEL",
+     "quantidade": 1,
+     "total": 45.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 3,
+     "total": 120.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 15,
+     "total": 90.0
+    },
+    {
+     "produto": "FISH FINGERS",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 3,
+     "total": 42.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 8,
+     "total": 144.0
+    },
+    {
+     "produto": "HEINEKEN LATA 473ML",
+     "quantidade": 6,
+     "total": 84.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 9,
+     "total": 126.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 14,
+     "total": 560.0
+    },
+    {
+     "produto": "JAGERINHA",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 1,
+     "total": 35.0
+    },
+    {
+     "produto": "Kit dos guri promo",
+     "quantidade": 2,
+     "total": 44.0
+    },
+    {
+     "produto": "MACUNAIMA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "Mukifo promo",
+     "quantidade": 12,
+     "total": 264.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 21,
+     "total": 420.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 1,
+     "total": 12.0
+    },
+    {
+     "produto": "PINK GT",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 16,
+     "total": 318.4
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 4,
+     "total": 60.0
+    },
+    {
+     "produto": "STELLA ARTOIS LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 3,
+     "total": 96.0
+    }
+   ]
+  },
+  {
+   "dia": "2026-11-20",
+   "fora_da_media": "Feriado (Consciência Negra)",
+   "itens": [
+    {
+     "produto": "A lá peixe",
+     "quantidade": 2,
+     "total": 69.8
+    },
+    {
+     "produto": "ÁGUA C/ GÁS",
+     "quantidade": 6,
+     "total": 30.0
+    },
+    {
+     "produto": "ÁGUA S/ GÁS",
+     "quantidade": 1,
+     "total": 5.0
+    },
+    {
+     "produto": "AMANSA LOUCO",
+     "quantidade": 1,
+     "total": 28.0
+    },
+    {
+     "produto": "BATATA FRITA G",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "BEATS SENSES LONG NECK 269ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "BRAHMA CHOPP LITRAO 1L",
+     "quantidade": 18,
+     "total": 288.0
+    },
+    {
+     "produto": "CAIPIRINHA CACHAÇA",
+     "quantidade": 2,
+     "total": 40.0
+    },
+    {
+     "produto": "CAIPIROSKA VODKA",
+     "quantidade": 1,
+     "total": 20.0
+    },
+    {
+     "produto": "CARNE LOKA",
+     "quantidade": 1,
+     "total": 30.0
+    },
+    {
+     "produto": "CEBOLA NA CHAPA",
+     "quantidade": 1,
+     "total": 4.0
+    },
+    {
+     "produto": "COCA COLA 350ML",
+     "quantidade": 2,
+     "total": 14.0
+    },
+    {
+     "produto": "COCA COLA ZERO 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "DOSE FIREBALL",
+     "quantidade": 1,
+     "total": 25.0
+    },
+    {
+     "produto": "DOSE JAGER",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "ENERGETICO MONSTER ENERGY LT 473ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "FANTA GUARANA 350ML",
+     "quantidade": 1,
+     "total": 7.0
+    },
+    {
+     "produto": "FERNET COLA 400ML",
+     "quantidade": 3,
+     "total": 84.0
+    },
+    {
+     "produto": "FERNET COLA 700ML",
+     "quantidade": 5,
+     "total": 200.0
+    },
+    {
+     "produto": "FICHA DE SINUCA DEB/CRED",
+     "quantidade": 18,
+     "total": 108.0
+    },
+    {
+     "produto": "FITZGERALD",
+     "quantidade": 2,
+     "total": 56.0
+    },
+    {
+     "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+     "quantidade": 2,
+     "total": 28.0
+    },
+    {
+     "produto": "HEINEKEN 600ML",
+     "quantidade": 6,
+     "total": 108.0
+    },
+    {
+     "produto": "HEINEKEN LONG NECK 330ML",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "JACK COM ENERGETICO",
+     "quantidade": 1,
+     "total": 45.0
+    },
+    {
+     "produto": "JAGERBOMB 700ML",
+     "quantidade": 8,
+     "total": 320.0
+    },
+    {
+     "produto": "KIT DOS GURI",
+     "quantidade": 4,
+     "total": 112.0
+    },
+    {
+     "produto": "KIT MAKI",
+     "quantidade": 7,
+     "total": 196.0
+    },
+    {
+     "produto": "KURTZ N' COKE 700ML",
+     "quantidade": 6,
+     "total": 210.0
+    },
+    {
+     "produto": "MACUNAIMA",
+     "quantidade": 1,
+     "total": 26.0
+    },
+    {
+     "produto": "MASCATE MELANCIA E FRAMBOESA",
+     "quantidade": 1,
+     "total": 16.0
+    },
+    {
+     "produto": "MATITO",
+     "quantidade": 12,
+     "total": 336.0
+    },
+    {
+     "produto": "MUKIFO",
+     "quantidade": 7,
+     "total": 196.0
+    },
+    {
+     "produto": "ORIGINAL GARRAFA 1L",
+     "quantidade": 9,
+     "total": 180.0
+    },
+    {
+     "produto": "ORIGINAL LATA 473ML",
+     "quantidade": 2,
+     "total": 24.0
+    },
+    {
+     "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+     "quantidade": 17,
+     "total": 340.0
+    },
+    {
+     "produto": "Prato do dia",
+     "quantidade": 8,
+     "total": 159.2
+    },
+    {
+     "produto": "RED BULL 250ML",
+     "quantidade": 1,
+     "total": 15.0
+    },
+    {
+     "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+     "quantidade": 1,
+     "total": 14.0
+    },
+    {
+     "produto": "Seda",
+     "quantidade": 1,
+     "total": 8.0
+    },
+    {
+     "produto": "VODKA & REDBULL",
+     "quantidade": 1,
+     "total": 40.0
+    },
+    {
+     "produto": "WHISKY & REDBULL",
+     "quantidade": 2,
+     "total": 80.0
+    },
+    {
+     "produto": "WHISKY SOUR",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS CALABRESA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS FRANGO",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS SALADA",
+     "quantidade": 1,
+     "total": 32.0
+    },
+    {
+     "produto": "XIS VEGANO",
+     "quantidade": 1,
+     "total": 32.0
+    }
+   ]
+  }
+ ],
+ "sabado_referencia": [
+  {
+   "produto": "A lá minuta frango",
+   "quantidade": 1,
+   "total": 29.9
+  },
+  {
+   "produto": "ÁGUA C/ GÁS",
+   "quantidade": 14,
+   "total": 70.0
+  },
+  {
+   "produto": "ÁGUA S/ GÁS",
+   "quantidade": 17,
+   "total": 85.0
+  },
+  {
+   "produto": "AMANSA LOUCO",
+   "quantidade": 2,
+   "total": 56.0
+  },
+  {
+   "produto": "APEROL SPRITZ",
+   "quantidade": 4,
+   "total": 112.0
+  },
+  {
+   "produto": "BATATA FRITA G",
+   "quantidade": 3,
+   "total": 90.0
+  },
+  {
+   "produto": "BEATS GREEN MIX LONG NECK 269ML",
+   "quantidade": 2,
+   "total": 30.0
+  },
+  {
+   "produto": "BEATS GT LONG NECK 269ML",
+   "quantidade": 1,
+   "total": 15.0
+  },
+  {
+   "produto": "BEATS RED MIX LONG NECK 269ML",
+   "quantidade": 7,
+   "total": 105.0
+  },
+  {
+   "produto": "BEATS SENSES LONG NECK 269ML",
+   "quantidade": 15,
+   "total": 225.0
+  },
+  {
+   "produto": "BRAHMA CHOPP LITRAO 1L",
+   "quantidade": 40,
+   "total": 640.0
+  },
+  {
+   "produto": "CAIPA COPÃO PROMO",
+   "quantidade": 4,
+   "total": 100.0
+  },
+  {
+   "produto": "CAIPIRINHA CACHAÇA",
+   "quantidade": 10,
+   "total": 200.0
+  },
+  {
+   "produto": "CAIPIROSKA VODKA",
+   "quantidade": 8,
+   "total": 160.0
+  },
+  {
+   "produto": "CARNE LOKA",
+   "quantidade": 1,
+   "total": 30.0
+  },
+  {
+   "produto": "COCA COLA 350ML",
+   "quantidade": 3,
+   "total": 21.0
+  },
+  {
+   "produto": "COCA COLA ZERO 350ML",
+   "quantidade": 5,
+   "total": 35.0
+  },
+  {
+   "produto": "CORONA LN 355ML/330ML",
+   "quantidade": 6,
+   "total": 90.0
+  },
+  {
+   "produto": "CROQUETE DE CARNE",
+   "quantidade": 1,
+   "total": 30.0
+  },
+  {
+   "produto": "DOSE GIN GORDONS",
+   "quantidade": 1,
+   "total": 25.0
+  },
+  {
+   "produto": "DOSE JOHNNIE BLONDE",
+   "quantidade": 1,
+   "total": 25.0
+  },
+  {
+   "produto": "DOSE TANQUERAY GIN",
+   "quantidade": 1,
+   "total": 35.0
+  },
+  {
+   "produto": "DOSE TEQUILA",
+   "quantidade": 1,
+   "total": 32.0
+  },
+  {
+   "produto": "ENERGETICO MONSTER 473ML LT MANGO LOCO",
+   "quantidade": 1,
+   "total": 15.0
+  },
+  {
+   "produto": "ENERGÉTICO MONSTER ZERO",
+   "quantidade": 1,
+   "total": 15.0
+  },
+  {
+   "produto": "FERNET COLA 400ML",
+   "quantidade": 6,
+   "total": 168.0
+  },
+  {
+   "produto": "FERNET COLA 700ML",
+   "quantidade": 10,
+   "total": 400.0
+  },
+  {
+   "produto": "FICHA DE SINUCA DEB/CRED",
+   "quantidade": 23,
+   "total": 138.0
+  },
+  {
+   "produto": "FICHA DE SINUCA PIX",
+   "quantidade": 3,
+   "total": 15.0
+  },
+  {
+   "produto": "GIN TONICA",
+   "quantidade": 3,
+   "total": 78.0
+  },
+  {
+   "produto": "HEINEKEN 0,0% LONG NECK 330ML",
+   "quantidade": 4,
+   "total": 56.0
+  },
+  {
+   "produto": "HEINEKEN 600ML",
+   "quantidade": 21,
+   "total": 378.0
+  },
+  {
+   "produto": "HEINEKEN LATA 473ML",
+   "quantidade": 15,
+   "total": 210.0
+  },
+  {
+   "produto": "HEINEKEN LONG NECK 330ML",
+   "quantidade": 12,
+   "total": 168.0
+  },
+  {
+   "produto": "HEINEKEN ULTIMATE LONG NECK",
+   "quantidade": 2,
+   "total": 30.0
+  },
+  {
+   "produto": "JACK COM ENERGETICO",
+   "quantidade": 4,
+   "total": 180.0
+  },
+  {
+   "produto": "JÄGER BUCK",
+   "quantidade": 1,
+   "total": 35.0
+  },
+  {
+   "produto": "JAGERBOMB 700ML",
+   "quantidade": 28,
+   "total": 1120.0
+  },
+  {
+   "produto": "KARIREL",
+   "quantidade": 1,
+   "total": 26.0
+  },
+  {
+   "produto": "KIT DOS GURI",
+   "quantidade": 18,
+   "total": 504.0
+  },
+  {
+   "produto": "KURTZ N' COKE 700ML",
+   "quantidade": 2,
+   "total": 70.0
+  },
+  {
+   "produto": "Kit maki",
+   "quantidade": 15,
+   "total": 420.0
+  },
+  {
+   "produto": "MATITO",
+   "quantidade": 25,
+   "total": 700.0
+  },
+  {
+   "produto": "MOSCOW MULE",
+   "quantidade": 2,
+   "total": 64.0
+  },
+  {
+   "produto": "MUKIFO",
+   "quantidade": 20,
+   "total": 557.0
+  },
+  {
+   "produto": "NEGRONI",
+   "quantidade": 1,
+   "total": 32.0
+  },
+  {
+   "produto": "ORIGINAL GARRAFA 1L",
+   "quantidade": 32,
+   "total": 640.0
+  },
+  {
+   "produto": "ORIGINAL LATA 473ML",
+   "quantidade": 2,
+   "total": 24.0
+  },
+  {
+   "produto": "PAVÊ GELADO MIRACI",
+   "quantidade": 1,
+   "total": 15.0
+  },
+  {
+   "produto": "PENICILIN",
+   "quantidade": 4,
+   "total": 128.0
+  },
+  {
+   "produto": "PROMO CAIPIRINHA DOSE DUPLA",
+   "quantidade": 33,
+   "total": 660.0
+  },
+  {
+   "produto": "PROMO HEINEKEN 600ML",
+   "quantidade": 1,
+   "total": 35.0
+  },
+  {
+   "produto": "PROMO HEINEKEN LATÃO",
+   "quantidade": 1,
+   "total": 35.0
+  },
+  {
+   "produto": "PROMO HEINEKEN LONGNECK",
+   "quantidade": 8,
+   "total": 280.0
+  },
+  {
+   "produto": "Parmegiana carne",
+   "quantidade": 1,
+   "total": 49.0
+  },
+  {
+   "produto": "Prato do dia",
+   "quantidade": 22,
+   "total": 437.8
+  },
+  {
+   "produto": "RED BULL 250ML",
+   "quantidade": 8,
+   "total": 120.0
+  },
+  {
+   "produto": "RED BULL MELANCIA 250ML",
+   "quantidade": 1,
+   "total": 15.0
+  },
+  {
+   "produto": "SPRITE LATA 350ML",
+   "quantidade": 1,
+   "total": 7.0
+  },
+  {
+   "produto": "STELLA ARTOIS LONG NECK 330ML",
+   "quantidade": 3,
+   "total": 42.0
+  },
+  {
+   "produto": "STELLA GOLD S/ GLUTEN LONG NECK",
+   "quantidade": 10,
+   "total": 140.0
+  },
+  {
+   "produto": "Seda",
+   "quantidade": 1,
+   "total": 8.0
+  },
+  {
+   "produto": "TROPICAL GIN",
+   "quantidade": 1,
+   "total": 40.0
+  },
+  {
+   "produto": "VODKA & REDBULL",
+   "quantidade": 2,
+   "total": 80.0
+  },
+  {
+   "produto": "WHISKY & REDBULL",
+   "quantidade": 7,
+   "total": 280.0
+  },
+  {
+   "produto": "WHISKY SOUR",
+   "quantidade": 2,
+   "total": 64.0
+  },
+  {
+   "produto": "XIS BACON",
+   "quantidade": 1,
+   "total": 38.0
+  },
+  {
+   "produto": "XIS FRANGO",
+   "quantidade": 2,
+   "total": 64.0
+  },
+  {
+   "produto": "XIS MUKIFO",
+   "quantidade": 1,
+   "total": 48.0
+  },
+  {
+   "produto": "XIS SALADA",
+   "quantidade": 1,
+   "total": 32.0
+  },
+  {
+   "produto": "XIS VEGETARIANO",
+   "quantidade": 1,
+   "total": 32.0
+  }
+ ]
+}
