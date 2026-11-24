@@ -494,6 +494,26 @@ const pctTxt = (v) => v == null ? '' : `<span class="${v >= 0 ? 'pos' : 'neg'}">
 const card = (t, v, sub = '') => `<div class="dp-card"><div class="mut">${t}</div><div class="dp-v">${v}</div><div>${sub}</div></div>`;
 function barras(linhas, rot, val, fmtv) { const max = Math.max(1, ...linhas.map(val)); return linhas.length ? linhas.map((l) => `<div class="dp-lin"><span class="dp-r">${esc(rot(l))}</span><span class="dp-b"><i style="width:${Math.max(2, val(l) / max * 100)}%"></i></span><b>${fmtv(val(l))}</b></div>`).join('') : '<p class="mut">Sem dados no período.</p>'; }
 const caixa = (t, h, dica = '') => `<div class="forn"><h3>${t}</h3>${dica ? `<p class="mut">${dica}</p>` : ''}${h}</div>`;
+const mm = (v) => v == null ? '—' : String(v).replace('.', ',') + ' min';
+function linhaTempo(rot, t) { return `<tr><td>${rot}</td><td>${t.n}</td><td><b>${mm(t.media)}</b></td><td>${mm(t.mediana)}</td><td>${mm(t.p90)}</td><td>${mm(t.max)}</td></tr>`; }
+function temposHtml(d) {
+  const t = d.tempos; if (!t || !t.pedidos) return caixa('⏱ Tempos por etapa', '<p class="mut">Ainda não há pedidos com tempo registrado neste período. Os tempos são gravados sozinhos conforme o pedido passa por pagamento → fila → preparo → entrega.</p>');
+  const E = [['Atendimento até pagar', 'pagamento'], ['Fila (pago → começou a preparar)', 'fila'], ['Preparo (começou → pronto)', 'preparo'], ['Retirada (pronto → QR, só app)', 'retirada'], ['Pago → entregue', 'pago_ate_fim'], ['Pedido inteiro', 'total']];
+  const tab = (g) => `<table><thead><tr><th>Etapa</th><th>Pedidos</th><th>Média</th><th>Mediana</th><th>90% até</th><th>Mais lento</th></tr></thead><tbody>${E.map(([r, k]) => linhaTempo(r, g[k])).join('')}</tbody></table>`;
+  const g = t.geral, delta = g.pago_ate_fim.media != null && t.anterior_total_media != null ? Math.round((g.pago_ate_fim.media - t.anterior_total_media) * 10) / 10 : null;
+  const cards = `<div class="dp-grid">${card('Fila média', mm(g.fila.media), `<span class="mut">${g.fila.n} pedido(s)</span>`)}${card('Preparo médio', mm(g.preparo.media), `<span class="mut">${g.preparo.n} pedido(s)</span>`)}
+    ${card('Pago → entregue', mm(g.pago_ate_fim.media), delta == null ? '' : `<span class="${delta <= 0 ? 'pos' : 'neg'}">${delta <= 0 ? '▼' : '▲'} ${String(Math.abs(delta)).replace('.', ',')} min</span> <span class="mut">vs. período anterior</span>`)}
+    ${card(`Acima de ${t.meta_min} min`, t.acima_da_meta_pct == null ? '—' : t.acima_da_meta_pct + '%', '<span class="mut">dos pedidos, do pago até entregar</span>')}</div>`;
+  return caixa('⏱ Tempos por etapa', cards + '<h4>Geral</h4>' + tab(t.geral) + '<h4>Balcão</h4>' + tab(t.balcao) + '<h4>App do cliente</h4>' + tab(t.app)
+      + '<h4>Tempo médio (pago → entregue) por hora do dia</h4>' + barras(t.por_hora, (x) => String(x.hora).padStart(2, '0') + 'h (' + x.pedidos + ')', (x) => x.media, mm)
+      + '<h4>Pedidos mais lentos</h4>' + (t.mais_lentos.length ? t.mais_lentos.map((x) => `<div>• ${x.origem === 'celular' ? '📱' : '🍸'} <b>#${esc(x.numero)}</b> ${esc(x.nome ?? '')} — ${mm(x.minutos)} (fila ${mm(x.fila)}, preparo ${mm(x.preparo)})</div>`).join('') : '<p class="mut">—</p>'),
+    `Gravado pedido a pedido: cada mudança de etapa guarda a hora, e estas médias se somam sozinhas. Esperas acima de ${t.max_considerado_min} min ficam de fora (pedido esquecido). ${t.sem_registro ? `${t.sem_registro} venda(s) não passaram pela tela de Produção e não têm fila/preparo.` : ''}`);
+}
+function pessoasHtml(d) {
+  const c = d.clientes;
+  return caixa('👥 Equipe e clientes', `<div class="dp-grid">${card('Pedidos de clientes cadastrados', c.pedidos, `<span class="mut">${c.distintos} cliente(s) · ${brl(c.fat)}</span>`)}${card('Clientes novos', c.novos)}${card('Pontos distribuídos', fmt(c.pontos_dados, 0))}</div>`
+    + '<h4>Vendas por operador</h4>' + barras(d.operadores, (x) => `${x.operador} (${x.vendas})`, (x) => x.fat, brl));
+}
 async function carregarDesempenho() {
   const n = +$('#dpPeriodo').value, hoje = new Date(Date.now() - 9 * 3600e3).toISOString().slice(0, 10), de = new Date(Date.parse(hoje + 'T12:00:00Z') - n * 864e5).toISOString().slice(0, 10);
   let d; try { d = await chamarConta(`/api/desempenho?de=${de}&ate=${hoje}`, null, 'GET'); } catch (e) { return ($('#dpCorpo').innerHTML = `<p class="neg">${esc(e.message)}</p>`); }
@@ -511,6 +531,7 @@ async function carregarDesempenho() {
     ${card('Perdas e diferenças', brl(d.perdas + d.diferenca_sumiu), `<span class="mut">perda registrada ${brl(d.perdas)} · sumiu na contagem ${brl(d.diferenca_sumiu)}</span>`)}
     ${card('Compras no período', brl(d.compras.total), `<span class="mut">${d.compras.qtd} compra(s)</span>`)}${card('Estoque agora', `${d.estoque.itens_esgotados} esgotado(s)`, `<span class="mut">${d.estoque.itens_em_alerta} em alerta</span>`)}</div>`
     + (avisos.length ? caixa('⚠ O que olhar', avisos.map((a) => `<div>• ${esc(a)}</div>`).join('')) : '')
+    + temposHtml(d) + pessoasHtml(d)
     + caixa('Faturamento por dia', barras(d.dias, (x) => x.dia.split('-').reverse().slice(0, 2).join('/'), (x) => x.fat, brl))
     + caixa('Horário de pico (venda no Mukifo)', barras(d.hora, (x) => String(x.hora).padStart(2, '0') + 'h', (x) => x.fat, brl), 'Só vendas lançadas aqui; relatório importado não traz o horário.')
     + caixa('Média por dia da semana', barras(d.media_por_dia_semana, (x) => `${x.dia} (${x.dias}×)`, (x) => x.media, brl))

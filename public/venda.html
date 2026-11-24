@@ -174,13 +174,18 @@ $('#dOk').onclick = async () => { try { if (!forma) throw new Error('Escolha a f
 const abas = (qual) => { if (qual !== 'R' && typeof fecharCamera === 'function') fecharCamera(); $('#telaV').hidden = qual !== 'V'; $('#telaR').hidden = qual !== 'R'; $('#telaH').hidden = qual !== 'H'; for (const k of 'VRH') $('#a' + k).classList.toggle('on', k === qual); };
 const ROTULO = { entregue: 'Entregue', recebido: 'Pago · na fila', preparando: 'Preparando', pronto: 'Pronto', cancelado: 'Cancelado', aguardando_pagamento: 'Aguardando pagamento' };
 const FORMA = { pix: 'Pix', debito: 'Débito', credito: 'Crédito', dinheiro: 'Dinheiro' };
+const minEnt = (a, b) => { const d = (Date.parse(String(b).replace(' ', 'T') + 'Z') - Date.parse(String(a).replace(' ', 'T') + 'Z')) / 60000; return a && b && d >= 0 ? Math.round(d * 10) / 10 : null; };
+function etapasTxt(p) {   // tempo de cada etapa, registrado pedido a pedido
+  const t = [['pagou em', minEnt(p.criado_em, p.pago_em)], ['fila', minEnt(p.pago_em, p.preparo_em)], ['preparo', minEnt(p.preparo_em, p.pronto_em)], ['retirada', p.origem === 'celular' ? minEnt(p.pronto_em, p.retirado_em) : null]].filter(([, v]) => v != null);
+  return t.length ? `<div class="mut" style="margin-top:4px">⏱ ${t.map(([k, v]) => `${k} ${String(v).replace('.', ',')} min`).join(' · ')}</div>` : '';
+}
 async function lerHistorico() {
   const r = await api('/api/venda/historico' + ($('#hDia').value ? '?dia=' + $('#hDia').value : '')); $('#hDia').value = r.dia;   // sem data: o servidor usa o dia do turno
   const validos = r.pedidos.filter((p) => p.status !== 'cancelado'), soma = validos.reduce((s, p) => s + p.total, 0);
   $('#hResumo').textContent = `${validos.length} pedido(s) · ${R$(soma)}` + (r.pedidos.length > validos.length ? ` · ${r.pedidos.length - validos.length} cancelado(s)` : '');
   $('#hLista').innerHTML = r.pedidos.length ? r.pedidos.map((p) => `<div class="ret" style="margin-bottom:8px${p.status === 'cancelado' ? ';opacity:.55' : ''}"><div style="display:flex;justify-content:space-between;gap:8px"><b>#${p.numero} ${p.origem === 'celular' ? '📱' : '🍸'} ${p.nome_cliente ?? ''}</b><b>${R$(p.total)}</b></div>
     <div class="mut">${new Date(String(p.criado_em).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} · ${ROTULO[p.status] ?? p.status}${p.pagamentos.length ? ' · ' + p.pagamentos.map((c) => `${FORMA[c.forma] ?? c.forma} ${R$(c.valor)}`).join(' + ') : ''}</div>
-    <div>${p.itens.map((i) => `${i.quantidade}× ${i.nome}`).join(', ')}</div></div>`).join('') : '<p class="mut">Nenhum pedido neste dia.</p>';
+    <div>${p.itens.map((i) => `${i.quantidade}× ${i.nome}`).join(', ')}</div>${etapasTxt(p)}</div>`).join('') : '<p class="mut">Nenhum pedido neste dia.</p>';
 }
 $('#aH').onclick = () => { abas('H'); lerHistorico().catch((e) => msg(e.message, true)); };
 $('#hDia').onchange = () => lerHistorico().catch((e) => msg(e.message, true));

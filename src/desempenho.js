@@ -10,6 +10,60 @@ const somarDias = (iso, n) => new Date(new Date(iso + 'T12:00:00Z').getTime() + 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const pct = (a, b) => (b ? Math.round(((a - b) / b) * 1000) / 10 : null);
 
+// ---- tempos entre as etapas do pedido (balcão e app) ----
+const MAX_ESPERA_MIN = 180;   // esperas acima disso são pedido esquecido/aberto de um dia para o outro: ficam fora da média
+const ms = (t) => (t ? Date.parse(String(t).replace(' ', 'T') + 'Z') : NaN);
+const minEntre = (a, b) => { const d = (ms(b) - ms(a)) / 60000; return Number.isFinite(d) && d >= 0 ? d : null; };
+function resumoTempos(valores) {
+  const ok = valores.filter((v) => v != null && v <= MAX_ESPERA_MIN).sort((x, y) => x - y);
+  if (!ok.length) return { n: 0, media: null, mediana: null, p90: null, max: null, descartados: valores.filter((v) => v != null).length };
+  const at = (q) => ok[Math.min(ok.length - 1, Math.floor(q * ok.length))];
+  const r1 = (x) => Math.round(x * 10) / 10;
+  return { n: ok.length, media: r1(ok.reduce((s, v) => s + v, 0) / ok.length), mediana: r1(at(0.5)), p90: r1(at(0.9)), max: r1(ok[ok.length - 1]), descartados: valores.filter((v) => v != null).length - ok.length };
+}
+export async function tempos(db, de, ate) {
+  const { results } = await db.prepare(`SELECT id, numero, origem, nome_cliente, criado_em, pago_em, preparo_em, pronto_em, retirado_em, status FROM pedido
+    WHERE origem IN ('balcao', 'celular') AND dia BETWEEN ? AND ? AND status NOT IN ('cancelado', 'aberta', 'aguardando_pagamento')`).bind(de, ate).all();
+  const etapas = (p) => {
+    const fim = p.origem === 'celular' ? p.retirado_em : p.pronto_em;   // app termina no QR; balcão, ao marcar pronto
+    return {
+      pagamento: minEntre(p.criado_em, p.pago_em), fila: minEntre(p.pago_em, p.preparo_em), preparo: minEntre(p.preparo_em, p.pronto_em),
+      retirada: p.origem === 'celular' ? minEntre(p.pronto_em, p.retirado_em) : null, pago_ate_fim: minEntre(p.pago_em, fim), total: minEntre(p.criado_em, fim),
+    };
+  };
+  const linhas = results.map((p) => ({ p, e: etapas(p) }));
+  const tabela = (sel) => { const o = {}; for (const k of ['pagamento', 'fila', 'preparo', 'retirada', 'pago_ate_fim', 'total']) o[k] = resumoTempos(sel.map((l) => l.e[k])); return o; };
+  const porHora = new Map();
+  for (const l of linhas) {
+    const h = Number.isFinite(ms(l.p.pago_em)) ? new Date(ms(l.p.pago_em) - 3 * 3600e3).getUTCHours() : null;
+    if (h == null || l.e.pago_ate_fim == null || l.e.pago_ate_fim > MAX_ESPERA_MIN) continue;
+    const x = porHora.get(h) ?? { hora: h, pedidos: 0, soma: 0 }; x.pedidos++; x.soma += l.e.pago_ate_fim; porHora.set(h, x);
+  }
+  const lentos = linhas.filter((l) => l.e.pago_ate_fim != null && l.e.pago_ate_fim <= MAX_ESPERA_MIN).sort((a, b) => b.e.pago_ate_fim - a.e.pago_ate_fim).slice(0, 5)
+    .map((l) => ({ numero: l.p.numero, origem: l.p.origem, nome: l.p.nome_cliente, minutos: Math.round(l.e.pago_ate_fim * 10) / 10, fila: l.e.fila == null ? null : Math.round(l.e.fila * 10) / 10, preparo: l.e.preparo == null ? null : Math.round(l.e.preparo * 10) / 10 }));
+  const comPreparo = linhas.filter((l) => l.e.preparo != null && l.e.preparo <= MAX_ESPERA_MIN);
+  return {
+    pedidos: results.length, geral: tabela(linhas), balcao: tabela(linhas.filter((l) => l.p.origem === 'balcao')), app: tabela(linhas.filter((l) => l.p.origem === 'celular')),
+    por_hora: [...porHora.values()].sort((a, b) => a.hora - b.hora).map((x) => ({ hora: x.hora, pedidos: x.pedidos, media: Math.round((x.soma / x.pedidos) * 10) / 10 })),
+    mais_lentos: lentos, meta_min: 10,
+    acima_da_meta_pct: comPreparo.length ? Math.round((linhas.filter((l) => l.e.pago_ate_fim != null && l.e.pago_ate_fim <= MAX_ESPERA_MIN && l.e.pago_ate_fim > 10).length / Math.max(1, linhas.filter((l) => l.e.pago_ate_fim != null && l.e.pago_ate_fim <= MAX_ESPERA_MIN).length)) * 100) : null,
+    sem_registro: results.filter((p) => !p.preparo_em).length,   // vendas que não passaram pela tela de produção: não entram nas médias de fila/preparo
+    max_considerado_min: MAX_ESPERA_MIN,
+  };
+}
+
+// ---- equipe e clientes ----
+export async function extras(db, de, ate) {
+  const q = (sql, ...b) => db.prepare(sql).bind(...b).all().then((r) => r.results);
+  const [ops, cli, novos, pontos] = await Promise.all([
+    q(`SELECT COALESCE(operador, 'sem registro') AS operador, COUNT(*) AS vendas, SUM(total) AS fat FROM pedido p WHERE ${VENDA} AND origem IN ('balcao', 'celular') AND dia BETWEEN ? AND ? GROUP BY operador ORDER BY fat DESC`, de, ate),
+    db.prepare(`SELECT COUNT(*) AS pedidos, COUNT(DISTINCT cliente_id) AS clientes, COALESCE(SUM(total), 0) AS fat FROM pedido p WHERE ${VENDA} AND cliente_id IS NOT NULL AND dia BETWEEN ? AND ?`).bind(de, ate).first(),
+    db.prepare("SELECT COUNT(*) AS n FROM cliente WHERE date(datetime(criado_em, '-3 hours')) BETWEEN ? AND ?").bind(de, ate).first(),
+    db.prepare("SELECT COALESCE(SUM(CASE WHEN pontos > 0 THEN pontos END), 0) AS dados FROM ponto_mov WHERE date(datetime(criado_em, '-3 hours')) BETWEEN ? AND ?").bind(de, ate).first(),
+  ]);
+  return { operadores: ops.map((o) => ({ ...o, fat: r2(o.fat) })), clientes: { pedidos: cli.pedidos, distintos: cli.clientes, fat: r2(cli.fat), novos: novos.n, pontos_dados: pontos.dados } };
+}
+
 export async function periodo(db, de, ate) {
   const q = (sql, ...b) => db.prepare(sql).bind(...b).all().then((r) => r.results);
   const um = (sql, ...b) => db.prepare(sql).bind(...b).first();
@@ -78,11 +132,12 @@ export async function getDesempenho(request, env, url) {
   const n = Math.round((new Date(ate) - new Date(de)) / 864e5) + 1;
   if (n > 366) return json({ erro: 'Escolha no máximo 1 ano.' }, 400);
   const antesAte = somarDias(de, -1), antesDe = somarDias(de, -n);
-  const [atual, anterior, alertas, esgot] = await Promise.all([
+  const [atual, anterior, alertas, esgot, tmp, tmpAnt, ext] = await Promise.all([
     periodo(db, de, ate), periodo(db, antesDe, antesAte),
     db.prepare(`SELECT COUNT(*) AS n FROM insumo i WHERE ativo = 1 AND minimo_alerta IS NOT NULL AND COALESCE((SELECT SUM(quantidade) FROM movimento_estoque WHERE insumo_id = i.id), 0) <= minimo_alerta`).first(),
     db.prepare(`SELECT COUNT(*) AS n FROM insumo i WHERE ativo = 1 AND (EXISTS (SELECT 1 FROM movimento_estoque WHERE insumo_id = i.id AND tipo <> 'venda') OR EXISTS (SELECT 1 FROM contagem WHERE insumo_id = i.id))
                 AND COALESCE((SELECT SUM(quantidade) FROM movimento_estoque WHERE insumo_id = i.id), 0) <= 0`).first(),
+    tempos(db, de, ate), tempos(db, antesDe, antesAte), extras(db, de, ate),
   ]);
   const dow = new Map(); for (const d of atual.dias) { const w = new Date(d.dia + 'T12:00:00Z').getUTCDay(); const x = dow.get(w) ?? { dia: DIAS_SEMANA[w], dias: 0, fat: 0 }; x.dias++; x.fat += d.fat; dow.set(w, x); }
   return json({
@@ -90,5 +145,6 @@ export async function getDesempenho(request, env, url) {
     variacao: { fat_pct: pct(atual.fat, anterior.fat), vendas_pct: pct(atual.vendas, anterior.vendas), ticket_pct: pct(atual.ticket, anterior.ticket) },
     ...atual, media_por_dia_semana: [...dow.values()].map((x) => ({ dia: x.dia, media: r2(x.fat / x.dias), dias: x.dias })),
     estoque: { itens_em_alerta: alertas.n, itens_esgotados: esgot.n },
+    tempos: { ...tmp, anterior_total_media: tmpAnt.geral.pago_ate_fim.media }, ...ext,
   });
 }

@@ -211,7 +211,7 @@ async function resumo(db, url) {
 async function historico(db, url) {
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('dia') ?? '') ? url.searchParams.get('dia') : diaDoTurno();
   const [{ results: peds }, { results: itens }, { results: pags }] = await Promise.all([
-    db.prepare(`SELECT id, numero, origem, status, nome_cliente, total, criado_em FROM pedido
+    db.prepare(`SELECT id, numero, origem, status, nome_cliente, total, criado_em, pago_em, preparo_em, pronto_em, retirado_em FROM pedido
                 WHERE origem IN ('balcao','celular') AND dia = ? AND status <> 'aberta' ORDER BY criado_em DESC, id DESC LIMIT 500`).bind(dia).all(),
     db.prepare(`SELECT ip.pedido_id, ip.nome, ip.quantidade FROM item_pedido ip JOIN pedido p ON p.id = ip.pedido_id
                 WHERE p.origem IN ('balcao','celular') AND p.dia = ? ORDER BY ip.id`).bind(dia).all(),

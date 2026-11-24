@@ -240,3 +240,17 @@ test('produção (kanban): pedido pronto no balcão passa para a coluna entregue
   const j = (await chamar('/api/producao')).corpo;
   assert.ok(!j.pedidos.some((p) => p.id === id)); assert.ok(j.entregues.some((e) => e.id === id && e.itens.length === 1));
 });
+
+test('desempenho: tempos entre etapas são calculados dos carimbos de cada pedido', async () => {
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const id = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda.id;
+  await chamar(`/api/venda/comandas/${id}/itens`, 'POST', { produto_id: prod, delta: 1 });
+  await chamar(`/api/venda/comandas/${id}/cobrar`, 'POST', { forma: 'dinheiro' });
+  await chamar(`/api/producao/${id}/preparo`, 'POST', { acao: 'preparando' });
+  await chamar(`/api/producao/${id}/preparo`, 'POST', { acao: 'pronto' });
+  // forçamos horas conhecidas: pagou 10:00, começou 10:03, ficou pronto 10:08
+  await env.DB.prepare("UPDATE pedido SET dia = '2026-01-01', criado_em = '2026-01-01 12:58:00', pago_em = '2026-01-01 13:00:00', preparo_em = '2026-01-01 13:03:00', pronto_em = '2026-01-01 13:08:00' WHERE id = ?").bind(id).run();
+  const t = (await chamar('/api/desempenho?de=2026-01-01&ate=2026-01-01')).corpo.tempos;   // dia isolado dos outros testes
+  assert.equal(t.balcao.fila.media, 3); assert.equal(t.balcao.preparo.media, 5); assert.equal(t.balcao.pagamento.media, 2); assert.equal(t.balcao.pago_ate_fim.media, 8);
+  assert.ok(t.por_hora.some((h) => h.hora === 10 && h.media === 8));   // 13:00 UTC = 10h em Brasília
+});
