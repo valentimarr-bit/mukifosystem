@@ -12,6 +12,7 @@ export const MODULOS = [
   { id: 'registrar', nome: 'Registrar compras, contagem e relatório', padrao: true },
   { id: 'fornecedores', nome: 'Fornecedores', padrao: true },
   { id: 'clientes', nome: 'Clientes, pontos e níveis', padrao: true },
+  { id: 'campeonato', nome: 'Campeonato de sinuca', padrao: true },
   { id: 'desempenho', nome: 'Desempenho (relatórios e indicadores)', padrao: false },
   { id: 'financeiro', nome: 'Financeiro (resultado, contas, fluxo, taxas)', padrao: false },
   { id: 'excel', nome: 'Excel (importar e exportar)', padrao: false },
@@ -30,6 +31,7 @@ export function moduloDaRota(p) {
   if (p === '/api/venda/cardapio') return null;
   if (p.startsWith('/api/venda/')) return 'venda';
   if (p.startsWith('/api/producao')) return 'producao';
+  if (p.startsWith('/api/campeonato/gestao')) return 'campeonato';
   if (p.startsWith('/api/clientes')) return 'clientes';
   if (p.startsWith('/api/fornecedores')) return 'fornecedores';
   if (p.startsWith('/api/planilhas')) return 'excel';

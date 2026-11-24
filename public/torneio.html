@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Mesa do campeonato</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a,header button{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:15px;cursor:pointer}
+main{max-width:860px;margin:0 auto;padding:12px 12px 90px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.card h2,.card h3{margin:0 0 8px}
+.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
+label{display:block;margin:10px 0 4px;color:var(--mut);font-size:14px}input,select{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1;min-width:0}.row>.fixo{flex:0 0 auto}
+.btn{min-height:50px;border-radius:12px;border:0;font-size:17px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;padding:0 16px;width:100%;margin-top:8px}.btn.sec{background:var(--input);color:var(--txt);border:1px solid var(--line);font-weight:500}.btn.ok{background:var(--ok);color:var(--on-ok)}.btn.mini{width:auto;min-height:42px;margin:0;font-size:15px;padding:0 12px}.btn:disabled{opacity:.5}
+.mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}
+.ins{display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding:8px 0;flex-wrap:wrap}.ins .n{flex:1;min-width:140px;overflow-wrap:anywhere}
+.jg{border:2px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;background:var(--input)}.jg.em_jogo{border-color:var(--warn)}.jg.pronta{border-color:var(--acc)}.jg.finalizada{opacity:.75}
+.jg .j{display:flex;align-items:center;gap:8px;padding:6px 0}.jg .j .nm{flex:1;min-width:0;font-size:19px;font-weight:700;overflow-wrap:anywhere}.jg .j .pl{font-size:34px;font-weight:900;min-width:44px;text-align:center}.jg .j.v .nm{color:var(--ok)}
+.jg .t{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;margin-bottom:4px}.passo{width:56px;height:56px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:28px;font-weight:800;cursor:pointer}
+#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}.erro{color:var(--bad)}
+</style></head><body data-sem-botao-visual>
+<header><h1>🎱 Mesa do campeonato</h1><a href="/campeonato.html" target="_blank">Ver como jogador</a><a href="/gestao.html">Gestão</a></header>
+<main id="m"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const G = '/api/campeonato/gestao';
+let token = Mukifo.token(), modId = null, timer, trava = 0;
+async function api(url, corpo) {
+  const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); desenhar(); }); throw new Error(j.erro || 'Entre de novo'); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
+const ROT = { inscricoes: 'Inscrições', andamento: 'Em andamento', encerrada: 'Encerrada', aberto: 'Aberto', encerrado: 'Encerrado' };
+const fase = (f, R, c) => c === 'T' ? '3º lugar' : f === R ? 'Final' : f === R - 1 ? 'Semifinal' : f === R - 2 ? 'Quartas' : `Rodada ${f}`;
+
+async function lista() {
+  const { campeonatos } = await api(G);
+  return `<div class="card"><h2>Novo campeonato</h2><div class="row"><div><label>Nome</label><input id="cNome" maxlength="60" placeholder="Copa Mukifo"></div><div><label>Data</label><input id="cData" type="date"></div></div><label>Local (opcional)</label><input id="cLocal" maxlength="60"><button class="btn" data-acao="novoCamp">Criar campeonato</button></div>`
+    + campeonatos.map((c) => `<div class="card"><h2>${esc(c.nome)} <span class="chip">${ROT[c.status]}</span></h2><div class="mut">${c.data ? new Date(c.data + 'T12:00:00').toLocaleDateString('pt-BR') : 'sem data'}${c.local ? ' · ' + esc(c.local) : ''}</div>
+      ${c.modalidades.map((m) => `<div class="mod" data-mod="${m.id}"><div><b>${esc(m.nome)}</b><div class="mut">${m.taxa > 0 ? R$(m.taxa) : 'grátis'} · ${m.pagas} pago${m.pagas === 1 ? '' : 's'}${m.pendentes ? ` · ${m.pendentes} esperando Pix` : ''}</div></div><span class="chip">${ROT[m.status]}</span></div>`).join('')}
+      <details style="margin-top:10px"><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">➕ Nova modalidade</summary>
+        <label>Nome (ex.: Bola 8, Bola 9, Duplas)</label><input data-f="nome" maxlength="40"><div class="row"><div><label>Taxa (R$)</label><input data-f="taxa" inputmode="decimal" value="0"></div><div><label>Vagas (opcional)</label><input data-f="vagas" inputmode="numeric"></div></div>
+        <label>Prêmio em % do arrecadado (1º, 2º, 3º…)</label><input data-f="premio" value="50,25,15"><div class="mut">O que sobrar fica com a casa.</div><button class="btn" data-acao="novaMod" data-camp="${c.id}">Criar modalidade</button></details>
+      <button class="btn sec" data-acao="${c.status === 'aberto' ? 'encerrarCamp' : 'reabrirCamp'}" data-camp="${c.id}">${c.status === 'aberto' ? 'Encerrar campeonato' : 'Reabrir campeonato'}</button></div>`).join('');
+}
+function cartaoJogo(p, R) {
+  const pode = p.a && p.b, fim = p.status === 'finalizada', jog = (x, pl, lado, v) => x ? `<div class="j ${v ? 'v' : ''}"><span class="nm">${esc(x.nome)}</span>${fim ? '' : `<button class="passo" data-acao="pt" data-p="${p.id}" data-lado="${lado}" data-d="-1" aria-label="menos um">−</button>`}<span class="pl">${pl}</span>${fim ? '' : `<button class="passo" data-acao="pt" data-p="${p.id}" data-lado="${lado}" data-d="1" aria-label="mais um">+</button>`}</div>` : '<div class="j"><span class="nm mut">a definir</span></div>';
+  return `<div class="jg ${p.status}"><div class="t"><b>${fase(p.fase, R, p.chave)}</b><span>${{ aguardando: 'aguardando', pronta: 'pode começar', em_jogo: '🔴 em jogo', finalizada: 'terminada' }[p.status]}</span></div>
+    ${jog(p.a, p.placar_a, 'a', fim && p.vencedor_id === p.a?.id)}${jog(p.b, p.placar_b, 'b', fim && p.vencedor_id === p.b?.id)}
+    ${pode && !fim ? `<div class="row" style="margin-top:6px"><input data-mesa="${p.id}" placeholder="Mesa" value="${esc(p.mesa ?? '')}" maxlength="12" style="min-height:44px"><button class="btn ok mini fixo" data-acao="fim" data-p="${p.id}">Finalizar</button></div>` : ''}
+    ${fim && p.a && p.b ? `<button class="btn sec mini" style="margin-top:6px" data-acao="corrigir" data-p="${p.id}">Corrigir resultado</button>` : ''}</div>`;
+}
+async function modalidade() {
+  const d = await api(`${G}/modalidades/${modId}`), R = d.rodadas;
+  const insc = d.status === 'inscricoes';
+  const ins = d.inscritos.map((i) => `<div class="ins"><span class="n">${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
+    ${i.status === 'pendente' ? `<button class="btn ok mini" data-acao="conf" data-i="${i.id}">Recebi o Pix</button>` : ''}${insc ? `<button class="btn sec mini" data-acao="canc" data-i="${i.id}">Tirar</button>` : ''}</div>`).join('') || '<p class="mut">Ninguém inscrito ainda.</p>';
+  const pr = d.premiacao.premios.filter((x) => x.valor > 0).map((x) => `${x.colocacao}º ${R$(x.valor)}`).join(' · ');
+  const ordem = [...d.partidas].sort((a, b) => ({ em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[a.status] - { em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[b.status]) || a.fase - b.fase || a.pos - b.pos).filter((p) => p.a || p.b);
+  return `<button class="btn sec" data-acao="voltar" style="margin:0 0 12px">← Campeonatos</button>
+    <div class="card"><h2>${esc(d.nome)} <span class="chip">${ROT[d.status]}</span></h2><div class="mut">${esc(d.campeonato)} · ${d.pagas} pago${d.pagas === 1 ? '' : 's'} · arrecadado ${R$(d.taxa * d.pagas)}${pr ? ' · prêmios: ' + pr : ''}</div>${d.campeao ? `<h3 style="margin-top:10px">🏆 Campeão: ${esc(d.campeao)}</h3>` : ''}</div>
+    ${d.status !== 'encerrada' && !d.partidas.some((p) => p.status === 'em_jogo' || (p.status === 'finalizada' && p.a && p.b)) ? `<div class="card"><h3>${insc ? 'Fechar inscrições e sortear' : 'Sortear de novo'}</h3><p class="mut">Só entram jogadores com inscrição paga. Com número ímpar, os primeiros sorteados folgam na 1ª rodada.</p><button class="btn" data-acao="sortear">${insc ? '🎲 Sortear chave' : '🎲 Refazer sorteio'}</button></div>` : ''}
+    ${d.partidas.length ? `<div class="card"><h3>Jogos</h3>${ordem.map((p) => cartaoJogo(p, R)).join('') || '<p class="mut">Sem jogos.</p>'}</div>` : ''}
+    <div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${ins}${insc ? `<label>Inscrever no balcão (pagou em dinheiro ou maquininha)</label><div class="row"><input id="bNome" placeholder="Nome do jogador" maxlength="40"><button class="btn fixo" style="width:auto;margin:0" data-acao="balcao">Inscrever</button></div>` : ''}</div>`;
+}
+async function desenhar() {
+  if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); desenhar(); });
+  if (Date.now() < trava) return;
+  const foco = document.activeElement, guarda = foco && foco.matches?.('input') && foco.value ? { chave: foco.id || foco.dataset.mesa, v: foco.value } : null;
+  try { $('#m').innerHTML = modId ? await modalidade() : await lista(); } catch (e) { if (!$('#m').children.length || $('#m').textContent === 'Carregando…') $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
+  clearInterval(timer); timer = setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input,details[open] *')) desenhar(); }, 5000);
+}
+const pega = (el, f) => el.closest('details').querySelector(`[data-f=${f}]`).value;
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-acao],[data-mod]'); if (!t) return;
+  if (t.dataset.mod) { modId = t.dataset.mod; scrollTo(0, 0); return desenhar(); }
+  const a = t.dataset.acao; t.disabled = true;
+  try {
+    if (a === 'voltar') { modId = null; }
+    else if (a === 'novoCamp') { await api(`${G}/campeonatos`, { nome: $('#cNome').value, data: $('#cData').value, local: $('#cLocal').value }); aviso('Campeonato criado.'); }
+    else if (a === 'novaMod') { const premio = pega(t, 'premio').split(',').map((x) => Number(x.trim().replace(',', '.'))).filter((x) => !Number.isNaN(x)); await api(`${G}/campeonatos/${t.dataset.camp}/modalidades`, { nome: pega(t, 'nome'), taxa: Number(pega(t, 'taxa').replace(',', '.')) || 0, vagas: pega(t, 'vagas') || null, premio }); aviso('Modalidade criada.'); }
+    else if (a === 'encerrarCamp' || a === 'reabrirCamp') await api(`${G}/campeonatos/${t.dataset.camp}/${a === 'encerrarCamp' ? 'encerrar' : 'reabrir'}`, {});
+    else if (a === 'conf') { await api(`${G}/inscricoes/${t.dataset.i}/confirmar`, {}); aviso('Inscrição paga ✅'); }
+    else if (a === 'canc') { if (!confirm('Tirar esse jogador da modalidade?')) { t.disabled = false; return; } const r = await api(`${G}/inscricoes/${t.dataset.i}/cancelar`, {}); aviso(r.reembolso === 'saldo' ? 'Tirado. O valor voltou para a carteira dele.' : r.reembolso === 'manual' ? 'Tirado. Devolva o valor pago a ele (Pix ou dinheiro).' : 'Tirado.'); }
+    else if (a === 'balcao') { await api(`${G}/modalidades/${modId}/inscrever`, { nome: $('#bNome').value }); aviso('Inscrito ✅'); }
+    else if (a === 'sortear') { if (!confirm('Sortear a chave agora? Isso fecha as inscrições.')) { t.disabled = false; return; } await api(`${G}/modalidades/${modId}/sortear`, {}); aviso('Chave sorteada 🎲'); }
+    else if (a === 'pt') {
+      const card = t.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent)), i = t.dataset.lado === 'a' ? 0 : 1;
+      pl[i] = Math.max(0, Math.min(99, pl[i] + Number(t.dataset.d)));
+      await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: card.querySelector('[data-mesa]')?.value ?? undefined });
+    } else if (a === 'fim') {
+      const card = t.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent));
+      if (pl[0] === pl[1]) { aviso('Sinuca não empata: ajuste o placar.'); t.disabled = false; return; }
+      if (!confirm(`Finalizar ${pl[0]} × ${pl[1]}?`)) { t.disabled = false; return; }
+      await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: card.querySelector('[data-mesa]')?.value ?? undefined, finalizar: true }); aviso('Resultado salvo. O vencedor já avançou.');
+    } else if (a === 'corrigir') { await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { reabrir: true }); aviso('Reaberta: ajuste o placar e finalize.'); }
+  } catch (er) { aviso(er.message); }
+  t.disabled = false; trava = 0; desenhar();
+});
+document.addEventListener('change', async (e) => {
+  const el = e.target.closest('[data-mesa]'); if (!el) return;
+  const card = el.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent)), id = el.dataset.mesa;
+  try { await api(`${G}/partidas/${encodeURIComponent(id)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: el.value }); } catch (er) { aviso(er.message); }
+});
+desenhar();
+</script></body></html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icone.svg">
+<title>Mukifo · Campeonato de sinuca</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a,.nav button{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:15px;cursor:pointer}
+.nav{display:flex;gap:8px;padding:10px 12px;max-width:760px;margin:0 auto}.nav button{flex:1;justify-content:center}.nav button[aria-pressed=true]{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
+main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2,.card h3{margin:0 0 6px}.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
+.btn{width:100%;min-height:54px;border-radius:14px;border:0;font-size:18px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px}.btn:disabled{opacity:.5}
+.mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}.mod:first-of-type{border-top:0}.mod b{font-size:19px}
+.chave{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.rod{min-width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;scroll-snap-align:start}.rod>h4{margin:0;text-align:center;color:var(--mut);font-size:14px;letter-spacing:.05em}
+.jg{background:var(--input);border:1px solid var(--line);border-radius:12px;overflow:hidden}.jg.vivo{border-color:var(--warn,#ffb347);box-shadow:0 0 0 2px var(--warn,#ffb347)}.jg .l{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;font-size:16px}.jg .l+.l{border-top:1px solid var(--line)}.jg .l.v{font-weight:800;color:var(--ok)}.jg .l.vazio{color:var(--mut);font-style:italic}.jg .m{font-size:12px;color:var(--mut);padding:0 10px 6px}
+.pos{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.pos:first-of-type{border-top:0}.pos .n{width:34px;font-weight:800;text-align:center}.pos .p{flex:1;min-width:0;overflow-wrap:anywhere}.pos .pt{font-weight:800}
+select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
+.erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
+</style></head><body data-sem-botao-visual>
+<header><h1>🎱 Campeonato de sinuca</h1><a href="/cliente.html">🍸 Cardápio</a></header>
+<div class="nav"><button data-aba="camps" aria-pressed="true">Campeonatos</button><button data-aba="rank" aria-pressed="false">Ranking</button></div>
+<main id="m"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/qrcode.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let conta = null; try { conta = JSON.parse(localStorage.getItem('mukifo_conta') || 'null'); } catch {}
+let aba = 'camps', modId = null, timer = null, pagando = null;
+async function api(url, corpo) {
+  const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...(conta?.token ? { 'X-Sessao-Cliente': conta.token } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
+const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
+const ROT = { aberto: 'Inscrições abertas', inscricoes: 'Inscrições abertas', andamento: 'Em andamento', encerrada: 'Encerrada', encerrado: 'Encerrado' };
+function rotuloFase(f, R, chave) { if (chave === 'T') return '3º lugar'; if (f === R) return 'Final'; if (f === R - 1) return 'Semifinal'; if (f === R - 2) return 'Quartas'; return `Rodada ${f}`; }
+function jogo(p) {
+  const lado = (x, pl, venc) => x ? `<div class="l ${venc ? 'v' : ''}"><span>${esc(x.nome)}</span><b>${p.status === 'aguardando' || p.status === 'pronta' ? '' : pl}</b></div>` : '<div class="l vazio"><span>a definir</span></div>';
+  const fim = p.status === 'finalizada';
+  return `<div class="jg ${p.status === 'em_jogo' ? 'vivo' : ''}">${lado(p.a, p.placar_a, fim && p.vencedor_id === p.a?.id)}${lado(p.b, p.placar_b, fim && p.vencedor_id === p.b?.id)}${p.mesa || p.status === 'em_jogo' ? `<div class="m">${p.status === 'em_jogo' ? '🔴 ao vivo' : ''}${p.mesa ? ` · mesa ${esc(p.mesa)}` : ''}</div>` : ''}</div>`;
+}
+function chave(d) {
+  if (!d.partidas.length) return '<p class="mut">A chave aparece aqui quando as inscrições fecharem e a equipe fizer o sorteio.</p>';
+  const R = d.rodadas, cols = [];
+  for (let f = 1; f <= R; f++) {
+    const ps = d.partidas.filter((p) => p.fase === f && p.chave === 'W').filter((p) => !(f === 1 && (!p.a || !p.b)));
+    const todos = d.partidas.filter((p) => p.fase === f && p.chave === 'W');
+    if (todos.length) cols.push(`<div class="rod"><h4>${rotuloFase(f, R, 'W').toUpperCase()}</h4>${todos.map((p) => (f === 1 && (!p.a || !p.b) ? `<div class="jg"><div class="l"><span>${esc((p.a || p.b)?.nome)}</span><span class="mut">folga</span></div></div>` : jogo(p))).join('')}</div>`);
+  }
+  const t = d.partidas.find((p) => p.chave === 'T');
+  if (t) cols.push(`<div class="rod"><h4>3º LUGAR</h4>${jogo(t)}</div>`);
+  return `<div class="chave">${cols.join('')}</div>`;
+}
+function premiacao(d) {
+  const pr = d.premiacao.premios.filter((x) => x.valor > 0); if (!pr.length) return '';
+  return `<div class="mut">Premiação (hoje): ${pr.map((x) => `${x.colocacao}º ${R$(x.valor)}`).join(' · ')}</div>`;
+}
+async function telaCamps() {
+  const { campeonatos } = await api('/api/campeonato');
+  if (!campeonatos.length) return '<div class="card"><b>Nenhum campeonato por enquanto.</b><p class="mut">Assim que o Mukifo abrir um, ele aparece aqui.</p></div>';
+  return campeonatos.map((c) => `<div class="card"><h2>${esc(c.nome)}</h2><div class="mut">${c.data ? new Date(c.data + 'T12:00:00').toLocaleDateString('pt-BR') : ''}${c.local ? ' · ' + esc(c.local) : ''} · ${ROT[c.status]}</div>
+    ${c.modalidades.length ? c.modalidades.map((m) => `<div class="mod" data-mod="${m.id}"><div><b>${esc(m.nome)}</b><div class="mut">${m.taxa > 0 ? R$(m.taxa) : 'grátis'} · ${m.pagas} inscrito${m.pagas === 1 ? '' : 's'}${m.vagas ? ` de ${m.vagas}` : ''}</div></div><span class="chip">${ROT[m.status]}</span></div>`).join('') : '<p class="mut">Modalidades em breve.</p>'}</div>`).join('');
+}
+async function telaMod() {
+  const d = await api('/api/campeonato/modalidades/' + modId);
+  let minha = null; if (conta?.token) { try { minha = (await api('/api/campeonato/minhas')).inscricoes.find((i) => i.modalidade_id === modId) ?? null; } catch (e) { if (e.status === 401) { conta = null; try { localStorage.removeItem('mukifo_conta'); } catch {} } } }
+  let acao = '';
+  if (d.status === 'inscricoes') {
+    if (minha?.status === 'paga') acao = `<div class="card"><b>✅ Você está inscrito!</b><p class="mut">Volte aqui no dia: sua chave e seus jogos aparecem ao vivo.</p></div>`;
+    else if (minha?.status === 'pendente') acao = pagarHtml(minha);
+    else if (!conta) acao = `<div class="card"><b>Quer jogar?</b><p class="mut">Entre na sua conta do Mukifo para se inscrever.</p><a class="btn" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="/cliente.html">Entrar / criar conta</a></div>`;
+    else if (d.vagas && d.pagas >= d.vagas) acao = '<div class="card"><b>Vagas esgotadas.</b></div>';
+    else acao = `<div class="card"><b>${d.taxa > 0 ? `Inscrição ${R$(d.taxa)}` : 'Inscrição grátis'}</b>${d.taxa > 0 ? '<p class="mut">Pague por Pix e entre na chave.</p>' : ''}<button class="btn" id="bIns">Quero me inscrever</button>${d.taxa > 0 && (conta?.cliente?.saldo ?? 0) >= d.taxa ? `<button class="btn sec" id="bInsSaldo">Pagar com meu saldo (${R$(conta.cliente.saldo)})</button>` : ''}</div>`;
+  }
+  const insc = d.inscritos.length ? `<div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${d.inscritos.map((i) => `<span class="chip">${esc(i.nome)}</span>`).join('')}</div>` : '';
+  const camp = d.campeao ? `<div class="card" style="text-align:center"><div style="font-size:40px">🏆</div><h2>${esc(d.campeao)}</h2><div class="mut">Campeão · ${esc(d.nome)}</div></div>` : '';
+  return `<button class="btn sec" id="bVolta" style="margin:0 0 12px">← Campeonatos</button><div class="card"><h2>${esc(d.nome)}</h2><div class="mut">${esc(d.campeonato)} · ${ROT[d.status]}</div>${premiacao(d)}</div>${camp}${acao}<div class="card"><h3>Chave</h3>${chave(d)}</div>${insc}`;
+}
+function pagarHtml(i) {
+  return `<div class="card pixbox"><b>Falta pagar ${R$(i.valor)}</b><p class="mut">Abra o app do seu banco e pague com Pix. A inscrição confirma sozinha quando o balcão receber.</p>${i.pix ? `<img alt="QR Pix" src="${qrImg(i.pix)}"><code>${esc(i.pix)}</code><button class="btn" id="bCopia" data-pix="${esc(i.pix)}">Copiar Pix copia e cola</button>` : '<p class="erro">Pix indisponível. Fale com o balcão.</p>'}<p class="mut">Vale por 30 minutos.</p></div>`;
+}
+async function telaRank() {
+  const d = await api('/api/campeonato/ranking' + (aba === 'rank' && telaRank.mod ? '?modalidade=' + encodeURIComponent(telaRank.mod) : ''));
+  const sel = `<select id="rMod"><option value="">Todas as modalidades</option>${d.modalidades.map((n) => `<option ${n === telaRank.mod ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+  if (!d.ranking.length) return `<div class="card">${sel}<p class="mut">O ranking começa quando a primeira modalidade terminar.</p></div>`;
+  return `<div class="card">${sel}<div style="margin-top:8px">${d.ranking.map((r) => `<div class="pos"><span class="n">${r.posicao <= 3 ? ['🥇', '🥈', '🥉'][r.posicao - 1] : r.posicao + 'º'}</span><span class="p">${esc(r.nome)}<div class="mut">${r.torneios} torneio${r.torneios === 1 ? '' : 's'}${r.titulos ? ` · ${r.titulos} título${r.titulos === 1 ? '' : 's'}` : ''}${r.vices ? ` · ${r.vices} vice` : ''}</div></span><span class="pt">${r.pontos} pts</span></div>`).join('')}</div></div>`;
+}
+async function desenhar() {
+  const ativo = document.activeElement?.id;
+  try { $('#m').innerHTML = modId ? await telaMod() : aba === 'rank' ? await telaRank() : await telaCamps(); }
+  catch (e) { $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
+  document.querySelectorAll('.nav button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.aba === aba && !modId)));
+  clearInterval(timer); timer = setInterval(() => { if (!document.hidden && !pagando) desenhar(); }, 6000);
+  if (ativo === 'rMod') $('#rMod')?.focus();
+}
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('button,[data-mod]'); if (!t) return;
+  if (t.dataset.aba) { aba = t.dataset.aba; modId = null; return desenhar(); }
+  if (t.dataset.mod) { modId = t.dataset.mod; scrollTo(0, 0); return desenhar(); }
+  if (t.id === 'bVolta') { modId = null; return desenhar(); }
+  if (t.id === 'bCopia') { try { await navigator.clipboard.writeText(t.dataset.pix); aviso('Pix copiado. Cole no app do seu banco.'); } catch { aviso('Segure o texto do Pix para copiar.'); } return; }
+  if (t.id === 'bIns' || t.id === 'bInsSaldo') {
+    t.disabled = true;
+    try { const i = await api(`/api/campeonato/modalidades/${modId}/inscrever`, { pagar_com_saldo: t.id === 'bInsSaldo' }); aviso(i.status === 'paga' ? 'Inscrição confirmada! 🎱' : 'Quase lá: falta pagar o Pix.'); if (i.status === 'paga' && t.id === 'bInsSaldo' && conta?.cliente) { conta.cliente.saldo = Math.max(0, (conta.cliente.saldo ?? 0) - i.valor); try { localStorage.setItem('mukifo_conta', JSON.stringify(conta)); } catch {} } }
+    catch (er) { aviso(er.message); t.disabled = false; }
+    desenhar();
+  }
+});
+document.addEventListener('change', (e) => { if (e.target.id === 'rMod') { telaRank.mod = e.target.value; desenhar(); } });
+const p = new URLSearchParams(location.search); if (p.get('m')) modId = p.get('m');
+desenhar();
+</script></body></html>

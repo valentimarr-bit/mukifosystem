@@ -197,3 +197,10 @@ Atualize no fim de cada sessão. Mais recente em cima.
 ## App do cliente: login primeiro
 - Sem conta salva e sem pedido em andamento, a primeira tela é o login/cadastro (`primeiroLogin`); após entrar vai ao cardápio. Sessão fica salva no aparelho (`mukifo_conta`), então só pede uma vez. O botão Voltar some nessa tela inicial.
 - Acesso por usuário: cliente vê o próprio perfil/nível/carteira; equipe usa o login do gestão (perfis definem os módulos). Obrigatoriedade ainda só no front: o servidor não recusa pedido sem conta (pendente, se quiser exigir).
+
+## Campeonato de sinuca (v1)
+- Migração `0022_campeonato`: `campeonato` → `modalidade` (nome, taxa, vagas, % de prêmio) → `inscricao` (Pix, carteira, balcão ou grátis) → `partida`.
+- `src/dominio/chaves.js`: gerador de mata-mata (folgas na 1ª rodada, disputa de 3º com 4+ jogadores), pontos por colocação (100/70/50/40/25/15/10) e divisão do prêmio (o que sobra fica com a casa).
+- `src/campeonato.js`: rotas públicas `/api/campeonato` (lista, modalidade, ranking, minhas, inscrever) e da equipe `/api/campeonato/gestao/*` (módulo `campeonato`, padrão para gerente): criar, inscrever no balcão, confirmar Pix, cancelar (devolve à carteira só o que saiu dela), sortear, placar ao vivo, finalizar, corrigir resultado (enquanto a próxima partida não começou).
+- Telas: `public/campeonato.html` (jogador: inscrição com Pix/saldo, chave e placar ao vivo, ranking) e `public/torneio.html` (equipe, link "Campeonato →" no gestão). 🎱 no topo do app do cliente.
+- Pendente: webhook do gateway chamar `confirmarInscricao`; formatos dupla eliminação/grupos; entrada da taxa no financeiro (hoje não entra no resultado); duplas; push de "sua partida vai começar".
