@@ -119,6 +119,8 @@ test('pedido do app: paga → aparece na produção com receita → começa a pr
   assert.equal(eu.nivel.proximo?.faltam, undefined); assert.ok(eu.nivel.nome);
   const bruto = JSON.stringify([(await chamar('/api/conta/eu', 'GET', null, cab, null)).corpo, (await chamar('/api/conta/niveis', 'GET', null, {}, null)).corpo]);
   assert.ok(!/"min"|pontos|faltam|progresso|"total"|"regra"/.test(bruto), 'resposta do cliente não pode trazer pontos nem valores');
+  const hist = (await chamar('/api/conta/eu', 'GET', null, cab, null)).corpo.pedidos;
+  assert.ok(hist.length && hist[0].itens.length && hist[0].itens[0].nome && hist[0].itens[0].quantidade, 'últimos pedidos mostram o que foi pedido'); assert.ok(!/preco|valor|total/.test(JSON.stringify(hist)), 'sem valores');
   const pontosReais = (await env.DB.prepare('SELECT pontos_total, pontos FROM cliente WHERE id = ?').bind(eu.id).first());   // a equipe/banco guarda
   assert.equal(pontosReais.pontos_total, Math.floor(prod.preco * 2)); assert.equal(pontosReais.pontos, pontosReais.pontos_total);
   const { creditarPontos } = await import('../src/clientes.js'); assert.equal(await creditarPontos(env.DB, ped.corpo.id), 0);   // não conta duas vezes

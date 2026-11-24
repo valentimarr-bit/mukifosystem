@@ -148,7 +148,10 @@ export async function rotearConta(request, env, url) {
   if (m === 'POST' && p === '/api/conta/redefinir') return redefinir(db, c);
   const cli = await clienteLogado(request, env); if (!cli) return erro('Entre na sua conta.', 401);
   if (m === 'GET' && p === '/api/conta/eu') {
-    const { results } = await db.prepare("SELECT p.numero, p.dia, p.status FROM pedido p WHERE p.cliente_id = ? AND p.status <> 'cancelado' ORDER BY p.criado_em DESC LIMIT 20").bind(cli.id).all();
+    const { results: peds } = await db.prepare("SELECT p.id, p.numero, p.dia, p.status FROM pedido p WHERE p.cliente_id = ? AND p.status <> 'cancelado' ORDER BY p.criado_em DESC, p.id DESC LIMIT 20").bind(cli.id).all();
+    const { results: its } = peds.length ? await db.prepare(`SELECT pedido_id, nome, quantidade FROM item_pedido WHERE pedido_id IN (${peds.map(() => '?').join(',')}) ORDER BY id`).bind(...peds.map((x) => x.id)).all() : { results: [] };
+    // o cliente vê o que pediu, nunca preço nem total
+    const results = peds.map((x) => ({ numero: x.numero, dia: x.dia, status: x.status, itens: its.filter((i) => i.pedido_id === x.id).map((i) => ({ nome: i.nome, quantidade: i.quantidade })) }));
     return json({ cliente: paraCliente(cli), pedidos: results });
   }
   if (m === 'POST' && p === '/api/conta/sair') { await db.prepare('DELETE FROM cliente_sessao WHERE token_hash = ?').bind(await hashToken(request.headers.get('X-Sessao-Cliente'))).run(); return json({ ok: true }); }

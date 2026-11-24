@@ -87,8 +87,8 @@ export async function rotearAuditoria(request, env, url) {
   const W = onde.length ? 'WHERE ' + onde.join(' AND ') : '';
   const [{ results: registros }, { results: pessoas }, tot] = await Promise.all([
     db.prepare(`SELECT id, quando, ator_tipo, ator_nome, papel, acao, metodo, rota, status, resumo, ip FROM auditoria ${W} ORDER BY id DESC LIMIT ${lim}`).bind(...b).all(),
-    db.prepare(`SELECT ator_nome AS nome, ator_tipo AS tipo, COUNT(*) AS acoes, MAX(quando) AS ultima, SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS erros,
-                MAX(CASE WHEN acao = 'Entrou no sistema' AND status < 400 THEN quando END) AS ultimo_login FROM auditoria GROUP BY ator_nome, ator_tipo ORDER BY ultima DESC LIMIT 200`).all(),
+    db.prepare(`SELECT ator_nome AS nome, CASE WHEN SUM(ator_tipo = 'equipe') > 0 THEN 'equipe' WHEN SUM(ator_tipo = 'cliente') > 0 THEN 'cliente' ELSE 'visitante' END AS tipo, COUNT(*) AS acoes, MAX(quando) AS ultima, SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS erros,
+                MAX(CASE WHEN acao = 'Entrou no sistema' AND status < 400 THEN quando END) AS ultimo_login FROM auditoria GROUP BY ator_nome ORDER BY ultima DESC LIMIT 200`).all(),
     db.prepare(`SELECT COUNT(*) AS n FROM auditoria ${W}`).bind(...b).first()]);
   return json({ total: tot.n, mostrando: registros.length, retencao_dias: RETENCAO_DIAS, registros: registros.map((r) => ({ ...r, resumo: r.resumo ? (() => { try { return JSON.parse(r.resumo); } catch { return r.resumo; } })() : null })), pessoas });
 }

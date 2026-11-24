@@ -163,7 +163,7 @@ function desenharPerfil(j) { const c = j.cliente, n = c.nivel; $('#cVisitante').
   $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
   $('#lPontos').innerHTML = n.proximo ? `Próximo nível: ${n.proximo.emoji} <b>${esc(n.proximo.nome)}</b>` : 'Você chegou ao topo! 💸';
   $('#lNiveis').innerHTML = (niveis?.niveis ?? []).map((x) => `<div class="cl"><span style="font-size:28px">${x.emoji}</span><span class="cn"><b${x.nivel === n.nivel ? ' class="bom"' : ''}>${esc(x.nome)}</b>${x.nivel === n.nivel ? '<br><span class="mut">você está aqui</span>' : ''}</span></div>`).join('');
-  $('#lPedidos').innerHTML = j.pedidos.length ? j.pedidos.map((p) => `${esc(p.numero)} · ${esc(p.dia.split('-').reverse().slice(0, 2).join('/'))}`).join('<br>') : 'Nenhum ainda.'; }
+  $('#lPedidos').innerHTML = j.pedidos.length ? j.pedidos.map((p) => `<b>${esc(p.numero)}</b> · ${esc(p.dia.split('-').reverse().slice(0, 2).join('/'))}<br>${p.itens.map((i) => `${i.quantidade}× ${esc(i.nome)}`).join(', ')}`).join('<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">') : 'Nenhum ainda.'; }
 $('#bConta').onclick = abrirConta; $('#cVoltar').onclick = () => { tela('cardapio'); desenhar(); };
 $('#aEntrar').onclick = () => { modo = 'entrar'; formaConta(); }; $('#aCriar').onclick = () => { modo = 'criar'; formaConta(); };
 $('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; formaConta();
