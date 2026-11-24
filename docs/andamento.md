@@ -186,3 +186,5 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Celular, passada geral (testado com Chrome em 390 px contra o app local): menu da gestão em uma linha que rola (antes ocupava 5 linhas); botão flutuante 🎨 removido de venda/produção/cliente/compras (cobria botões — o editor de design fica em Gestão → Conta); painel do pedido na venda mais baixo, sem texto de ajuda quando vazio; cabeçalho da produção enxuto.
 
 - Todas as tabelas da gestão ordenam pelo título (toque = crescente, de novo = decrescente; ▲▼). `public/ordenar.js`: entende R$, %, datas dd/mm e texto; linhas de total ficam no fim; vazio vai para o fim; mantém a ordem quando a tabela é redesenhada. O estoque mantém a própria ordenação (data-ordem); `data-sem-ordem` na tabela desliga.
+
+- Botões Baixar modelo / Exportar / Importar de Produtos e Fichas saíram da aba Produtos; ficam só na aba Excel (que já os tinha).

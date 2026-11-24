@@ -160,7 +160,6 @@
 
   <section id="produtos" hidden>
     <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" type="search" autocomplete="off" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
-    <div id="pExcel"></div>
     <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
   </section>
@@ -313,7 +312,7 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   if (b.dataset.aba === 'financeiro') Financeiro.iniciar(Mukifo.usuario()?.modulos?.includes('financeiro') ?? Mukifo.usuario()?.papel === 'superadmin');
   if (b.dataset.aba === 'planilhas') Financeiro.planilhas(true);
   if (b.dataset.aba === 'lista') carregarLista();
-  if (b.dataset.aba === 'produtos') { carregarProdutos(); Planilhas.botoes($('#pExcel'), ['produtos', 'fichas'], carregarProdutos); }
+  if (b.dataset.aba === 'produtos') carregarProdutos();
   if (b.dataset.aba === 'conta') carregarConta();
   if (b.dataset.aba === 'fotos') carregarFotos();
   if (b.dataset.aba === 'alertas') desenharAlertas();
