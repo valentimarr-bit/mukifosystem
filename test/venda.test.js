@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -156,4 +156,19 @@ test('trava: não vende o que não tem no estoque (balcão e app), respeitando r
   await chamar('/api/venda/trava', 'PUT', { ativa: true });
   await chamar(`/api/venda/comandas/${c1.id}/cancelar`, 'POST', {}); await chamar(`/api/venda/comandas/${c2.id}/cancelar`, 'POST', {});
   assert.ok(atual !== undefined);
+});
+
+test('estoque recomendado manda na compra recomendada (menos o que tem)', async () => {
+  const itens = (await chamar('/api/estoque?dia=quinta')).corpo.itens;
+  const it = itens[0];
+  assert.equal((await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: -1 }] })).status, 400);
+  assert.equal((await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: it.atual + 7 }] }, { token: null })).status, 401);
+  assert.equal((await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: it.atual + 7 }] })).status, 200);
+  const novo = (await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id);
+  assert.equal(novo.sugestao, 7);
+  const lista = (await chamar('/api/lista-compras?dia=quinta')).corpo;
+  const linha = [...lista.fornecedores.flatMap((f) => f.itens), ...lista.producao].find((x) => x.insumo_id === it.insumo_id);
+  assert.equal(linha.quantidade, 7);
+  await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: null }] });
+  assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id).estoque_recomendado, null);
 });

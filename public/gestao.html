@@ -83,10 +83,10 @@
   <b>MUKIFO</b>
   <nav>
     <button data-aba="estoque" aria-pressed="true">Estoque</button>
-    <button data-aba="lista">Lista de compras</button>
+    <button data-aba="lista">Recomendado</button>
     <button data-aba="produtos">Produtos e lucro</button>
     <button data-aba="combos">Combos</button>
-    <button data-aba="alertas">Alertas</button>
+    <button data-aba="alertas">Níveis</button>
     <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
     <a href="/venda.html" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a>
@@ -102,10 +102,11 @@
       <label><input type="checkbox" id="soAlerta"> só em alerta</label>
     </div>
     <div id="faixaAlerta" class="faixa-alerta" hidden></div>
-    <table id="tabEstoque"><thead><tr><th data-ordem="insumo">Item</th><th data-ordem="atual">Tem</th><th data-ordem="minimo">Mínimo</th><th data-ordem="sugestao">Comprar</th><th data-ordem="situacao">Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
+    <table id="tabEstoque"><thead><tr><th data-ordem="insumo">Item</th><th data-ordem="atual">Tem</th><th data-ordem="minimo">Recomendado</th><th data-ordem="sugestao">Comprar</th><th data-ordem="situacao">Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
   </section>
 
   <section id="lista" hidden>
+    <p class="mut">Aqui fica o que o sistema <b>recomenda comprar</b>: o estoque recomendado de cada item menos o que você tem agora (as vendas já saíram do estoque). A <b>lista de compras</b> de verdade é a que sai daqui para o celular (/compras).</p>
     <div class="bar">
       <span id="listaDia" class="mut"></span>
       <button class="btn prim" onclick="window.print()">Imprimir (58 mm)</button>
@@ -133,11 +134,12 @@
   </section>
 
   <section id="alertas" hidden>
-    <p class="mut">Defina, para cada item, com quantas embalagens (garrafas, latas, kg...) o sistema deve <b>avisar</b>. Quando o estoque chegar nesse número ou menos, o item fica em destaque no Estoque. Deixe em branco para não avisar.</p>
+    <p class="mut"><b>Recomendado</b> = quanto você quer ter de cada item. Se deixar em branco, o sistema calcula pelas vendas (automático). A compra recomendada é: recomendado − o que tem.</p>
+    <p class="mut">Em <b>Avisar</b>, defina com quantas embalagens (garrafas, latas, kg...) o sistema deve <b>avisar</b>. Quando o estoque chegar nesse número ou menos, o item fica em destaque no Estoque. Deixe em branco para não avisar.</p>
     <div class="bar"><input id="aBusca" placeholder="Buscar item" style="flex:1;min-width:140px">
-      <button class="btn prim" id="aSalvar">Salvar alertas</button></div>
+      <button class="btn prim" id="aSalvar">Salvar</button></div>
     <div id="aMsg"></div>
-    <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Mínimo automático</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
+    <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Automático</th><th>Recomendado</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
   </section>
 
   <section id="fotos" hidden>
@@ -308,10 +310,10 @@ $('#soAlerta').addEventListener('change', desenharEstoque);
 
 async function carregarLista() {
   lista = await api('/api/lista-compras?dia=' + $('#dia').value);
-  $('#listaDia').textContent = `Compra de ${lista.dia === 'segunda' ? 'segunda' : 'quinta'} · total estimado ${brl(lista.total_estimado)}`;
+  $('#listaDia').textContent = `Compra recomendada de ${lista.dia === 'segunda' ? 'segunda' : 'quinta'} · total estimado ${brl(lista.total_estimado)}`;
   $('#listaCorpo').innerHTML = lista.fornecedores.map((f) => `
     <div class="forn"><h3>${esc(f.fornecedor)} <span class="mut">${esc(f.como_recebe || '')}</span></h3>
-    ${f.itens.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)} <span class="mut">(${esc(i.embalagem)})</span></div>`).join('')}
+    ${f.itens.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)} <span class="mut">(${esc(i.embalagem)}) · tem ${fmt(i.tem, 2)}, recomendado ${fmt(i.recomendado, 2)}${i.recomendado_manual ? '' : ' (auto)'}</span></div>`).join('')}
     <div class="mut">Estimado: ${brl(f.total_estimado)}${f.tem_preco_estimado ? ' (preços estimados)' : ''}</div></div>`).join('')
     + (lista.producao.length ? `<div class="forn"><h3>Produção da casa (não comprar)</h3>${lista.producao.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)}</div>`).join('')}</div>` : '');
   $('#cupom').textContent = cupom(lista);
@@ -321,7 +323,7 @@ function cupom(l) {
   const L = 32, linha = '-'.repeat(L), centro = (s) => s.padStart(Math.floor((L + s.length) / 2)).padEnd(L);
   const quebra = (s, rec) => { const out = []; let a = s; while (a.length > L) { out.push(a.slice(0, L)); a = ' '.repeat(rec) + a.slice(L); } out.push(a); return out.join('\n'); };
   const d = new Date();
-  let t = `${centro('MUKIFO')}\n${centro('LISTA DE COMPRAS')}\n${centro((l.dia === 'segunda' ? 'SEGUNDA' : 'QUINTA') + ' ' + d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR').slice(0, 5))}\n${linha}\n`;
+  let t = `${centro('MUKIFO')}\n${centro('COMPRA RECOMENDADA')}\n${centro((l.dia === 'segunda' ? 'SEGUNDA' : 'QUINTA') + ' ' + d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR').slice(0, 5))}\n${linha}\n`;
   for (const f of l.fornecedores) {
     t += `${f.fornecedor.toUpperCase()}\n`;
     for (const i of f.itens) t += quebra(`[ ] ${fmt(i.quantidade)} ${i.insumo}`, 6) + '\n';
@@ -588,13 +590,15 @@ function desenharAlertas() {
   const q = $('#aBusca').value.toLowerCase(), dia = $('#dia').value;
   $('#tbAlertas').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(q)).map((i) => `
     <tr class="${i.alerta ? 'em-alerta' : ''}"><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></td>
-    <td>${fmt(i.atual, 2)}</td><td class="larga">${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
+    <td>${fmt(i.atual, 2)}</td><td class="larga">${fmt(dia === 'segunda' ? i.auto_segunda : i.auto_quinta)}</td>
+    <td><input inputmode="decimal" data-recom="${i.insumo_id}" value="${i.estoque_recomendado == null ? '' : String(i.estoque_recomendado).replace('.', ',')}" placeholder="auto"></td>
     <td><input inputmode="decimal" data-alerta="${i.insumo_id}" data-orig="${i.minimo_alerta ?? ''}" value="${i.minimo_alerta == null ? '' : String(i.minimo_alerta).replace('.', ',')}" placeholder="—"></td></tr>`).join('');
 }
 $('#aBusca').addEventListener('input', () => { guardarAlertasDigitados(); desenharAlertas(); reaplicarDigitados(); });
 let digitados = new Map();
-function guardarAlertasDigitados() { document.querySelectorAll('#tbAlertas input').forEach((el) => digitados.set(el.dataset.alerta, el.value)); }
-function reaplicarDigitados() { document.querySelectorAll('#tbAlertas input').forEach((el) => { if (digitados.has(el.dataset.alerta)) el.value = digitados.get(el.dataset.alerta); }); }
+function guardarAlertasDigitados() { document.querySelectorAll('#tbAlertas input[data-alerta]').forEach((el) => digitados.set(el.dataset.alerta, el.value)); document.querySelectorAll('#tbAlertas input[data-recom]').forEach((el) => digRec.set(el.dataset.recom, el.value)); }
+let digRec = new Map();
+function reaplicarDigitados() { document.querySelectorAll('#tbAlertas input[data-alerta]').forEach((el) => { if (digitados.has(el.dataset.alerta)) el.value = digitados.get(el.dataset.alerta); }); document.querySelectorAll('#tbAlertas input[data-recom]').forEach((el) => { if (digRec.has(el.dataset.recom)) el.value = digRec.get(el.dataset.recom); }); }
 $('#aSalvar').addEventListener('click', async () => {
   guardarAlertasDigitados();
   const itens = [];
@@ -604,8 +608,16 @@ $('#aSalvar').addEventListener('click', async () => {
     if (novo !== null && (!Number.isFinite(novo) || novo < 0)) return ($('#aMsg').innerHTML = `<p class="neg">Número inválido em “${esc(it.insumo)}”.</p>`);
     if ((it.minimo_alerta ?? null) !== novo) itens.push({ insumo_id: it.insumo_id, minimo_alerta: novo });
   }
-  if (!itens.length) return ($('#aMsg').innerHTML = '<p class="mut">Nada mudou.</p>');
+  const recs = [];
+  for (const [id, txt] of digRec) {
+    const it = estoque.find((x) => String(x.insumo_id) === id); if (!it) continue;
+    const novo = txt.trim() === '' ? null : Number(txt.trim().replace(/\./g, '').replace(',', '.'));
+    if (novo !== null && (!Number.isFinite(novo) || novo < 0)) return ($('#aMsg').innerHTML = `<p class="neg">Número inválido em “${esc(it.insumo)}”.</p>`);
+    if ((it.estoque_recomendado ?? null) !== novo) recs.push({ insumo_id: it.insumo_id, estoque_recomendado: novo });
+  }
+  if (!itens.length && !recs.length) return ($('#aMsg').innerHTML = '<p class="mut">Nada mudou.</p>');
   try {
+    if (recs.length) { const rr = await fetch('/api/recomendados', { method: 'PUT', body: JSON.stringify({ itens: recs }), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } }); if (!rr.ok) throw new Error((await rr.json().catch(() => ({}))).erro || 'Erro ' + rr.status); digRec = new Map(); if (!itens.length) { await carregarEstoque(); desenharAlertas(); return ($('#aMsg').innerHTML = `<p class="pos">${recs.length} recomendado(s) salvo(s) ✓</p>`); } }
     const r = await fetch('/api/alertas', { method: 'PUT', body: JSON.stringify({ itens }), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } });
     const j = await r.json().catch(() => ({}));
     if (r.status === 401) { Mukifo.pedir(() => {}); throw new Error('Entre com seu nome e senha.'); }

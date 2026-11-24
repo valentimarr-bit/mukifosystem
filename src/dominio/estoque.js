@@ -152,10 +152,14 @@ export function painelEstoque({ insumos, produtos, historico, atual, dia, folga 
   const consumo = consumoPorDia(insumos, produtos, mediasPorDia(historico));
   return insumos.map((i) => {
     const c = consumo.get(i.nome);
-    const minimo_segunda = estoqueMinimo(i, c, 'segunda', folga);
-    const minimo_quinta = estoqueMinimo(i, c, 'quinta', folga);
+    const auto_segunda = estoqueMinimo(i, c, 'segunda', folga);
+    const auto_quinta = estoqueMinimo(i, c, 'quinta', folga);
+    // Se o gerente definiu o estoque recomendado, ele manda; senão vale o cálculo pelas vendas.
+    const manual = i.estoque_recomendado != null && Number.isFinite(Number(i.estoque_recomendado));
+    const minimo_segunda = manual ? Number(i.estoque_recomendado) : auto_segunda;
+    const minimo_quinta = manual ? Number(i.estoque_recomendado) : auto_quinta;
     const a = atual.get(i.nome) ?? 0;
     const sugestao = sugestaoCompra(i, dia === 'segunda' ? minimo_segunda : minimo_quinta, a);
-    return { insumo: i.nome, atual: a, minimo_segunda, minimo_quinta, sugestao, situacao: situacao(a, sugestao), consumo_dia: c };
+    return { insumo: i.nome, atual: a, minimo_segunda, minimo_quinta, auto_segunda, auto_quinta, recomendado_manual: manual, sugestao, situacao: situacao(a, sugestao), consumo_dia: c };
   });
 }

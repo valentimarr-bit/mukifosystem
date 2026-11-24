@@ -89,3 +89,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Combos conferem o estoque pelos ingredientes dos produtos que levam.
 - A trava só vale para ingredientes **já contados ou com entrada** (compra/ajuste/produção). Vendas sozinhas não contam; por isso, **antes da primeira contagem nada trava**. Depois da contagem passa a travar.
 - Superadmin liga/desliga em Conta → "Trava de estoque" (padrão: ligada).
+
+## Estoque recomendado e "Recomendado" (antiga lista de compras sugerida)
+- Cada item pode ter **estoque recomendado** (quanto o bar quer ter; aba Níveis). Em branco = cálculo automático pelo histórico de vendas.
+- A aba antes chamada "Lista de compras" na gestão agora é **Recomendado**: compra recomendada = recomendado − o que tem agora (as vendas feitas aqui já baixaram o estoque). A **lista de compras** propriamente dita é a que vai para o celular (/compras), gerada a partir do recomendado.
+- API: `PUT /api/recomendados`; `/api/estoque` e `/api/lista-compras` trazem `estoque_recomendado`, `auto_*`, `tem`, `recomendado`.

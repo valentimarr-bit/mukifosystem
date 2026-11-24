@@ -80,7 +80,8 @@ async function getEstoque(db, url) {
       return {
         insumo_id: i.id, insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
         minimo_alerta: i.minimo_alerta ?? null, alerta: i.minimo_alerta != null && r2(l.atual) <= i.minimo_alerta,
-        minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, sugestao: l.sugestao, situacao: l.situacao,
+        minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, auto_segunda: l.auto_segunda, auto_quinta: l.auto_quinta,
+        estoque_recomendado: i.estoque_recomendado ?? null, sugestao: l.sugestao, situacao: l.situacao,
         fornecedor: i.fornecedor, producao_propria: i.producao_propria,
       };
     }),
@@ -103,7 +104,8 @@ async function calcularLista(db, dia) {
     if (!grupos.has(fo)) grupos.set(fo, { fornecedor: fo, itens: [], total_estimado: 0, tem_preco_estimado: false });
     const g = grupos.get(fo);
     const preco = precoDe(i);
-    g.itens.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco });
+    g.itens.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco,
+      tem: r2(l.atual), recomendado: dia === 'segunda' ? l.minimo_segunda : l.minimo_quinta, recomendado_manual: l.recomendado_manual });
     if (preco != null) g.total_estimado = r2(g.total_estimado + preco * l.sugestao);
     if (i.preco_unidade == null) g.tem_preco_estimado = true;
   }
@@ -353,6 +355,23 @@ async function putAlertas(db, body) {
   return json({ ok: true, salvos: stmts.length });
 }
 
+/** PUT /api/recomendados { itens: [{ insumo_id, estoque_recomendado }] } — o quanto o bar quer ter de cada item (null = automático). */
+async function putRecomendados(db, body) {
+  const itens = Array.isArray(body?.itens) ? body.itens : null;
+  if (!itens?.length) return erro('Nenhum item para salvar.');
+  const stmts = [];
+  for (const it of itens) {
+    const id = Number(it.insumo_id);
+    let v = it.estoque_recomendado;
+    if (v === '' || v === undefined) v = null;
+    if (v !== null) { v = Number(v); if (!Number.isFinite(v) || v < 0 || v > 100000) return erro('O estoque recomendado precisa ser um número maior ou igual a zero.'); }
+    if (!Number.isInteger(id)) return erro('Item inválido.');
+    stmts.push(db.prepare('UPDATE insumo SET estoque_recomendado = ? WHERE id = ?').bind(v, id));
+  }
+  await db.batch(stmts);
+  return json({ ok: true, salvos: stmts.length });
+}
+
 // ---------------- roteador ----------------
 
 export async function rotearApi(request, env, url) {
@@ -390,6 +409,11 @@ export async function rotearApi(request, env, url) {
     if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
     let body; try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
     return putAlertas(db, body);
+  }
+  if (request.method === 'PUT' && p === '/api/recomendados') {
+    if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
+    let body; try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
+    return putRecomendados(db, body);
   }
   if (m === 'POST' && ['/api/vendas/relatorio', '/api/contagem', '/api/compras'].includes(p)) {
     if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
