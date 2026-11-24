@@ -3,6 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-24 — **Campeonato**: botão para convidar por WhatsApp na mesa do campeonato (`/torneio.html`).
 - 2026-11-24 — **iFood e 99Food**: pedidos das plataformas entram na Produção, baixam estoque e a plataforma é avisada do andamento (`/canais.html`).
 - 2026-11-24 — **Manual do sistema**: botão "📖 Manual" na gestão abre `/manual.html`, gerado de `docs/manual.md` e deste arquivo.
 - 2026-11-24 — **Monitor de Pix**: aprova Pix que cai direto na chave, por aviso do celular ou da API do banco (`/pix.html`).

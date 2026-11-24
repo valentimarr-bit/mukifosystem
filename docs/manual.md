@@ -116,6 +116,7 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 - Acompanha a **chave** e o **placar ao vivo** (atualiza sozinho) e o **ranking** com pontos por colocação.
 
 ### Para a equipe (`/torneio.html`)
+- **Convidar por WhatsApp:** com as inscrições abertas, o cartão "📲 Convidar por WhatsApp" abre o WhatsApp com o convite (nome, taxa e link `/campeonato.html`). Informe o número do convidado ou deixe vazio para escolher contatos e grupos.
 - Cria o campeonato (nome, data, local) e as modalidades (taxa, vagas, divisão do prêmio em %).
 - Confirma Pix de inscrição à mão e inscreve gente no balcão (dinheiro ou maquininha).
 - **Sorteia a chave**: fecha as inscrições. Com número ímpar, os primeiros sorteados folgam na 1ª rodada. Há disputa de 3º lugar quando há 4 ou mais jogadores.
