@@ -31,6 +31,11 @@
   .msg { padding:10px 12px; border-radius:8px; margin:10px 0; background:var(--card); border:1px solid var(--line); }
   .neg { color:var(--bad); } .pos { color:var(--ok); }
   .larga { display:table-cell; }
+  select, input, textarea, .btn { max-width:100%; }
+  img, video { max-width:100%; }
+  dialog { max-width:94vw; max-height:92vh; overflow:auto; }
+  main > section { min-width:0; }
+  @media (max-width: 760px) { table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; } main { padding:12px; } }
   @media (max-width: 520px) {
     table { font-size:14px; } th, td { padding:7px 3px; } th { top:118px; }
     .larga { display:none; }

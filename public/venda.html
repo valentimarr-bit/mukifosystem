@@ -2,15 +2,17 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
 <title>Mukifo · Venda</title><script src="/tema.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px system-ui,sans-serif}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px system-ui,sans-serif}
 header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
 header h1{font-size:20px;margin:0;flex:1}header a,header select{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;font-size:15px}
 .abas{display:flex;gap:8px;padding:10px 14px}.abas button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px;font-weight:600}
 .abas button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
-main{display:grid;grid-template-columns:1fr 380px;gap:12px;padding:0 14px 90px}@media(max-width:900px){main{grid-template-columns:1fr}}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:12px;padding:0 14px 24px}main>*{min-width:0}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr);padding-bottom:12px}.painel{position:sticky!important;bottom:0;top:auto!important;max-height:46vh;overflow:auto;box-shadow:0 -6px 16px #0008;z-index:4}}
+img,video{max-width:100%}dialog{max-width:94vw;max-height:92vh;overflow:auto}header h1{min-width:0;white-space:nowrap;flex:1 1 auto}#resumo{order:5;flex:1 1 100%;font-size:13px}@media(min-width:700px){#resumo{order:0;flex:0 1 auto;font-size:14px}}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}.chips button{white-space:nowrap;min-height:48px;padding:0 16px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px}
 .chips button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
-.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:10px}
 .prod{min-height:104px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);padding:10px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;font-size:16px;cursor:pointer}
 .prod:active{transform:scale(.97)}.prod b{font-size:22px;color:var(--acc)}.prod span{line-height:1.2}
 .painel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;align-self:start;position:sticky;top:70px}
