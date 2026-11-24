@@ -70,7 +70,8 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
 <div id="telaQr" class="tela centro" hidden>
   <div class="card"><h2 class="bom" style="margin-top:0" id="qEtapa">✔ Pago! Aguardando o preparo</h2><button class="grande sec" id="bAviso" hidden>🔔 Avisar no celular quando começar</button><p>Pedido <b id="qNum"></b> · mostre este QR no balcão</p>
     <div class="qr"><img id="qrRet" alt="QR de retirada"></div>
-    <p class="mut">Vale uma vez só. Não mostre para outras pessoas.</p><div id="qItens" class="mut"></div></div></div>
+    <p class="mut">Vale uma vez só. Não mostre para outras pessoas.</p><div id="qItens" class="mut"></div></div>
+  <div class="card" id="qFila" hidden style="text-align:center"></div></div>
 
 <div id="telaFim" class="tela centro" hidden><div class="card"><h2 id="fTitulo"></h2><p id="fTexto" class="mut"></p><button class="grande" id="bNovo">Fazer outro pedido</button></div></div>
 
@@ -138,7 +139,7 @@ async function consultar() {
   if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
   const s = await r.json();
   if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
-  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}.${s.remessa || 0}`);
+  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; filaTela(s); etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}.${s.remessa || 0}`);
     $('#qItens').innerHTML = (s.remessa ? `<b style="color:#f59e0b">REP ${s.remessa}</b> · entrega parcial — mostre este QR NOVO para receber o que falta<br>` : '') + s.itens.map((i) => (i.entregue >= i.quantidade ? `<s style="opacity:.55">${i.quantidade}× ${i.nome}</s> ✓ entregue` : i.entregue > 0 ? `${i.quantidade - i.entregue}× ${i.nome} <small>(falta; ${i.entregue} já entregue)</small>` : `${i.quantidade}× ${i.nome}`)).join('<br>'); return tela('telaQr'); }
   if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
   const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;
@@ -214,6 +215,12 @@ function chamarAtencao(st) {
   try { navigator.wakeLock?.request('screen').then((w) => { trava = w; }).catch(() => {}); } catch {}
 }
 function bipar() { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .25; o.start(); o.stop(c.currentTime + .3); } catch {} }
+function filaTela(s) {
+  const f = s.fila, box = $('#qFila'); if (!f || s.status === 'pronto') { box.hidden = true; return; }
+  const est = Espera.estimar(s.espera, [{ q: 1 }]), tempo = est ? `<div class="mut" style="margin-top:6px">${Espera.texto(est)}</div>` : '';
+  const dica = f.a_frente === 0 ? '<b class="bom" style="font-size:20px">🔥 É o seu! Estamos preparando agora</b>' : `<div style="font-size:30px;font-weight:800">${f.posicao}º da fila</div><div>${f.a_frente === 1 ? '1 pedido' : f.a_frente + ' pedidos'} na sua frente</div>`;
+  box.innerHTML = `📋 <b>Fila de pedidos</b><div style="margin:8px 0">${dica}</div><div class="mut">${f.na_fila} ${f.na_fila === 1 ? 'pedido' : 'pedidos'} em produção agora</div>${tempo}`; box.hidden = false;
+}
 function etapa(st) { $('#qEtapa').textContent = TEXTO[st] ?? TEXTO.recebido;
   if (etapaAtual !== null && etapaAtual !== st && PADRAO[st]) { if (!document.hidden) chamarAtencao(st); else { alertaPend = st; if (navigator.vibrate) navigator.vibrate(PADRAO[st]); }
     try { if (Notification.permission === 'granted' && document.hidden) navigator.serviceWorker?.ready.then((r) => r.showNotification('Mukifo · ' + TEXTO[st].replace(/^\S+\s/, ''), { body: 'Pedido ' + pedido?.numero, vibrate: PADRAO[st], tag: 'pedido', renotify: true, requireInteraction: true })); } catch {} }

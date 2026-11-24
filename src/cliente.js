@@ -6,6 +6,7 @@ import { gerarPix } from './pagamentos/pix.js';
 import { clienteLogado } from './clientes.js';
 import { textosPedido } from './textos.js';
 import { debitarSaldo } from './carteira.js';
+import { esperaDoDia } from './venda.js';
 
 const VALIDADE_MIN = 15;          // pedido não pago some depois disso
 const MAX_PENDENTES_CELULAR = 2;  // quantos pedidos não pagos o mesmo celular pode ter ao mesmo tempo
@@ -136,6 +137,7 @@ async function verStatus(db, request, id) {
   return json({
     id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
     remessa: (await db.prepare('SELECT remessa FROM pedido WHERE id = ?').bind(id).first())?.remessa ?? 0,
+    fila: ['recebido', 'preparando'].includes(c.status) ? await filaDoPedido(db, id) : null, espera: await esperaDoDia(db),
     itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,
     textos: textosPedido(await itensComPronta(db, id), c.numero),
     pix: pix ? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` }) : null,
@@ -242,4 +244,16 @@ export async function validarRetirada(db, corpo, eu) {
 export async function itensComPronta(db, pedidoId) {
   const { results } = await db.prepare('SELECT i.nome, i.quantidade, COALESCE(p.pronta_entrega, 0) AS pronta FROM item_pedido i LEFT JOIN produto p ON p.id = i.produto_id WHERE i.pedido_id = ?').bind(pedidoId).all();
   return results.map((r) => ({ nome: r.nome, quantidade: r.quantidade, pronta: !!r.pronta }));
+}
+
+/** Posição do pedido na fila de produção de hoje (pedidos pagos que ainda não ficaram prontos, do app e do balcão), por ordem de pagamento. */
+async function filaDoPedido(db, id) {
+  const eu = await db.prepare('SELECT pago_em, dia FROM pedido WHERE id = ?').bind(id).first();
+  if (!eu?.pago_em) return null;
+  const abertos = "dia = ? AND pago_em IS NOT NULL AND pronto_em IS NULL AND ((origem = 'celular' AND status IN ('recebido', 'preparando')) OR (origem = 'balcao' AND status = 'entregue'))";
+  const [a, t, p] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos} AND id <> ? AND (pago_em < ? OR (pago_em = ? AND id < ?))`).bind(eu.dia, id, eu.pago_em, eu.pago_em, id).first(),
+    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos}`).bind(eu.dia).first(),
+    db.prepare("SELECT preparo_em FROM pedido WHERE id = ?").bind(id).first()]);
+  return { a_frente: a.n, na_fila: t.n, posicao: a.n + 1, em_preparo: !!p?.preparo_em };
 }

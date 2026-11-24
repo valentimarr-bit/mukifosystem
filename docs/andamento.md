@@ -191,3 +191,5 @@ Atualize no fim de cada sessão. Mais recente em cima.
 
 - Menu da gestão em 5 grupos (📦 Estoque · 🍹 Cardápio · 💰 Resultado · 👥 Clientes · ⚙️ Sistema) com abas do grupo numa segunda linha; Venda/Produção fixos no topo. O <nav id=navAbas> original fica escondido e continua mandando (permissões e lógica não mudaram).
 - Desempenho: nova caixa "Desempenho por produto" (sempre visível): todos os produtos vendidos no período com Qtd, vs período anterior, faturamento, % do total, custo, lucro e margem; ordenável pelo título. Servidor: `produtos` em /api/desempenho.
+
+- App do cliente: card "Fila de pedidos" (depois de pago, até ficar pronto): posição ("3º da fila"), quantos pedidos na frente, quantos em produção agora e a espera estimada (média do dia ou tempo padrão). Fila = pedidos pagos de hoje (app + balcão) ainda não prontos, por ordem de pagamento. `fila` e `espera` vêm em GET /api/cliente/pedidos/:id.

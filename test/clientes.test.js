@@ -298,3 +298,21 @@ test('produção: pronto por item; todos prontos → pedido pronto automaticamen
   assert.equal((await chamar(`/api/producao/${ped.corpo.id}/item/${itens[0].id}/pronto`, 'POST', { pronto: true })).status, 409);
   await chamar('/api/teste', 'PUT', { ativo: false });
 });
+
+test('fila do cliente: mostra quantos pedidos estão na frente e some quando fica pronto', async () => {
+  await chamar('/api/teste', 'PUT', { ativo: true });
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Fila Teste', celular: '(51) 98888-0004', email: 'fila@email.com', senha: 'segredo1', aceite: true }, {}, null);
+  const sess = { 'X-Sessao-Cliente': cad.corpo.token };
+  const prod = await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL LIMIT 1').first();
+  const fazer = async () => (await chamar('/api/cliente/pedidos', 'POST', { itens: [{ produto_id: prod.id, quantidade: 1 }] }, sess, null)).corpo;
+  const a = await fazer(), b = await fazer();
+  await env.DB.prepare("UPDATE pedido SET pago_em = datetime('now', '-5 minutes') WHERE id = ?").bind(a.id).run();
+  const ver = async (p) => (await chamar(`/api/cliente/pedidos/${p.id}`, 'GET', null, { 'X-Chave-Pedido': p.chave_qr }, null)).corpo;
+  const sb = await ver(b); assert.ok(sb.fila);
+  assert.equal(sb.fila.a_frente >= 1, true); assert.equal(sb.fila.posicao, sb.fila.a_frente + 1); assert.ok(sb.espera.padrao_min > 0);
+  assert.equal((await ver(a)).fila.a_frente < sb.fila.a_frente, true);
+  await env.DB.prepare("UPDATE pedido SET status = 'pronto', pronto_em = datetime('now') WHERE id = ?").bind(a.id).run();
+  assert.equal((await ver(b)).fila.a_frente, sb.fila.a_frente - 1);
+  assert.equal((await ver(a)).fila, null);
+  await chamar('/api/teste', 'PUT', { ativo: false });
+});

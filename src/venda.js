@@ -74,7 +74,7 @@ async function conferirQuitacao(db, pedidoId, operador) {
 }
 
 /** Espera média de HOJE: dos últimos 10 pedidos prontos do dia, quanto levou do pagamento até ficar pronto. Sem amostra, quem decide é o tempo padrão por produto. */
-async function esperaDoDia(db) {
+export async function esperaDoDia(db) {
   const [{ results }, cfg] = await Promise.all([
     db.prepare("SELECT pago_em, pronto_em FROM pedido WHERE dia = ? AND origem IN ('balcao', 'celular') AND pago_em IS NOT NULL AND pronto_em IS NOT NULL ORDER BY pronto_em DESC LIMIT 10").bind(diaDoTurno()).all(),
     db.prepare("SELECT valor FROM configuracao WHERE chave = 'tempo_padrao_min'").first()]);
