@@ -241,3 +241,11 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Para ligar (passo a passo):** 1) contratar emissor (Focus NFe) e cadastrar a empresa com certificado A1 e CSC da SEFAZ-RS; 2) `wrangler secret put FOCUSNFE_TOKEN`; 3) em `/fiscal.html`: emissor, CNPJ, NCM/CFOP/CSOSN padrão (confirmar com o contador); 4) emitir em **homologação**, conferir o DANFE; 5) trocar para produção.
 - **Validar em homologação:** nomes de campos do payload e códigos de retorno do Focus foram montados pela documentação pública e ainda não foram exercitados contra a API real.
 - **Ficou de fora:** emissão automática ao pagar (hoje o botão emite por número do pedido), NFC-e em contingência/offline, impressão do DANFE no balcão, NF-e (modelo 55) e NFS-e.
+
+## Monitor de Pix (Pix direto na chave, sem gateway)
+- **Problema:** com a chave Pix do bar sem gateway, o banco não avisa o sistema. O monitor resolve em duas partes: **receber o aviso** e **conciliar** com o que está esperando pagamento.
+- **Receber o aviso:** `POST /api/pagamentos/aviso/pix-monitor` com cabeçalho `X-Pix-Segredo` (segredo `PIX_MONITOR_SECRET` no Cloudflare). Corpo: `{"texto": "<notificação do banco>"}` ou `{"valor", "pagador", "id"}`. Fontes possíveis: app encaminhador de notificações no celular do bar (só aceita texto de Pix **recebido**) ou a API Pix de um banco (adaptador futuro). Aviso repetido não duplica (id do Pix ou impressão digital).
+- **Conciliar:** procura cobranças esperando Pix com **valor exatamente igual** (pedidos do app/balcão, recargas de saldo, inscrições do campeonato). Um Pix só paga uma cobrança. Aprovação automática vem **desligada**; ligada (só superadmin), aprova sozinha apenas se houver **uma única** cobrança com aquele valor e até o limite (R$ 200 padrão). Com duas ou mais, ou sem cobrança, vira "para decidir" na tela.
+- **Tela:** `/pix.html` ("Monitor Pix →" na gestão): Pix recebidos com botão "Aprovar: <pedido>", cobranças esperando, lançamento manual (Pix visto no app do banco) e as instruções de ligação.
+- **Cuidados:** o segredo funciona como senha (quem o tem forja pagamentos); valor diferente nunca é aprovado (devolver/ajustar à mão); pedido vencido antes do Pix não aprova sozinho.
+- Migração `0027_pix_monitor`; `src/pixmonitor.js`; testes em `test/pixmonitor.test.js`.

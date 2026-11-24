@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icone.svg">
+<title>Mukifo · Monitor de Pix</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a,.nav button{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:15px;cursor:pointer}
+.nav{display:flex;gap:8px;padding:10px 12px;max-width:760px;margin:0 auto}.nav button{flex:1;justify-content:center}.nav button[aria-pressed=true]{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
+main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2,.card h3{margin:0 0 6px}.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
+.btn{width:100%;min-height:54px;border-radius:14px;border:0;font-size:18px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px}.btn:disabled{opacity:.5}
+.mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}.mod:first-of-type{border-top:0}.mod b{font-size:19px}
+.chave{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.rod{min-width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;scroll-snap-align:start}.rod>h4{margin:0;text-align:center;color:var(--mut);font-size:14px;letter-spacing:.05em}
+.jg{background:var(--input);border:1px solid var(--line);border-radius:12px;overflow:hidden}.jg.vivo{border-color:var(--warn,#ffb347);box-shadow:0 0 0 2px var(--warn,#ffb347)}.jg .l{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;font-size:16px}.jg .l+.l{border-top:1px solid var(--line)}.jg .l.v{font-weight:800;color:var(--ok)}.jg .l.vazio{color:var(--mut);font-style:italic}.jg .m{font-size:12px;color:var(--mut);padding:0 10px 6px}
+.pos{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.pos:first-of-type{border-top:0}.pos .n{width:34px;font-weight:800;text-align:center}.pos .p{flex:1;min-width:0;overflow-wrap:anywhere}.pos .pt{font-weight:800}
+select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
+.erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
+.big{font-size:46px;font-weight:900;text-align:center;margin:6px 0}.mesa{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:10px 0}.mesa:first-of-type{border-top:0}.st{border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:var(--input);border:1px solid var(--line)}.st.livre{color:var(--ok,#3ddc84)}.st.ocupada,.st.liberando{color:var(--warn,#ffb347)}.st.chamando{color:var(--acc)}.btn.pq{min-height:44px;font-size:16px;width:auto;padding:0 16px;margin:0}.btn.ruim{background:var(--bad,#e5484d);color:#fff}</style></head><body data-sem-botao-visual>
+<header><h1>💸 Monitor de Pix</h1><a href="/pagamentos.html">Gateway</a><a href="/gestao.html">Gestão</a></header>
+<main id="m" style="padding-top:12px"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const hora = (s) => new Date(String(s).replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+let token = Mukifo.token(), d = null;
+async function api(url, corpo, metodo) {
+  const m = metodo || (corpo ? 'POST' : 'GET');
+  const r = await fetch(url, { method: m, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: m === 'GET' ? undefined : JSON.stringify(corpo || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); throw new Error(j.erro || 'Entre de novo'); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 5000); };
+const ST = { novo: '🟡 Esperando aprovação', conciliado: '✅ Aprovado', ignorado: '⚪ Ignorado' };
+function desenhar() {
+  const novos = d.recebidos.filter((x) => x.status === 'novo');
+  const como = `<details class="card"><summary><b>Como o aviso chega ao sistema</b></summary><div class="mut" style="margin-top:8px">
+    O banco não avisa o Mukifosystem sozinho quando o Pix cai direto na chave. Há dois jeitos:<br>
+    <b>1. Pelo celular do bar</b> (o que recebe as notificações do banco): um app que encaminha notificações (MacroDroid, Tasker ou parecido) manda cada “Você recebeu um Pix…” para o endereço abaixo.<br>
+    <b>2. Pela API Pix do banco</b> (Sicoob, Inter, Itaú…): o banco chama o endereço quando entra um Pix. Pede certificado e conta PJ; fica para um adaptador próprio.<br><br>
+    Endereço: <code style="word-break:break-all">${esc(d.url_entrada)}</code><br>
+    Método POST, cabeçalho <code>X-Pix-Segredo</code> com o segredo, corpo JSON <code>{"texto": "texto da notificação"}</code> (ou <code>{"valor": 25.00, "pagador": "Maria", "id": "código do Pix"}</code>).<br>
+    Segredo: <code>wrangler secret put PIX_MONITOR_SECRET</code>. Quem souber o segredo consegue forjar um pagamento: trate como senha.</div></details>`;
+  const estado = `<div class="card"><h3>${d.ligado ? '🟢 Monitor ligado' : '🔴 Monitor desligado'}</h3><div class="mut">${d.ligado ? 'Recebendo avisos.' : 'Falta o segredo no Cloudflare (veja acima). Enquanto isso, lance os Pix à mão aqui embaixo.'}</div>
+    <label class="mut" style="display:flex;gap:10px;align-items:center;margin-top:10px"><input type="checkbox" id="auto" style="width:28px;min-height:28px" ${d.auto ? 'checked' : ''}> Aprovar sozinho quando só houver uma cobrança com aquele valor (só superadmin)</label>
+    <label class="mut">Limite do automático (R$)</label><input id="max" type="number" inputmode="decimal" value="${d.auto_max}"><button class="btn" data-a="cfg">Salvar</button></div>`;
+  const pend = `<div class="card"><h3>Esperando Pix (${d.pendentes.length})</h3>${d.pendentes.map((p) => `<div class="pos"><span class="p">${esc(p.descricao)}<div class="mut">${hora(p.criada_em)}</div></span><b>${R$(p.valor)}</b></div>`).join('') || '<div class="mut">Nada esperando pagamento.</div>'}</div>`;
+  const rec = `<div class="card"><h3>Pix recebidos${novos.length ? ` <span class="chip">${novos.length} para decidir</span>` : ''}</h3>${d.recebidos.map((x) => `<div class="pos" style="flex-wrap:wrap"><span class="p">${ST[x.status]} · <b>${R$(x.valor)}</b>${x.pagador ? ' · ' + esc(x.pagador) : ''}<div class="mut">${hora(x.recebido_em)}${x.origem === 'manual' ? ' · lançado à mão' : ''}${x.conciliado_por ? ' · por ' + esc(x.conciliado_por) : ''}${x.ref ? ' · ' + esc(x.ref) : ''}</div></span>
+      ${x.status === 'novo' ? `<div style="flex-basis:100%">${x.candidatos.length ? x.candidatos.map((c) => `<button class="btn pq" style="margin:4px 4px 0 0" data-a="ok" data-id="${x.id}" data-ref="${esc(c.ref)}">Aprovar: ${esc(c.descricao)}</button>`).join('') : '<div class="mut">Nenhuma cobrança esperando esse valor. Se for pagamento de outra coisa, ignore.</div>'}<button class="btn sec pq" style="margin-top:4px" data-a="ign" data-id="${x.id}">Ignorar</button></div>` : ''}</div>`).join('') || '<div class="mut">Nenhum Pix recebido ainda.</div>'}</div>`;
+  const man = `<div class="card"><h3>Lançar um Pix visto no app do banco</h3><div style="display:flex;gap:8px"><input id="mv" inputmode="decimal" placeholder="Valor (ex.: 25,00)" style="flex:1"><input id="mp" placeholder="Quem pagou (opcional)" style="flex:1"></div><button class="btn" data-a="man">Lançar e procurar cobrança</button></div>`;
+  $('#m').innerHTML = como + estado + (novos.length ? rec + pend : pend + rec) + man;
+}
+async function carregar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); try { d = await api('/api/pagamentos/monitor'); desenhar(); } catch (e) { if (!d) $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a; t.disabled = true;
+  try {
+    if (a === 'cfg') { await api('/api/pagamentos/monitor/config', { auto: $('#auto').checked, auto_max: Number($('#max').value) }, 'PUT'); aviso('Salvo.'); }
+    else if (a === 'ok') { await api(`/api/pagamentos/monitor/${t.dataset.id}/conciliar`, { ref: t.dataset.ref }); aviso('Pagamento aprovado ✅'); }
+    else if (a === 'ign') { if (!confirm('Ignorar esse Pix? Ele fica só no histórico.')) { t.disabled = false; return; } await api(`/api/pagamentos/monitor/${t.dataset.id}/ignorar`, {}); }
+    else if (a === 'man') { const r = await api('/api/pagamentos/monitor/manual', { valor: Number($('#mv').value.replace(/\./g, '').replace(',', '.')), pagador: $('#mp').value }); aviso(r.aprovado ? 'Aprovado sozinho ✅' : r.candidatos ? 'Achei cobrança com esse valor: confirme abaixo.' : 'Lançado. Nenhuma cobrança com esse valor por enquanto.'); }
+  } catch (er) { aviso(er.message); }
+  t.disabled = false; carregar();
+});
+setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input,select')) carregar(); }, 5000);
+carregar();
+</script></body></html>

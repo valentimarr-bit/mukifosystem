@@ -6,6 +6,7 @@ import { GATEWAYS, MANUAL, gatewayAtivo } from './gateways.js';
 import { confirmarRecarga } from '../carteira.js';
 import { confirmarInscricao } from '../campeonato.js';
 import { COMPARATIVO, simular } from '../dominio/comparativo.js';
+import { entradaPix, monitorPix } from '../pixmonitor.js';
 
 /** Dá baixa no que a referência representa. Cada confirmação é idempotente (aviso repetido não credita duas vezes). */
 export async function confirmarPorRef(db, ref, gw) {
@@ -24,6 +25,7 @@ export async function confirmarPorRef(db, ref, gw) {
 }
 
 async function aviso(request, env, id) {
+  if (id === 'pix-monitor') return entradaPix(request, env);
   const g = GATEWAYS[id]; if (!g) return erro('Gateway desconhecido.', 404);
   if (!g.configurado(env)) return erro('Gateway não configurado.', 503);
   const db = env.DB, bruto = await request.text();
@@ -44,6 +46,7 @@ export async function rotearPagamentos(request, env, url) {
   if (m === 'POST' && (r = p.match(/^\/api\/pagamentos\/aviso\/([\w-]+)$/))) return aviso(request, env, r[1]);
   const eu = await usuarioLogado(request, env);
   if (!eu) return erro('Entre com seu nome e senha.', 401);
+  if (p.startsWith('/api/pagamentos/monitor')) return monitorPix(request, env, url, eu);
   if (p === '/api/pagamentos/gateway' && m === 'GET') {
     const ativo = await gatewayAtivo(env.DB, env);
     return json({ ativo: ativo.id, url_aviso: `${env.URL_PUBLICA || url.origin}/api/pagamentos/aviso/`,
