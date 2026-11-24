@@ -189,6 +189,8 @@
     <label for="prodPreco">Preço de venda (R$)</label><input id="prodPreco" inputmode="decimal" placeholder="ex.: 18,00">
     <label class="chk"><input type="checkbox" id="prodBaixa"> Dá baixa no estoque quando vende</label>
     <label class="chk" id="prodAtivoBox"><input type="checkbox" id="prodAtivo"> Produto ativo (desmarque para tirar do cardápio)</label>
+    <label for="prodCategoria">Categoria (aparece na tela de venda)</label><input id="prodCategoria" list="dlCategorias" autocomplete="off" placeholder="ex.: Drinks">
+    <datalist id="dlCategorias"></datalist><datalist id="dlInsumos"></datalist>
     <h4>Ficha — o que vai em cada um</h4>
     <div id="prodFicha"></div>
     <button class="btn" id="prodAddIng">＋ Ingrediente</button>
@@ -354,8 +356,8 @@ async function chamar(url, metodo, corpo) {
   return j;
 }
 function linhaFicha(l = {}) {
-  const opts = insumosLista.map((i) => `<option value="${i.id}" ${i.id === l.insumo_id ? 'selected' : ''}>${esc(i.nome)}</option>`).join('');
-  return `<div class="lfi"><select class="fi-insumo"><option value="">Escolha o ingrediente…</option>${opts}</select>
+  const atual = insumosLista.find((i) => i.id === l.insumo_id);
+  return `<div class="lfi"><input class="fi-insumo" list="dlInsumos" placeholder="Digite para buscar o ingrediente…" autocomplete="off" value="${esc(atual?.nome ?? '')}">
     <input class="fi-qtd" inputmode="decimal" placeholder="Qtd" value="${l.quantidade ?? ''}"><span class="mut fi-un">${esc(l.unidade_ficha ?? '')}</span>
     <button class="btn" data-tirar aria-label="Tirar ingrediente">✕</button></div>`;
 }
@@ -363,28 +365,37 @@ async function abrirProduto(id) {
   if (!Mukifo.token()) return Mukifo.pedir(() => abrirProduto(id));
   try {
     if (!insumosLista.length) insumosLista = await api('/api/insumos');
+    $('#dlInsumos').innerHTML = insumosLista.map((i) => `<option value="${esc(i.nome)}">`).join('');
     pEdit = id ? await chamar('/api/produtos/' + id, 'GET') : { id: null, nome: '', preco_venda: null, baixa_estoque: true, ativo: true, ficha: [] };
   } catch (e) { return alertar(e.message, 'neg'); }
   $('#prodTitulo').textContent = id ? 'Editar produto' : 'Novo produto';
   $('#prodNome').value = pEdit.nome;
   $('#prodPreco').value = pEdit.preco_venda == null ? '' : String(pEdit.preco_venda).replace('.', ',');
+  $('#prodCategoria').value = pEdit.categoria ?? '';
+  $('#dlCategorias').innerHTML = [...new Set(produtosLista.map((x) => x.categoria).filter(Boolean))].sort().map((c) => `<option value="${esc(c)}">`).join('');
   $('#prodBaixa').checked = pEdit.baixa_estoque;
   $('#prodAtivo').checked = pEdit.ativo; $('#prodAtivoBox').hidden = !id;
   $('#prodFicha').innerHTML = pEdit.ficha.map(linhaFicha).join('');
   $('#prodMsg').textContent = id ? 'Se mudar o nome, ele precisa continuar igual ao do sistema de vendas, senão os relatórios novos não encontram o produto.' : '';
   $('#dlgProduto').showModal();
 }
+const semAcento = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const insumoPorNome = (n) => insumosLista.find((i) => semAcento(i.nome) === semAcento(n));
 $('#prodAddIng').addEventListener('click', () => $('#prodFicha').insertAdjacentHTML('beforeend', linhaFicha()));
 $('#prodFicha').addEventListener('click', (ev) => { if (ev.target.closest('[data-tirar]')) ev.target.closest('.lfi').remove(); });
 $('#prodFicha').addEventListener('change', (ev) => {
   if (!ev.target.classList.contains('fi-insumo')) return;
-  const i = insumosLista.find((x) => x.id === Number(ev.target.value));
+  const i = insumoPorNome(ev.target.value);
   ev.target.closest('.lfi').querySelector('.fi-un').textContent = i?.unidade_ficha ?? '';
+  ev.target.style.borderColor = ev.target.value && !i ? 'var(--bad)' : '';
 });
 const lerNumero = (t) => { const x = String(t ?? '').trim().replace(/\./g, '').replace(',', '.'); return x === '' ? null : Number(x); };
 $('#prodSalvar').addEventListener('click', async () => {
-  const ficha = [...document.querySelectorAll('#prodFicha .lfi')].map((l) => ({ insumo_id: l.querySelector('.fi-insumo').value === '' ? null : Number(l.querySelector('.fi-insumo').value), quantidade: lerNumero(l.querySelector('.fi-qtd').value) }));
-  const corpo = { nome: $('#prodNome').value, preco_venda: lerNumero($('#prodPreco').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
+  const campos = [...document.querySelectorAll('#prodFicha .lfi')];
+  const ruim = campos.find((l) => l.querySelector('.fi-insumo').value.trim() && !insumoPorNome(l.querySelector('.fi-insumo').value));
+  if (ruim) { $('#prodMsg').textContent = `Não achei o ingrediente “${ruim.querySelector('.fi-insumo').value}”. Escolha um da lista que aparece ao digitar.`; return; }
+  const ficha = campos.map((l) => ({ insumo_id: insumoPorNome(l.querySelector('.fi-insumo').value)?.id ?? null, quantidade: lerNumero(l.querySelector('.fi-qtd').value) }));
+  const corpo = { nome: $('#prodNome').value, categoria: $('#prodCategoria').value.trim() || null, preco_venda: lerNumero($('#prodPreco').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
   $('#prodSalvar').disabled = true;
   try {
     await chamar(pEdit.id ? '/api/produtos/' + pEdit.id : '/api/produtos', pEdit.id ? 'PUT' : 'POST', corpo);
