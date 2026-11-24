@@ -193,3 +193,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Desempenho: nova caixa "Desempenho por produto" (sempre visível): todos os produtos vendidos no período com Qtd, vs período anterior, faturamento, % do total, custo, lucro e margem; ordenável pelo título. Servidor: `produtos` em /api/desempenho.
 
 - App do cliente: card "Fila de pedidos" (depois de pago, até ficar pronto): posição ("3º da fila"), quantos pedidos na frente, quantos em produção agora e a espera estimada (média do dia ou tempo padrão). Fila = pedidos pagos de hoje (app + balcão) ainda não prontos, por ordem de pagamento. `fila` e `espera` vêm em GET /api/cliente/pedidos/:id.
+
+## App do cliente: login primeiro
+- Sem conta salva e sem pedido em andamento, a primeira tela é o login/cadastro (`primeiroLogin`); após entrar vai ao cardápio. Sessão fica salva no aparelho (`mukifo_conta`), então só pede uma vez. O botão Voltar some nessa tela inicial.
+- Acesso por usuário: cliente vê o próprio perfil/nível/carteira; equipe usa o login do gestão (perfis definem os módulos). Obrigatoriedade ainda só no front: o servidor não recusa pedido sem conta (pendente, se quiser exigir).

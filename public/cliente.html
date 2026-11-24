@@ -151,11 +151,11 @@ $('#bNovo').onclick = () => tela('cardapio');
   const fotos = Fotos.carregar();   // as fotos vêm do cache do aparelho; a lista nova chega em paralelo e só redesenha depois
   { const d = await (await fetch('/api/venda/cardapio')).json(); cardapio = d.categorias; espera = d.espera; } cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); desenhar();
   fotos.then(() => { if (!$('#cardapio').hidden) desenhar(); });
-  try { pedido = JSON.parse(localStorage.getItem(CH) || 'null'); } catch {} if (pedido) acompanhar();
+  try { pedido = JSON.parse(localStorage.getItem(CH) || 'null'); } catch {} if (pedido) acompanhar(); else if (!conta) { primeiroLogin = true; abrirConta(); }
 })();
 
 // ---------- conta e níveis (o cliente nunca vê pontos nem valores acumulados) ----------
-const SC = 'mukifo_conta'; let conta = null, modo = 'entrar', niveis = null, etapaAtual = null;
+let primeiroLogin = false; const SC = 'mukifo_conta'; let conta = null, modo = 'entrar', niveis = null, etapaAtual = null;
 try { conta = JSON.parse(localStorage.getItem(SC) || 'null'); } catch {}
 const cabConta = () => (conta?.token ? { 'X-Sessao-Cliente': conta.token } : {});
 const salvarConta = (c) => { conta = c; try { c ? localStorage.setItem(SC, JSON.stringify(c)) : localStorage.removeItem(SC); } catch {} botaoConta(); };
@@ -167,7 +167,7 @@ function formaConta() { const novo = modo === 'criar', rec = modo === 'recuperar
 async function abrirConta() {
   tela('telaConta'); niveis ??= await api('/api/conta/niveis').catch(() => null);
   if (conta) { try { const j = await api('/api/conta/eu'); salvarConta({ ...conta, cliente: j.cliente }); desenharPerfil(j); } catch (e) { if (e.status === 401) { salvarConta(null); abrirConta(); } } return; }
-  $('#cVisitante').hidden = false; $('#cLogado').hidden = true; formaConta(); botaoGoogle();
+  $('#cVisitante').hidden = false; $('#cLogado').hidden = true; formaConta(); botaoGoogle(); $('#cVoltar').hidden = primeiroLogin;
 }
 function desenharPerfil(j) { const c = j.cliente, n = c.nivel; $('#cVisitante').hidden = true; $('#cLogado').hidden = false;
   carteira(); $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
@@ -192,7 +192,7 @@ $('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; 
 $('#criarAqui').onclick = (e) => { e.preventDefault(); modo = 'criar'; abrirConta(); };
 $('#cOk').onclick = async () => { $('#cErro').textContent = ''; $('#cOk').disabled = true;
   try { const j = modo === 'recuperar' ? await api('/api/conta/redefinir', { login: $('#cLogin').value, codigo: $('#cCodigo').value, senha: $('#cSenha').value }) : modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked })
-      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; abrirConta(); }
+      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; if (primeiroLogin) { primeiroLogin = false; tela('cardapio'); desenhar(); } else abrirConta(); }
   catch (e) { $('#cErro').textContent = e.message; } $('#cOk').disabled = false; };
 $('#lSair').onclick = async () => { try { await api('/api/conta/sair', {}); } catch {} salvarConta(null); tela('cardapio'); desenhar(); };
 function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGoogle').dataset.ok) return; $('#cGoogle').dataset.ok = 1;
