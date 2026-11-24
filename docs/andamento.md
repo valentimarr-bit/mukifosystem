@@ -10,7 +10,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - 15 testes passando (inclui o fluxo da lista).
 
 **Próximo**
-- Igual à sessão anterior (subir o D1 no PC) + abrir `/compras/` no celular e instalar.
+- Repo no GitHub: https://github.com/valentimarr-bit/mukifosystem (o `origin` já está configurado; falta `git push -u origin main` pelo terminal).
+- Subir o D1 no PC (README → "Banco de dados") + abrir `/compras/` no celular e instalar.
 
 ## 2026-11-23 (2ª sessão) — fase 2
 **Feito**
