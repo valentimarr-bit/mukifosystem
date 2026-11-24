@@ -80,6 +80,7 @@
     <button data-aba="estoque" aria-pressed="true">Estoque</button>
     <button data-aba="lista">Lista de compras</button>
     <button data-aba="produtos">Produtos e lucro</button>
+    <button data-aba="combos">Combos</button>
     <button data-aba="alertas">Alertas</button>
     <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
@@ -112,6 +113,18 @@
     <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
     <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
+  </section>
+
+  <section id="combos" hidden>
+    <div class="bar"><button class="btn prim" id="novoCombo">＋ Novo combo</button></div>
+    <p class="mut">Combo = vários produtos vendidos juntos por um preço só. Ao vender, o estoque baixa de cada produto do combo. Custo = soma do custo dos produtos.</p>
+    <table><thead><tr><th>Combo</th><th>O que leva</th><th>Preço</th><th>Custo</th><th>Lucro</th><th></th></tr></thead><tbody id="tbCombos"></tbody></table>
+    <dialog id="dlgCombo"><h3 id="cTitulo">Combo</h3>
+      <label>Nome</label><input id="cbNome" maxlength="60"><label>Preço de venda (R$)</label><input id="cbPreco" inputmode="decimal">
+      <h4>Produtos do combo</h4><div id="cbItens"></div>
+      <div class="bar"><select id="cbAdd" style="flex:1"></select><button class="btn" id="cbAddBtn">Adicionar</button></div>
+      <p class="mut" id="cbCusto"></p><label><input type="checkbox" id="cbAtivo" checked> Combo ativo (aparece na venda)</label>
+      <div class="neg" id="cbErro"></div><div class="bar"><button class="btn prim" id="cbSalvar">Salvar</button><button class="btn" id="cbFechar">Voltar</button></div></dialog>
   </section>
 
   <section id="alertas" hidden>
@@ -218,6 +231,7 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   if (b.dataset.aba === 'conta') carregarConta();
   if (b.dataset.aba === 'fotos') carregarFotos();
   if (b.dataset.aba === 'alertas') desenharAlertas();
+  if (b.dataset.aba === 'combos') carregarCombos();
 }));
 
 async function api(caminho, corpo) {
@@ -405,6 +419,40 @@ $('#enviarCont').addEventListener('click', async () => {
     carregarEstoque();
   } catch (e) { alertar(e.message, 'neg'); }
 });
+
+// ---- combos ----
+let combosLista = [], cbEdit = null, cbItens = [], prodBase = [];
+const custoCombo = (itens) => itens.reduce((s, i) => s + i.quantidade * (prodBase.find((p) => p.id === i.produto_id)?.cmv ?? 0), 0);
+async function carregarCombos() {
+  try { [combosLista, prodBase] = await Promise.all([chamarConta('/api/combos', null, 'GET'), api('/api/produtos')]); } catch (e) { return alertar(e.message, 'neg'); }
+  $('#tbCombos').innerHTML = combosLista.map((c) => { const custo = custoCombo(c.itens);
+    return `<tr><td>${esc(c.nome)}${c.ativo ? '' : ' <span class="mut">(desativado)</span>'}</td><td>${c.itens.map((i) => `${i.quantidade}× ${esc(i.nome)}`).join('<br>')}</td><td>${brl(c.preco_venda)}</td><td>${brl(custo)}</td><td>${brl(c.preco_venda - custo)}</td><td><button class="btn" data-ecombo="${c.id}">Editar</button></td></tr>`; }).join('')
+    || '<tr><td colspan="6" class="mut">Nenhum combo ainda. Toque em “Novo combo”.</td></tr>';
+}
+function desenharCombo() {
+  $('#cbItens').innerHTML = cbItens.map((i, n) => `<div class="bar"><span style="flex:1">${esc(i.nome)}</span><button class="btn" data-cbq="${n}" data-d="-1">−</button><b>${i.quantidade}</b><button class="btn" data-cbq="${n}" data-d="1">+</button></div>`).join('') || '<p class="mut">Nenhum produto ainda.</p>';
+  const custo = custoCombo(cbItens), preco = parseFloat(String($('#cbPreco').value).replace(',', '.')) || 0;
+  $('#cbCusto').textContent = `Custo: ${brl(custo)}${preco ? ' · lucro: ' + brl(preco - custo) : ''}`;
+}
+function abrirCombo(id) {
+  cbEdit = id ? combosLista.find((c) => c.id === id) : null; cbItens = cbEdit ? cbEdit.itens.map((i) => ({ ...i })) : [];
+  $('#cTitulo').textContent = cbEdit ? 'Editar combo' : 'Novo combo'; $('#cbNome').value = cbEdit?.nome ?? ''; $('#cbPreco').value = cbEdit ? String(cbEdit.preco_venda).replace('.', ',') : '';
+  $('#cbAtivo').checked = cbEdit ? cbEdit.ativo : true; $('#cbErro').textContent = '';
+  const ids = new Set(combosLista.map((c) => c.id));
+  $('#cbAdd').innerHTML = prodBase.filter((p) => !ids.has(p.id) && p.preco_venda != null).sort((a, b) => a.produto.localeCompare(b.produto, 'pt-BR')).map((p) => `<option value="${p.id}">${esc(p.produto)}</option>`).join('');
+  desenharCombo(); $('#dlgCombo').showModal();
+}
+$('#novoCombo').onclick = () => abrirCombo(null);
+$('#tbCombos').onclick = (e) => { const b = e.target.closest('[data-ecombo]'); if (b) abrirCombo(+b.dataset.ecombo); };
+$('#cbAddBtn').onclick = () => { const id = +$('#cbAdd').value; if (!id) return; const x = cbItens.find((i) => i.produto_id === id);
+  x ? x.quantidade++ : cbItens.push({ produto_id: id, nome: prodBase.find((p) => p.id === id).produto, quantidade: 1 }); desenharCombo(); };
+$('#cbItens').onclick = (e) => { const b = e.target.closest('[data-cbq]'); if (!b) return; const i = cbItens[+b.dataset.cbq]; i.quantidade += +b.dataset.d; if (i.quantidade < 1) cbItens.splice(+b.dataset.cbq, 1); desenharCombo(); };
+$('#cbPreco').addEventListener('input', desenharCombo);
+$('#cbFechar').onclick = () => $('#dlgCombo').close();
+$('#cbSalvar').onclick = async () => { try {
+  const corpo = { nome: $('#cbNome').value, preco_venda: parseFloat(String($('#cbPreco').value).replace(',', '.')), ativo: $('#cbAtivo').checked, itens: cbItens.map((i) => ({ produto_id: i.produto_id, quantidade: i.quantidade })) };
+  await chamarConta(cbEdit ? '/api/combos/' + cbEdit.id : '/api/combos', corpo, cbEdit ? 'PUT' : 'POST');
+  $('#dlgCombo').close(); carregarCombos(); alertar('Combo salvo ✓', 'pos'); } catch (e) { $('#cbErro').textContent = e.message; } };
 
 // ---- conta ----
 const msgConta = (t, c = 'pos') => { $('#retornoConta').innerHTML = `<p class="${c}">${esc(t)}</p>`; };

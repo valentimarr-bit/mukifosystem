@@ -39,10 +39,15 @@ async function recalcular(db, pedidoId) {
 /** Baixa do estoque pela ficha técnica dos itens da comanda (sem arredondar para cima: é uma venda só). */
 async function darBaixa(db, pedidoId) {
   if (await db.prepare("SELECT 1 AS ok FROM movimento_estoque WHERE tipo = 'venda' AND referencia = ?").bind(pedidoId).first()) return;
+  // Produto comum baixa pela própria ficha; combo baixa pela ficha de cada produto que o compõe.
   const { results } = await db.prepare(
-    `SELECT ft.insumo_id, SUM(ft.quantidade * ip.quantidade / i.conteudo) AS q
-     FROM item_pedido ip JOIN ficha_tecnica ft ON ft.produto_id = ip.produto_id JOIN insumo i ON i.id = ft.insumo_id
-     WHERE ip.pedido_id = ? GROUP BY ft.insumo_id`).bind(pedidoId).all();
+    `SELECT insumo_id, SUM(q) AS q FROM (
+       SELECT ft.insumo_id, ft.quantidade * ip.quantidade / i.conteudo AS q
+       FROM item_pedido ip JOIN ficha_tecnica ft ON ft.produto_id = ip.produto_id JOIN insumo i ON i.id = ft.insumo_id WHERE ip.pedido_id = ?
+       UNION ALL
+       SELECT ft.insumo_id, ft.quantidade * ip.quantidade * ci.quantidade / i.conteudo
+       FROM item_pedido ip JOIN combo_item ci ON ci.combo_id = ip.produto_id JOIN ficha_tecnica ft ON ft.produto_id = ci.produto_id JOIN insumo i ON i.id = ft.insumo_id WHERE ip.pedido_id = ?
+     ) GROUP BY insumo_id`).bind(pedidoId, pedidoId).all();
   if (!results.length) return;
   await db.batch(results.filter((r) => r.q > 0).map((r) =>
     db.prepare(`INSERT INTO movimento_estoque (insumo_id, tipo, quantidade, motivo, referencia) VALUES (?, 'venda', ?, 'venda no balcão', ?)`).bind(r.insumo_id, -r.q, pedidoId)));

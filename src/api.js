@@ -4,6 +4,7 @@ import { rotearFotos } from './fotos.js';
 import { rotearProdutos } from './produtos.js';
 import { rotearVenda } from './venda.js';
 import { rotearCliente } from './cliente.js';
+import { rotearCombos } from './combos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -363,6 +364,7 @@ export async function rotearApi(request, env, url) {
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
   if (p.startsWith('/api/cliente/')) return rotearCliente(request, env, url);
+  if (p === '/api/combos' || p.startsWith('/api/combos/')) return rotearCombos(request, env, url);
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);

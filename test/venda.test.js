@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -111,4 +111,22 @@ test('app do cliente: limita pedidos não pagos por celular', async () => {
   assert.equal((await novo()).status, 201);
   assert.equal((await novo()).status, 201);
   assert.equal((await novo()).status, 429);
+});
+
+test('combos: cria, valida e baixa o estoque pelos produtos do combo', async () => {
+  const lista = (await chamar('/api/produtos')).corpo.filter((x) => x.tem_ficha && x.ficha.length && x.preco_venda);
+  const [a, b] = lista;
+  assert.equal((await chamar('/api/combos', 'GET', null, { token: null })).status, 401);
+  assert.equal((await chamar('/api/combos', 'POST', { nome: 'Vazio', preco_venda: 10, itens: [] })).status, 400);
+  const r = await chamar('/api/combos', 'POST', { nome: 'Combo teste', preco_venda: 30, itens: [{ produto_id: a.id, quantidade: 2 }, { produto_id: b.id, quantidade: 1 }] });
+  assert.equal(r.status, 201);
+  const id = r.corpo.combo.id;
+  assert.equal((await chamar('/api/combos', 'POST', { nome: 'Combo dentro', preco_venda: 5, itens: [{ produto_id: id, quantidade: 1 }] })).status, 400);
+  assert.ok((await chamar('/api/venda/cardapio', 'GET', null, { token: null })).corpo.categorias.some((c) => c.produtos.some((p) => p.id === id)));
+  const c = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda;
+  await chamar(`/api/venda/comandas/${c.id}/itens`, 'POST', { produto_id: id, delta: 1 });
+  assert.equal((await chamar(`/api/venda/comandas/${c.id}/cobrar`, 'POST', { forma: 'dinheiro' })).corpo.comanda.status, 'entregue');
+  const mov = await env.DB.prepare("SELECT COUNT(*) AS n FROM movimento_estoque WHERE tipo = 'venda' AND referencia = ?").bind(c.id).first();
+  assert.ok(mov.n >= 1);
+  assert.equal((await chamar(`/api/combos/${id}`, 'DELETE')).status, 200);
 });

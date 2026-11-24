@@ -77,3 +77,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Segurança**: preço sempre vem do servidor; QR de retirada com segredo de 128 bits (só o hash fica no banco), uso único (atualização atômica), vale só no dia do turno; o balcão recusa pedido não pago, vencido, de outro dia ou já usado; limite de pedidos não pagos por celular (2) e por aparelho/rede (6); a consulta de status exige a chave do pedido (erro idêntico para "não existe" e "chave errada"); aviso automático de pagamento só vale com assinatura HMAC (`PAGAMENTO_WEBHOOK_SECRET`).
 - **Pendente**: confirmação AUTOMÁTICA do Pix (hoje o balcão toca "Pix recebido ✓" depois de ver o dinheiro no banco). Precisa de um provedor Pix (banco/PSP com cobrança e webhook) ou do Navi; o endpoint `/api/cliente/pagamento/webhook` já existe e confere a assinatura.
 - Importar o relatório de vendas de um dia que já tem vendas lançadas aqui retorna 409 (evita contar em dobro no estoque); use `forcar` só se souber o que faz.
+
+## Combos
+- Aba **Combos** na gestão: combo = produto vendável (categoria "Promoções e kits") formado por outros produtos; custo e lucro calculados pelos componentes; ao vender, o estoque baixa pela ficha de cada produto do combo (sem combo dentro de combo). Combos antigos da planilha (KIT…) continuam como produtos comuns com ficha própria.
+- Limitação: o cálculo de estoque mínimo por histórico de vendas ainda não "abre" combos.
+- **Pergunta em aberto (Pix):** em qual conta/banco o Pix cai? Define o provedor para confirmação automática (webhook).
