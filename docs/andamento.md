@@ -233,3 +233,11 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - "Consultar na Receita Federal": dados cadastrais do CNPJ (razão social, situação) pela BrasilAPI. Se estiver fora do ar, o sistema segue normal.
 - Migração `0025_nota_fiscal`; `src/dominio/fiscal.js`; testes em `test/notafiscal.test.js`.
 - **Não faz ainda:** emitir nota (NFC-e/NF-e) nem baixar a nota do fornecedor direto da SEFAZ. Ver conversa sobre emissão: exige certificado digital A1, CSC da SEFAZ-RS e dados fiscais (NCM, CFOP, CSOSN) em cada produto.
+
+## Emissão de NFC-e (pronta para ligar)
+- **Estado:** tudo construído e testado com o emissor simulado; vem **desligado** (`fiscal_emissor = desligado`). Nada sai para a Receita/SEFAZ até configurar.
+- **Peças:** migração `0026_fiscal` (NCM/CFOP/CSOSN/origem/unidade no produto; configuração; tabela `nota_emitida`); `src/dominio/nfce.js` (monta e valida a nota); `src/fiscal/emissores.js` (contrato + adaptador Focus NFe; outros emissores entram no mesmo molde); `src/fiscal.js` (rotas `/api/fiscal`, módulo financeiro); tela `/fiscal.html` ("Notas fiscais →" na gestão).
+- **Regras:** só pedido pago; soma dos itens tem que bater com o total; item sem NCM/CFOP/CSOSN válido bloqueia antes de falar com o emissor e lista o produto; uma nota viva por pedido (emitir de novo devolve a mesma); rejeição guarda o motivo e libera nova tentativa; cancelamento exige justificativa de 15+ letras.
+- **Para ligar (passo a passo):** 1) contratar emissor (Focus NFe) e cadastrar a empresa com certificado A1 e CSC da SEFAZ-RS; 2) `wrangler secret put FOCUSNFE_TOKEN`; 3) em `/fiscal.html`: emissor, CNPJ, NCM/CFOP/CSOSN padrão (confirmar com o contador); 4) emitir em **homologação**, conferir o DANFE; 5) trocar para produção.
+- **Validar em homologação:** nomes de campos do payload e códigos de retorno do Focus foram montados pela documentação pública e ainda não foram exercitados contra a API real.
+- **Ficou de fora:** emissão automática ao pagar (hoje o botão emite por número do pedido), NFC-e em contingência/offline, impressão do DANFE no balcão, NF-e (modelo 55) e NFS-e.

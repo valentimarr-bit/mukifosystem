@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icone.svg">
+<title>Mukifo · Notas fiscais</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a,.nav button{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:15px;cursor:pointer}
+.nav{display:flex;gap:8px;padding:10px 12px;max-width:760px;margin:0 auto}.nav button{flex:1;justify-content:center}.nav button[aria-pressed=true]{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
+main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2,.card h3{margin:0 0 6px}.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
+.btn{width:100%;min-height:54px;border-radius:14px;border:0;font-size:18px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px}.btn:disabled{opacity:.5}
+.mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}.mod:first-of-type{border-top:0}.mod b{font-size:19px}
+.chave{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.rod{min-width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;scroll-snap-align:start}.rod>h4{margin:0;text-align:center;color:var(--mut);font-size:14px;letter-spacing:.05em}
+.jg{background:var(--input);border:1px solid var(--line);border-radius:12px;overflow:hidden}.jg.vivo{border-color:var(--warn,#ffb347);box-shadow:0 0 0 2px var(--warn,#ffb347)}.jg .l{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;font-size:16px}.jg .l+.l{border-top:1px solid var(--line)}.jg .l.v{font-weight:800;color:var(--ok)}.jg .l.vazio{color:var(--mut);font-style:italic}.jg .m{font-size:12px;color:var(--mut);padding:0 10px 6px}
+.pos{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.pos:first-of-type{border-top:0}.pos .n{width:34px;font-weight:800;text-align:center}.pos .p{flex:1;min-width:0;overflow-wrap:anywhere}.pos .pt{font-weight:800}
+select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
+.erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
+.big{font-size:46px;font-weight:900;text-align:center;margin:6px 0}.mesa{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:10px 0}.mesa:first-of-type{border-top:0}.st{border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:var(--input);border:1px solid var(--line)}.st.livre{color:var(--ok,#3ddc84)}.st.ocupada,.st.liberando{color:var(--warn,#ffb347)}.st.chamando{color:var(--acc)}.btn.pq{min-height:44px;font-size:16px;width:auto;padding:0 16px;margin:0}.btn.ruim{background:var(--bad,#e5484d);color:#fff}</style></head><body data-sem-botao-visual>
+<header><h1>🧾 Notas fiscais</h1><a href="/gestao.html">Gestão</a></header>
+<main id="m" style="padding-top:12px"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let token = Mukifo.token(), d = null;
+async function api(url, corpo, metodo) {
+  const m = metodo || (corpo ? 'POST' : 'GET');
+  const r = await fetch(url, { method: m, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: m === 'GET' ? undefined : JSON.stringify(corpo || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); throw new Error(j.erro || 'Entre de novo'); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 5000); };
+const ST = { pendente: '⏳ Aguardando SEFAZ', autorizada: '✅ Autorizada', rejeitada: '❌ Rejeitada', cancelada: '🚫 Cancelada', erro: '⚠️ Erro' };
+function desenhar() {
+  const c = d.config, desl = c.emissor === 'desligado';
+  const passos = `<div class="card"><h3>Para ligar a emissão</h3><div class="mut">${[
+    [!desl, 'Escolher o emissor e informar o CNPJ abaixo'], [d.token_ok, 'Guardar o token do emissor no Cloudflare: <code>wrangler secret put FOCUSNFE_TOKEN</code>'],
+    [!!c.ncm || d.sem_ncm === 0, 'Definir o NCM padrão ou o NCM de cada produto'], [c.ambiente === 'producao', 'Testar em homologação e só então passar para produção']].map(([ok, t]) => `<div>${ok ? '✅' : '⬜'} ${t}</div>`).join('')}</div></div>`;
+  const cfg = `<div class="card"><h3>Configuração fiscal</h3>
+    <label class="mut">Emissor</label><select id="fEm"><option value="desligado">Desligado</option>${d.emissores.map((e) => `<option value="${e.id}" ${c.emissor === e.id ? 'selected' : ''}>${esc(e.nome)}</option>`).join('')}</select>
+    <label class="mut">Ambiente</label><select id="fAmb"><option value="homologacao" ${c.ambiente === 'homologacao' ? 'selected' : ''}>Homologação (teste, sem valor fiscal)</option><option value="producao" ${c.ambiente === 'producao' ? 'selected' : ''}>Produção (valendo)</option></select>
+    <label class="mut">CNPJ da empresa</label><input id="fCnpj" inputmode="numeric" value="${esc(c.cnpj)}">
+    <label class="mut">NCM padrão (8 números; usado quando o produto não tem o dele)</label><input id="fNcm" inputmode="numeric" maxlength="8" value="${esc(c.ncm)}">
+    <label class="mut">CFOP padrão</label><input id="fCfop" inputmode="numeric" maxlength="4" value="${esc(c.cfop)}">
+    <label class="mut">CSOSN padrão (Simples Nacional: 102 = sem crédito de ICMS; 500 = ICMS já pago por substituição)</label><input id="fCsosn" inputmode="numeric" maxlength="3" value="${esc(c.csosn)}">
+    <button class="btn" data-a="cfg">Salvar</button></div>`;
+  const emitir = desl ? '' : `<div class="card"><h3>Emitir nota de um pedido</h3><div style="display:flex;gap:8px"><input id="eNum" placeholder="Nº do pedido (ex.: A27)" style="flex:1"><button class="btn pq" data-a="emitir">Emitir</button></div><div class="mut">Procura nos pedidos de hoje. Só pedido pago.</div></div>`;
+  const notas = `<div class="card"><h3>Notas emitidas</h3>${d.notas.map((n) => `<div class="pos"><span class="p"><b>${ST[n.status]}</b> · pedido ${esc(n.pedido_numero || n.pedido_id)} · ${R$(n.valor)}${n.ambiente === 'homologacao' ? ' · <i>teste</i>' : ''}<div class="mut">${n.numero ? 'NFC-e ' + esc(n.numero) + ' · ' : ''}${esc(n.mensagem || '')}</div></span>${n.url_danfe ? `<a class="btn sec pq" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" href="${esc(n.url_danfe)}">Ver</a>` : ''}${n.status === 'pendente' || n.status === 'erro' ? `<button class="btn sec pq" data-a="cons" data-id="${n.id}">Atualizar</button>` : ''}${n.status === 'autorizada' ? `<button class="btn sec pq" data-a="canc" data-id="${n.id}">Cancelar</button>` : ''}</div>`).join('') || '<div class="mut">Nenhuma nota ainda.</div>'}</div>`;
+  const prods = `<div class="card"><h3>Dados fiscais dos produtos${d.sem_ncm ? ` <span class="chip">${d.sem_ncm} sem NCM</span>` : ''}</h3><div class="mut">Em branco = usa o padrão. NCM de bebidas e porções você confirma com o contador.</div>${d.produtos.map((p) => `<div class="pos" data-prod="${p.id}" style="flex-wrap:wrap"><span class="p" style="flex-basis:100%">${esc(p.nome)}</span><input data-f="ncm" placeholder="NCM" inputmode="numeric" maxlength="8" value="${esc(p.ncm)}" style="flex:2;min-width:100px"><input data-f="cfop" placeholder="CFOP" inputmode="numeric" maxlength="4" value="${esc(p.cfop)}" style="flex:1;min-width:70px"><input data-f="csosn" placeholder="CSOSN" inputmode="numeric" maxlength="3" value="${esc(p.csosn)}" style="flex:1;min-width:70px"><button class="btn sec pq" data-a="prod">Salvar</button></div>`).join('')}</div>`;
+  $('#m').innerHTML = passos + cfg + emitir + notas + prods;
+}
+async function carregar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); try { d = await api('/api/fiscal'); desenhar(); } catch (e) { if (!d) $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a; t.disabled = true;
+  try {
+    if (a === 'cfg') { await api('/api/fiscal/config', { emissor: $('#fEm').value, ambiente: $('#fAmb').value, cnpj: $('#fCnpj').value, ncm: $('#fNcm').value, cfop: $('#fCfop').value, csosn: $('#fCsosn').value }, 'PUT'); aviso('Configuração salva.'); }
+    else if (a === 'emitir') { const r = await api('/api/fiscal/emitir', { numero: $('#eNum').value }); aviso(r.repetida ? 'Esse pedido já tem nota.' : 'Enviado ao emissor.'); }
+    else if (a === 'cons') { await api(`/api/fiscal/notas/${t.dataset.id}/consultar`, {}); }
+    else if (a === 'canc') { const j = prompt('Motivo do cancelamento (mínimo 15 letras):', ''); if (!j) { t.disabled = false; return; } await api(`/api/fiscal/notas/${t.dataset.id}/cancelar`, { justificativa: j }); aviso('Nota cancelada.'); }
+    else if (a === 'prod') { const l = t.closest('[data-prod]'), g = (f) => l.querySelector(`[data-f=${f}]`).value; await api(`/api/fiscal/produtos/${l.dataset.prod}`, { ncm: g('ncm'), cfop: g('cfop'), csosn: g('csosn') }, 'PUT'); aviso('Produto salvo.'); }
+  } catch (er) { aviso(er.message); }
+  t.disabled = false; carregar();
+});
+setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input,select')) carregar(); }, 15000);
+carregar();
+</script></body></html>
