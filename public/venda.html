@@ -29,6 +29,11 @@ input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border
 .setor{min-height:112px;border-radius:18px;border:2px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:20px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:10px;text-align:center}.setor span{font-size:44px;line-height:1}.setor small{font-size:14px;font-weight:400;color:var(--mut)}.setor:active{transform:scale(.97)}.busca{display:block;width:100%;min-height:54px;font-size:18px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:0 0 10px}.volta{min-height:52px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:800;font-size:17px;cursor:pointer}.cabset{display:flex;align-items:center;gap:12px;margin-bottom:10px}.cabset b{font-size:20px}
 .chips{display:none!important}
 button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#confRes:not(:empty){position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:8px;overflow:auto}
+#confRes>.ret{width:min(640px,100%);max-height:100%;overflow:auto;font-size:22px;line-height:1.4;padding:20px;border-radius:18px;border-width:3px;margin:0}
+#confRes>.ret b.bom{font-size:26px}#confRes>.ret ul{padding-left:0;list-style:none}#confRes>.ret li{padding:8px 0;border-bottom:1px solid var(--line);font-size:24px}
+#confRes>.ret input[type=checkbox]{width:30px;height:30px;vertical-align:middle;margin-right:10px}#confRes>.ret select{font-size:22px;min-height:44px}
+#confRes>.ret .grande{min-height:64px;font-size:22px;margin-top:10px}
 </style></head><body>
 <header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
 <div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button><button id="aH">Histórico</button></div>
@@ -212,6 +217,8 @@ function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="
 const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { const v = await conferir(codigo, false), its = v.pedido.itens.filter((i) => i.falta > 0);
     if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
 let stream = null;
+// o resultado da leitura abre em popup grande; o botão Fechar é posto aqui, em qualquer conteúdo que entrar
+new MutationObserver(() => { const r = $('#confRes').firstElementChild; if (r && !r.querySelector('#popFechar')) { const b = document.createElement('button'); b.id = 'popFechar'; b.className = 'grande sec'; b.textContent = '✖ Fechar'; b.onclick = () => { $('#confRes').innerHTML = ''; }; r.appendChild(b); } }).observe($('#confRes'), { childList: true });
 let carregouJsQR = null;
 const carregarJsQR = () => carregouJsQR ??= new Promise((ok, no) => { if (window.jsQR) return ok(); const t = document.createElement('script'); t.src = '/vendor/jsqr.min.js'; t.onload = ok; t.onerror = () => no(new Error('Não consegui carregar o leitor de QR.')); document.head.appendChild(t); });
 function fecharCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('#cam').style.display = 'none'; $('#bCam').textContent = '📷 Ler QR do cliente'; }

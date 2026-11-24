@@ -178,3 +178,5 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Rota: `POST /api/producao/:pedido/item/:item/pronto` `{pronto: true|false}`.
 
 - Retirada na venda: removidos o campo de digitar código e o botão "Conferir código". A aba abre a câmera sozinha; o QR (`MKF1.id.chave.remessa`) é lido pela câmera (leitor nativo ou jsQR) e confere/dá baixa. Verificado: o QR gerado pelo app é decodificado pelo jsQR.
+
+- Leitura do QR abre um popup que ocupa quase a tela toda (letras grandes, itens em lista, botões altos, botão Fechar); vale para entrega total, parcial e erro.
