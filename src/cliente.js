@@ -191,7 +191,7 @@ export async function validarRetirada(db, corpo, eu) {
   if (p.dia !== diaDoTurno()) return erro('Esse pedido é de outro dia. Chame o gerente.', 409);
   const c = await lerComanda(db, id);
   if (corpo?.confirmar !== true) return json({ ok: true, entregue: false, pedido: { numero: c.numero, nome: c.nome_cliente, total: c.total, itens: c.itens } });
-  const r = await db.prepare("UPDATE pedido SET status = 'entregue', retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id).run();
+  const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id).run();
   if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
   return json({ ok: true, entregue: true, pedido: { numero: c.numero, nome: c.nome_cliente, total: c.total, itens: c.itens } });
 }

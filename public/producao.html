@@ -5,7 +5,11 @@
 [hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
 header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}header h1{font-size:22px;margin:0;flex:1}
 header a,header select{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:48px;display:inline-flex;align-items:center;text-decoration:none;font:inherit}
-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;padding:12px}
+main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;padding:12px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}.col>h2{margin:0;font-size:17px;letter-spacing:.06em;padding:10px 12px;border-radius:12px;background:var(--hdr);border-bottom:4px solid var(--line);position:sticky;top:72px;z-index:4;display:flex;justify-content:space-between}
+.col.c1>h2{border-color:var(--acc)}.col.c2>h2{border-color:var(--warn,#ffb347)}.col.c3>h2{border-color:var(--ok,#4caf50)}
+.col .n{background:var(--card);border-radius:999px;padding:0 10px;min-width:28px;text-align:center}
+.ped.entregue{opacity:.8;padding:10px;gap:4px}.ped.entregue .num{font-size:28px}.ped.entregue ul{margin:0;padding-left:18px;font-size:15px}
 .ped{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .ped.preparando{border-color:var(--warn,#ffb347)}.ped.pronto{border-color:var(--ok,#4caf50)}.ped.novo{animation:pisca 1s 3}
 @keyframes pisca{50%{background:var(--input)}}
@@ -30,7 +34,9 @@ async function api(url, corpo) {
 const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
 function bipe() { if (!som) return; try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .2; o.start(); o.stop(c.currentTime + .25); } catch {} if (navigator.vibrate) navigator.vibrate(200); }
 const rec = (l) => l.length ? `<ul class="rec">${l.map((r) => `<li><span class="q">${fmt(r.quantidade)} ${esc(r.unidade)}</span> ${esc(r.insumo)}${r.observacao ? ` <span class="mut">(${esc(r.observacao)})</span>` : ''}</li>`).join('')}</ul>` : '<p class="mut" style="margin:0">Sem ficha técnica cadastrada para este item.</p>';
+const hora = (t) => t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
 function cartao(p, novo) {
+  if (p.status === 'entregue') return `<section class="ped entregue"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}</span><span class="tempo">${esc(p.nome_cliente || '')} · ${hora(p.entregue_em)}</span></div><ul>${p.itens.map((i) => `<li>${i.quantidade}× ${esc(i.nome)}</li>`).join('')}</ul></section>`;
   const itens = p.itens.map((i) => `<div class="item"><h3><b>${i.quantidade}×</b> ${esc(i.nome)}</h3>${i.combo ? i.combo.map((c) => `<div class="sub"><b>${c.quantidade}× ${esc(c.nome)}</b>${rec(c.receita)}</div>`).join('') : rec(i.receita)}</div>`).join('');
   const atraso = p.minutos >= 10 && p.status !== 'pronto';
   const botao = p.status === 'recebido' ? `<button class="btn" data-id="${p.id}" data-acao="preparando">▶ Começar a preparar</button>` : p.status === 'preparando' ? `<button class="btn ok" data-id="${p.id}" data-acao="pronto">✔ Pronto</button>` : '<div class="mut" style="text-align:center">Pronto · esperando o cliente mostrar o QR no balcão</div>';
@@ -41,7 +47,9 @@ async function atualizar() {
     const j = await api('/api/producao'), ids = new Set(j.pedidos.map((p) => p.id));
     const novos = vistos ? j.pedidos.filter((p) => !vistos.has(p.id)) : []; if (novos.length) bipe(); vistos = ids;
     $('#cont').textContent = j.pedidos.length ? `· ${j.pedidos.length} na fila` : '';
-    $('#fila').innerHTML = j.pedidos.length ? j.pedidos.map((p) => cartao(p, novos.includes(p))).join('') : '<div class="vazio">Nenhum pedido na fila 🎉<br><small>Pedidos do app aparecem aqui assim que o Pix é pago e saem quando o cliente mostra o QR.</small></div>';
+    const rec = j.pedidos.filter((p) => p.status === 'recebido'), prod = j.pedidos.filter((p) => p.status === 'preparando' || p.status === 'pronto'), ent = (j.entregues ?? []).map((e) => ({ ...e, status: 'entregue' }));
+    const col = (cls, titulo, lista, vazio) => `<div class="col ${cls}"><h2>${titulo} <span class="n">${lista.length}</span></h2>${lista.map((p) => cartao(p, novos.includes(p))).join('') || `<div class="mut" style="text-align:center;padding:20px">${vazio}</div>`}</div>`;
+    $('#fila').innerHTML = col('c1', '📥 RECEBIDO', rec, 'Nada esperando') + col('c2', '🔥 EM PRODUÇÃO', prod, 'Nada em preparo') + col('c3', '✅ ENTREGUE', ent, 'Nenhuma entrega hoje');
   } catch (e) { if (!/Entre/.test(e.message)) aviso(e.message); }
 }
 $('#fila').onclick = async (e) => { const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;

@@ -18,7 +18,16 @@ export async function listarProducao(db) {
     WHERE (origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto'))
        OR (origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL AND dia = ?) ORDER BY pago_em, id`).bind(diaDoTurno()).all();
   const pedidos = brutos.map((p) => (p.origem === 'balcao' ? { ...p, status: p.preparo_em ? 'preparando' : 'recebido' } : p));
-  if (!pedidos.length) return { pedidos: [] };
+  // coluna ENTREGUE do kanban: os últimos 30 entregues do dia (app: QR lido; balcão: marcado pronto), sem receita
+  const { results: ent } = await db.prepare(`SELECT id, numero, origem, nome_cliente, total, COALESCE(retirado_em, pronto_em, pago_em) AS entregue_em FROM pedido
+    WHERE dia = ? AND ((origem = 'celular' AND status = 'entregue') OR (origem = 'balcao' AND status = 'entregue' AND pronto_em IS NOT NULL))
+    ORDER BY COALESCE(retirado_em, pronto_em, pago_em) DESC, id DESC LIMIT 30`).bind(diaDoTurno()).all();
+  let entregues = [];
+  if (ent.length) {
+    const { results: its } = await db.prepare(`SELECT pedido_id, nome, quantidade FROM item_pedido WHERE pedido_id IN (${ent.map(() => '?').join(',')}) ORDER BY id`).bind(...ent.map((e) => e.id)).all();
+    entregues = ent.map((e) => ({ ...e, itens: its.filter((i) => i.pedido_id === e.id).map((i) => ({ nome: i.nome, quantidade: i.quantidade })) }));
+  }
+  if (!pedidos.length) return { pedidos: [], entregues };
   const marcas = pedidos.map(() => '?').join(',');
   const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
   const prodIds = [...new Set(itens.map((i) => i.produto_id))];
@@ -31,6 +40,7 @@ export async function listarProducao(db) {
   const receita = (pid, q) => (ficha.get(pid) ?? []).map((f) => ({ insumo: f.insumo, quantidade: r3(f.quantidade * q), unidade: f.unidade, observacao: f.observacao }));
   const doCombo = new Map(); for (const c of comps) { if (!doCombo.has(c.combo_id)) doCombo.set(c.combo_id, []); doCombo.get(c.combo_id).push(c); }
   return {
+    entregues,
     pedidos: pedidos.map((p) => ({ ...p, itens: itens.filter((i) => i.pedido_id === p.id).map((i) => doCombo.has(i.produto_id)
       ? { nome: i.nome, quantidade: i.quantidade, combo: doCombo.get(i.produto_id).map((c) => ({ nome: c.nome, quantidade: c.quantidade * i.quantidade, receita: receita(c.produto_id, c.quantidade * i.quantidade) })) }
       : { nome: i.nome, quantidade: i.quantidade, receita: receita(i.produto_id, i.quantidade) }) })),

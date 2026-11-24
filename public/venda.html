@@ -171,7 +171,7 @@ $('#dOk').onclick = async () => { try { if (!forma) throw new Error('Escolha a f
   if (troco > 0) { msg(`💵 Devolva de troco: ${R$(troco)}`); clearTimeout(msg.t); msg.t = setTimeout(() => ($('#msg').style.display = 'none'), 15000); } } catch (e) { $('#dErro').textContent = e.message; } };
 
 // ---- retirada do app ----
-const abas = (qual) => { $('#telaV').hidden = qual !== 'V'; $('#telaR').hidden = qual !== 'R'; $('#telaH').hidden = qual !== 'H'; for (const k of 'VRH') $('#a' + k).classList.toggle('on', k === qual); };
+const abas = (qual) => { if (qual !== 'R' && typeof fecharCamera === 'function') fecharCamera(); $('#telaV').hidden = qual !== 'V'; $('#telaR').hidden = qual !== 'R'; $('#telaH').hidden = qual !== 'H'; for (const k of 'VRH') $('#a' + k).classList.toggle('on', k === qual); };
 const ROTULO = { entregue: 'Entregue', recebido: 'Pago · na fila', preparando: 'Preparando', pronto: 'Pronto', cancelado: 'Cancelado', aguardando_pagamento: 'Aguardando pagamento' };
 const FORMA = { pix: 'Pix', debito: 'Débito', credito: 'Crédito', dinheiro: 'Dinheiro' };
 async function lerHistorico() {
@@ -186,24 +186,47 @@ $('#aH').onclick = () => { abas('H'); lerHistorico().catch((e) => msg(e.message,
 $('#hDia').onchange = () => lerHistorico().catch((e) => msg(e.message, true));
 $('#hHoje').onclick = () => { $('#hDia').value = ''; lerHistorico().catch((e) => msg(e.message, true)); };
 $('#aV').onclick = () => abas('V');
-$('#aR').onclick = () => { abas('R'); lerRetiradas(); };
+$('#aR').onclick = () => { abas('R'); lerRetiradas(); setTimeout(() => $('#codigo').focus(), 50); };
 $('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
 async function lerRetiradas() { const r = await api('/api/venda/retiradas'); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
   $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
   $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
 async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
 function mostrar(r, codigo) { const p = r.pedido; $('#confRes').innerHTML = `<div class="ret"><b class="bom">✔ Pago e válido</b><br><b>#${p.numero}</b> ${p.nome ?? ''} · ${R$(p.total)}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${i.nome}</li>`).join('')}</ul>` +
-  (r.entregue ? '<b class="bom">Entregue ✓ (QR já foi usado)</b>' : `<button class="grande ok" id="bEntregar">Entregar ✓</button>`) + '</div>';
+  (r.entregue ? '<b class="bom">Entregue ✓ — saiu da produção</b>' : `<button class="grande ok" id="bEntregar">Entregar ✓</button>`) + '</div>';
   const b = $('#bEntregar'); if (b) b.onclick = tentar(async () => { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); }); }
+// QR lido pela câmera ou leitor: confere E já dá a baixa (entrega) — o QR é de uso único, então não precisa de segundo toque
+const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
 const checar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, false), codigo); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; } });
 $('#bConferir').onclick = () => checar($('#codigo').value.trim());
 let stream = null;
+let carregouJsQR = null;
+const carregarJsQR = () => carregouJsQR ??= new Promise((ok, no) => { if (window.jsQR) return ok(); const t = document.createElement('script'); t.src = '/vendor/jsqr.min.js'; t.onload = ok; t.onerror = () => no(new Error('Não consegui carregar o leitor de QR.')); document.head.appendChild(t); });
+function fecharCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('#cam').style.display = 'none'; $('#bCam').textContent = '📷 Abrir câmera e ler QR'; }
 $('#bCam').onclick = tentar(async () => {
-  if (!('BarcodeDetector' in window)) throw new Error('Este aparelho não lê QR pela câmera aqui. Use o código digitado ou a câmera do celular.');
+  if (stream) return fecharCamera();   // segundo toque fecha
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('A câmera só abre em endereço seguro (https). Use o código digitado.');
   stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); const v = $('#cam'); v.srcObject = stream; v.style.display = 'block'; await v.play();
-  const det = new BarcodeDetector({ formats: ['qr_code'] });
-  const laco = async () => { if (!stream) return; try { const [c] = await det.detect(v); if (c) { stream.getTracks().forEach((t) => t.stop()); stream = null; v.style.display = 'none'; $('#codigo').value = c.rawValue; return checar(c.rawValue); } } catch {} setTimeout(laco, 300); };
+  $('#bCam').textContent = '✖ Fechar câmera';
+  // leitor nativo quando existe (Chrome/Android); senão a biblioteca jsQR (iPhone, Safari, computador)
+  const nativo = 'BarcodeDetector' in window ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
+  if (!nativo) await carregarJsQR();
+  const tela = document.createElement('canvas'), ctx = tela.getContext('2d', { willReadFrequently: true });
+  const achou = (valor) => { fecharCamera(); $('#codigo').value = valor; navigator.vibrate?.(60); return baixar(valor); };
+  const laco = async () => {
+    if (!stream) return;
+    try {
+      if (nativo) { const [c] = await nativo.detect(v); if (c) return achou(c.rawValue); }
+      else if (v.videoWidth) {
+        const w = Math.min(640, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth); tela.width = w; tela.height = h; ctx.drawImage(v, 0, 0, w, h);
+        const c = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (c?.data) return achou(c.data);
+      }
+    } catch {}
+    setTimeout(laco, nativo ? 250 : 200);
+  };
   laco(); });
+// leitor de código de barras USB/Bluetooth digita o código e dá Enter: confere sozinho
+$('#codigo').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); baixar($('#codigo').value.trim()); } });
 
 async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); });
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();

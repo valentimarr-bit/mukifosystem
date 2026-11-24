@@ -229,3 +229,14 @@ test('produção: venda de balcão paga aparece na produção e sai quando marca
   assert.ok(!(await chamar('/api/producao')).corpo.pedidos.some((p) => p.id === id), 'pronta sai da tela');
   assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(id).first()).status, 'entregue');
 });
+
+test('produção (kanban): pedido pronto no balcão passa para a coluna entregues', async () => {
+  const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
+  const id = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda.id;
+  await chamar(`/api/venda/comandas/${id}/itens`, 'POST', { produto_id: prod, delta: 1 });
+  await chamar(`/api/venda/comandas/${id}/cobrar`, 'POST', { forma: 'dinheiro' });
+  assert.ok(!(await chamar('/api/producao')).corpo.entregues.some((e) => e.id === id));
+  await chamar(`/api/producao/${id}/preparo`, 'POST', { acao: 'pronto' });
+  const j = (await chamar('/api/producao')).corpo;
+  assert.ok(!j.pedidos.some((p) => p.id === id)); assert.ok(j.entregues.some((e) => e.id === id && e.itens.length === 1));
+});
