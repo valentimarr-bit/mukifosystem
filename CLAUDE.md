@@ -36,7 +36,7 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 - `docs/roteiro.md` — fases e critérios.
 - `docs/decisoes.md` — decisões tomadas.
 - `docs/prompt-pos.md`, `docs/prompt-celular.md` — especificação das partes.
-- `docs/historico-pos.md`, `docs/hortifruti-perguntas.md` — pendências de informação.
+- `docs/historico-pos.md`, `docs/hortifruti-perguntas.md`, `docs/perguntas-pagamentos.md` — pendências de informação.
 - `docs/colaborar.md` — como várias contas Claude trabalham no mesmo repo.
 
 ## Código
