@@ -198,11 +198,17 @@ async function lerRetiradas() { const r = await api('/api/venda/retiradas'); $('
   $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
   $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
 async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
-function mostrar(r, codigo) { const p = r.pedido; $('#confRes').innerHTML = `<div class="ret"><b class="bom">✔ Pago e válido</b><br><b>#${p.numero}</b> ${p.nome ?? ''} · ${R$(p.total)}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${i.nome}</li>`).join('')}</ul>` +
-  (r.entregue ? '<b class="bom">Entregue ✓ — saiu da produção</b>' : `<button class="grande ok" id="bEntregar">Entregar ✓</button>`) + '</div>';
-  const b = $('#bEntregar'); if (b) b.onclick = tentar(async () => { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); }); }
-// QR lido pela câmera ou leitor: confere E já dá a baixa (entrega) — o QR é de uso único, então não precisa de segundo toque
-const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
+function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="ruim">REP ${p.remessa}</b>` : '';
+  const linha = (i) => i.falta > 0 ? `<li><label><input type="checkbox" data-item="${i.id}" data-max="${i.falta}" checked> ${i.falta}× ${i.nome}${i.entregue ? ` <small class="mut">(${i.entregue} já entregue)</small>` : ''}</label>${i.falta > 1 ? ` <select data-qtd="${i.id}">${Array.from({ length: i.falta }, (_, k) => `<option value="${i.falta - k}">${i.falta - k}</option>`).join('')}</select>` : ''}</li>` : `<li class="mut"><s>${i.quantidade}× ${i.nome}</s> ✓ entregue</li>`;
+  const topo = `<div class="ret"><b class="bom">✔ Pago e válido</b>${rep}<br><b>#${p.numero}</b> ${p.nome ?? ''}`;
+  if (r.entregue) { $('#confRes').innerHTML = `${topo}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${i.nome}</li>`).join('')}</ul><b class="bom">Entrega TOTAL ✓ — pedido concluído</b></div>`; return; }
+  if (r.parcial) { $('#confRes').innerHTML = `${topo}<ul>${p.itens.map(linha).join('')}</ul><b class="ruim">Entrega PARCIAL (REP ${p.remessa}). Faltam itens: o cliente já tem um QR NOVO no app.</b></div>`; return; }
+  $('#confRes').innerHTML = `${topo}<ul>${p.itens.map(linha).join('')}</ul><p class="mut">Desmarque o que NÃO está sendo entregue agora.</p><button class="grande ok" id="bEntregar">Confirmar entrega ✓</button></div>`;
+  $('#bEntregar').onclick = tentar(async () => { const entrega = [...document.querySelectorAll('#confRes [data-item]')].filter((c) => c.checked).map((c) => ({ item_id: Number(c.dataset.item), qtd: Number(document.querySelector(`#confRes [data-qtd="${c.dataset.item}"]`)?.value ?? c.dataset.max) }));
+    mostrar(await api('/api/venda/retirada', 'POST', { codigo, confirmar: true, entrega }), codigo); lerRetiradas(); atualizarResumo(); }); }
+// QR lido: pedido simples (uma linha, uma unidade) já dá a baixa; pedido com vários itens abre a lista para marcar o que está saindo (entrega parcial)
+const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { const v = await conferir(codigo, false), its = v.pedido.itens.filter((i) => i.falta > 0);
+    if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
 const checar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, false), codigo); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; } });
 $('#bConferir').onclick = () => checar($('#codigo').value.trim());
 let stream = null;

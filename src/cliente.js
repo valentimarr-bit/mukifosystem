@@ -121,7 +121,8 @@ async function verStatus(db, request, id) {
   const pix = c.status === 'aguardando_pagamento' ? await lerPix(db) : null;
   return json({
     id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
-    itens: c.itens.map((i) => ({ nome: i.nome, quantidade: i.quantidade, preco: i.preco })),
+    remessa: (await db.prepare('SELECT remessa FROM pedido WHERE id = ?').bind(id).first())?.remessa ?? 0,
+    itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,
     textos: textosPedido(await itensComPronta(db, id), c.numero),
     pix: pix ? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` }) : null,
   });
@@ -183,19 +184,44 @@ export async function listarRetiradas(db) {
 
 export async function validarRetirada(db, corpo, eu) {
   const partes = String(corpo?.codigo ?? '').trim().split('.');
-  if (partes.length !== 3 || partes[0] !== 'MKF1') return erro('Esse QR não é do Mukifo.', 400);
-  const [, id, chave] = partes;
-  const p = await db.prepare("SELECT id, dia, status, token_hash, retirado_em FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  if ((partes.length !== 3 && partes.length !== 4) || partes[0] !== 'MKF1') return erro('Esse QR não é do Mukifo.', 400);
+  const [, id, chave] = partes, remessaQr = Number(partes[3] ?? 0);
+  const p = await db.prepare("SELECT id, dia, status, token_hash, retirado_em, remessa FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
   if (!p || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('QR inválido. NÃO entregue nada.', 400);
   if (p.status === 'entregue') return erro(`QR já usado${p.retirado_em ? ` em ${p.retirado_em} (UTC)` : ''}. NÃO entregue de novo.`, 409);
   if (p.status === 'aguardando_pagamento') return erro('Pedido ainda NÃO foi pago. Não entregue.', 402);
   if (p.status === 'cancelado') return erro('Pedido cancelado ou vencido. Não entregue.', 409);
   if (p.dia !== diaDoTurno()) return erro('Esse pedido é de outro dia. Chame o gerente.', 409);
+  if (remessaQr !== p.remessa) return erro('QR antigo: já houve entrega parcial deste pedido. O cliente deve mostrar o QR NOVO que aparece no app.', 409);
   const c = await lerComanda(db, id);
-  if (corpo?.confirmar !== true) return json({ ok: true, entregue: false, pedido: { numero: c.numero, nome: c.nome_cliente, total: c.total, itens: c.itens } });
-  const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id).run();
+  const { results: its } = await db.prepare('SELECT id, nome, quantidade, entregue_qtd FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all();
+  const itens = its.map((i) => ({ id: i.id, nome: i.nome, quantidade: i.quantidade, entregue: i.entregue_qtd, falta: i.quantidade - i.entregue_qtd }));
+  const resumo = (lista, remessa = p.remessa) => ({ numero: c.numero, nome: c.nome_cliente, total: c.total, remessa, itens: lista });
+  if (corpo?.confirmar !== true) return json({ ok: true, entregue: false, pedido: resumo(itens) });
+  // o que está saindo agora: a lista marcada pelo vendedor; sem lista = tudo que ainda falta
+  let sai = new Map(itens.filter((i) => i.falta > 0).map((i) => [i.id, i.falta]));
+  if (Array.isArray(corpo?.entrega)) {
+    sai = new Map();
+    for (const e of corpo.entrega) {
+      const it = itens.find((i) => i.id === Number(e?.item_id)), q = Number(e?.qtd);
+      if (!it || !Number.isFinite(q) || q <= 0 || q > it.falta) return erro('Quantidade inválida para um dos itens.', 400);
+      sai.set(it.id, q);
+    }
+    if (!sai.size) return erro('Marque pelo menos um item para entregar.', 400);
+  }
+  const falta = itens.reduce((s, i) => s + i.falta - (sai.get(i.id) ?? 0), 0);
+  const atualizaItens = [...sai].map(([iid, q]) => db.prepare('UPDATE item_pedido SET entregue_qtd = entregue_qtd + ? WHERE id = ? AND pedido_id = ? AND entregue_qtd + ? <= quantidade').bind(q, iid, id, q));
+  if (falta > 0) {   // entrega parcial: o QR muda (a "remessa" sobe) e o pedido continua aberto
+    const r = await db.prepare("UPDATE pedido SET remessa = remessa + 1 WHERE id = ? AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(id, p.remessa).run();
+    if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
+    await db.batch(atualizaItens);
+    const novos = itens.map((i) => ({ ...i, entregue: i.entregue + (sai.get(i.id) ?? 0), falta: i.falta - (sai.get(i.id) ?? 0) }));
+    return json({ ok: true, entregue: false, parcial: true, pedido: resumo(novos, p.remessa + 1) });
+  }
+  const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id, p.remessa).run();
   if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
-  return json({ ok: true, entregue: true, pedido: { numero: c.numero, nome: c.nome_cliente, total: c.total, itens: c.itens } });
+  await db.batch(atualizaItens);
+  return json({ ok: true, entregue: true, pedido: resumo(itens.map((i) => ({ ...i, entregue: i.quantidade, falta: 0 }))) });
 }
 
 /** Itens do pedido com a marca de pronta entrega (para os textos de aviso). */

@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -272,4 +272,29 @@ test('textos de aviso: um produto → pelo nome; vários → "Seu pedido"; pront
   assert.match(varios.preparando.titulo, /Seu pedido começou/);
   assert.match(varios.preparando.corpo, /buscar no balcão: Heineken/);
   assert.doesNotMatch(varios.preparando.titulo, /drink/i);
+});
+
+test('entrega parcial: marca o que sai, QR antigo morre, QR novo (REP 1) entrega o resto', async () => {
+  const p = await primeiroProduto(), sem = { token: null };
+  await chamar('/api/venda/pix', 'PUT', { chave: 'bar@mukifo.com' });
+  await env.DB.prepare("UPDATE pedido SET status = 'cancelado' WHERE status = 'aguardando_pagamento'").run();
+  const ped = await chamar('/api/cliente/pedidos', 'POST', { nome: 'Bia', celular: '51988887777', itens: [{ produto_id: p.id, quantidade: 2 }] }, sem);
+  assert.equal(ped.status, 201, JSON.stringify(ped.corpo));
+  const id = ped.corpo.id, chave = ped.corpo.chave_qr;
+  if (!ped.corpo.teste) {
+    const cobId = (await env.DB.prepare('SELECT id FROM cobranca WHERE pedido_id = ?').bind(id).first()).id;
+    await env.DB.prepare("UPDATE cobranca SET status = 'paga', paga_em = datetime('now') WHERE id = ?").bind(cobId).run();
+    await env.DB.prepare("UPDATE pedido SET status = 'recebido', pago_em = datetime('now') WHERE id = ?").bind(id).run();
+  }
+  const qr0 = `MKF1.${id}.${chave}`;
+  const ver = (await chamar('/api/venda/retirada', 'POST', { codigo: qr0 })).corpo.pedido;
+  assert.equal(ver.itens[0].falta, 2);
+  const parcial = (await chamar('/api/venda/retirada', 'POST', { codigo: qr0, confirmar: true, entrega: [{ item_id: ver.itens[0].id, qtd: 1 }] })).corpo;
+  assert.equal(parcial.parcial, true); assert.equal(parcial.pedido.remessa, 1); assert.equal(parcial.pedido.itens[0].falta, 1);
+  assert.equal((await chamar('/api/venda/retirada', 'POST', { codigo: qr0, confirmar: true })).status, 409);   // QR velho não vale
+  const st = (await chamar(`/api/cliente/pedidos/${id}`, 'GET', null, { token: null, cab: { 'X-Chave-Pedido': chave } })).corpo;
+  assert.equal(st.remessa, 1); assert.equal(st.retirado, false);
+  const fim = (await chamar('/api/venda/retirada', 'POST', { codigo: `${qr0}.1`, confirmar: true })).corpo;
+  assert.equal(fim.entregue, true);
+  assert.equal((await chamar('/api/venda/retirada', 'POST', { codigo: `${qr0}.1`, confirmar: true })).status, 409);
 });

@@ -160,3 +160,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 ## Avisos conforme o pedido
 - Migração `0018_pronta_entrega` (aplicar no D1): `produto.pronta_entrega` (checkbox no cadastro do produto).
 - `src/textos.js`: um único produto em produção → "Seu Gin Tônica começou a ser preparado"; vários → "Seu pedido…"; itens de pronta entrega → "Já pode buscar no balcão: Heineken". Usado no push e na tela piscante do app (vem em `textos` no status do pedido).
+
+## Entrega parcial (REP n)
+- Migração `0019_entrega_parcial` (aplicar no D1): `item_pedido.entregue_qtd`, `pedido.remessa`.
+- Leitura do QR na venda: pedido de 1 item/1 unidade dá a baixa direto; senão abre a lista com caixas (e quantidade) para marcar o que está saindo. Se algo ficar faltando: o pedido continua aberto, marcador **REP 1/2/…**, e o QR muda (`MKF1.id.chave.remessa`) — o QR antigo é recusado. O app do cliente troca o QR sozinho no próximo ciclo de atualização (4 s) e mostra o que já saiu e o que falta.
+- Produção mostra só o que falta (quantidade restante) e o selo REP n. Todos os itens entregues → pedido entregue.

@@ -130,8 +130,8 @@ async function consultar() {
   if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
   const s = await r.json();
   if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
-  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
-    $('#qItens').innerHTML = s.itens.map((i) => `${i.quantidade}× ${i.nome}`).join('<br>'); return tela('telaQr'); }
+  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}.${s.remessa || 0}`);
+    $('#qItens').innerHTML = (s.remessa ? `<b style="color:#f59e0b">REP ${s.remessa}</b> · entrega parcial — mostre este QR NOVO para receber o que falta<br>` : '') + s.itens.map((i) => (i.entregue >= i.quantidade ? `<s style="opacity:.55">${i.quantidade}× ${i.nome}</s> ✓ entregue` : i.entregue > 0 ? `${i.quantidade - i.entregue}× ${i.nome} <small>(falta; ${i.entregue} já entregue)</small>` : `${i.quantidade}× ${i.nome}`)).join('<br>'); return tela('telaQr'); }
   if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
   const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;
 }

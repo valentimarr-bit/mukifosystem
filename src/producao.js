@@ -15,7 +15,7 @@ export async function listarProducao(db) {
   await expirarPendentes(db);
   // App: sai da tela quando o QR é lido (entregue). Balcão: a venda já nasce "entregue" (pagou, levou), então fica na produção
   // do dia até alguém marcar "pronto" — o status no banco não muda, só preparo_em/pronto_em.
-  const { results: brutos } = await db.prepare(`SELECT id, numero, origem, nome_cliente, status, total, pago_em, preparo_em, pronto_em,
+  const { results: brutos } = await db.prepare(`SELECT id, numero, origem, nome_cliente, status, total, pago_em, preparo_em, pronto_em, remessa,
     CAST((julianday('now') - julianday(pago_em)) * 1440 AS INTEGER) AS minutos FROM pedido
     WHERE (origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto'))
        OR (origem = 'balcao' AND status = 'entregue' AND pronto_em IS NULL AND dia = ?) ORDER BY pago_em, id`).bind(diaDoTurno()).all();
@@ -31,7 +31,7 @@ export async function listarProducao(db) {
   }
   if (!pedidos.length) return { pedidos: [], entregues };
   const marcas = pedidos.map(() => '?').join(',');
-  const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
+  const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade - ip.entregue_qtd AS quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) AND ip.quantidade - ip.entregue_qtd > 0 ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
   const prodIds = [...new Set(itens.map((i) => i.produto_id))];
   const pm = prodIds.map(() => '?').join(',');
   const [{ results: comps }, { results: fichas }] = await Promise.all([
