@@ -204,3 +204,11 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - `src/campeonato.js`: rotas públicas `/api/campeonato` (lista, modalidade, ranking, minhas, inscrever) e da equipe `/api/campeonato/gestao/*` (módulo `campeonato`, padrão para gerente): criar, inscrever no balcão, confirmar Pix, cancelar (devolve à carteira só o que saiu dela), sortear, placar ao vivo, finalizar, corrigir resultado (enquanto a próxima partida não começou).
 - Telas: `public/campeonato.html` (jogador: inscrição com Pix/saldo, chave e placar ao vivo, ranking) e `public/torneio.html` (equipe, link "Campeonato →" no gestão). 🎱 no topo do app do cliente.
 - Pendente: webhook do gateway chamar `confirmarInscricao`; formatos dupla eliminação/grupos; entrada da taxa no financeiro (hoje não entra no resultado); duplas; push de "sua partida vai começar".
+
+## Gateways de pagamento plugáveis + tabela comparativa
+- `src/pagamentos/gateways.js`: contrato único por gateway (`criarPix`, `identificarAviso`, `consultar`, `configurado`, `segredos`). Prontos: **Mercado Pago** (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` opcional) e **Woovi** (`WOOVI_APP_ID`). Gateway ativo em `configuracao.gateway_pix` (padrão `manual` = Pix da chave do bar, confirmação à mão).
+- Segurança: o aviso (webhook, `POST /api/pagamentos/aviso/:gateway`, público) só identifica a cobrança; quem confirma é a CONSULTA ao gateway (status pago + valor igual ao cobrado). Confirmações são idempotentes. Gateway fora do ar → cai no Pix estático.
+- `src/pagamentos/aviso.js` dá baixa por prefixo da referência: `cob-` pedido do app, `rec-` recarga, `ins-` inscrição do campeonato. Tabela `pix_externo` (migração 0023).
+- Para integrar outro (Asaas, AbacatePay, Getnet, InfinitePay...): criar um objeto com o mesmo contrato, registrar em `GATEWAYS` e escrever o teste com `fetch` simulado (ver `test/gateways.test.js`). Nenhum fluxo do sistema precisa mudar.
+- `src/dominio/comparativo.js` (taxas + simulador de custo) e tela `public/pagamentos.html` (gestão → "Pagamentos →"; módulo financeiro; só o superadmin troca o gateway). Taxas de fontes públicas e de comparadores, conferidas em nov/2026: confirmar na conta antes de decidir.
+- Pendente: pagamento que chega depois do pedido vencer (a baixa é ignorada e a tela avisa para devolver); estorno automático; Getnet/Asaas/InfinitePay como adaptadores; tap to pay.

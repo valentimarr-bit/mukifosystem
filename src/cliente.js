@@ -3,6 +3,7 @@ import { json } from './api.js';
 import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
 import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
+import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
 import { clienteLogado } from './clientes.js';
 import { textosPedido } from './textos.js';
 import { debitarSaldo } from './carteira.js';
@@ -47,7 +48,7 @@ export async function expirarPendentes(db) {
 
 export const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return /^\d{10,11}$/.test(d) ? d : null; };
 
-async function criarPedido(db, request, corpo) {
+async function criarPedido(db, request, corpo, env) {
   await expirarPendentes(db);
   const teste = await modoTeste(db);
   const pix = await lerPix(db);
@@ -106,7 +107,8 @@ async function criarPedido(db, request, corpo) {
         ...itens.map((i) => db.prepare('INSERT INTO item_pedido (pedido_id, produto_id, nome, quantidade, preco) VALUES (?, ?, ?, ?, ?)').bind(id, i.id, i.nome, i.q, i.preco_venda)),
         db.prepare("INSERT INTO cobranca (id, pedido_id, forma, valor, status, operador) VALUES (?, ?, 'pix', ?, 'pendente', 'app')").bind(cid, id, total),
       ]);
-      const copiaECola = gerarPix({ ...pix, valor: total, txid: `MKF${dia.replaceAll('-', '')}${numero}` });
+      let copiaECola = gerarPix({ ...pix, valor: total, txid: `MKF${dia.replaceAll('-', '')}${numero}` });
+      if (!teste && !comSaldo) copiaECola = (await cobrarPix(db, env, request, { ref: cid, valor: total, descricao: `Pedido ${numero} Mukifo`, expiraMin: VALIDADE_MIN })) ?? copiaECola;   // gateway ativo, se houver
       if (teste) {   // "fingir que o pagamento entrou": confirma na hora, pelo mesmo caminho do pagamento real
         await db.prepare("UPDATE cobranca SET status = 'paga', paga_em = datetime('now'), operador = 'teste' WHERE id = ?").bind(cid).run();
         await conferirQuitacao(db, id, 'teste');
@@ -125,6 +127,11 @@ async function criarPedido(db, request, corpo) {
   return erro('Não consegui registrar o pedido. Tente de novo.', 409);
 }
 
+async function pixDoPedido(db, pedidoId) {
+  const c = await db.prepare("SELECT id FROM cobranca WHERE pedido_id = ? AND forma = 'pix' AND status = 'pendente' ORDER BY criada_em DESC LIMIT 1").bind(pedidoId).first();
+  return c ? pixDaRef(db, c.id) : null;
+}
+
 async function verStatus(db, request, id) {
   await expirarPendentes(db);
   const chave = request.headers.get('X-Chave-Pedido') ?? '';
@@ -140,7 +147,7 @@ async function verStatus(db, request, id) {
     fila: ['recebido', 'preparando'].includes(c.status) ? await filaDoPedido(db, id) : null, espera: await esperaDoDia(db),
     itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,
     textos: textosPedido(await itensComPronta(db, id), c.numero),
-    pix: pix ? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` }) : null,
+    pix: pix ? ((await pixDoPedido(db, id)) ?? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` })) : null,
   });
 }
 
@@ -178,7 +185,7 @@ async function webhook(db, env, request) {
 export async function rotearCliente(request, env, url) {
   const db = env.DB, m = request.method, p = url.pathname;
   let k;
-  if (m === 'POST' && p === '/api/cliente/pedidos') { let c = {}; try { c = await request.json(); } catch { /* vazio */ } return criarPedido(db, request, c); }
+  if (m === 'POST' && p === '/api/cliente/pedidos') { let c = {}; try { c = await request.json(); } catch { /* vazio */ } return criarPedido(db, request, c, env); }
   if (m === 'GET' && (k = p.match(/^\/api\/cliente\/pedidos\/([\w-]+)$/))) return verStatus(db, request, k[1]);
   if (m === 'GET' && p === '/api/cliente/push-chave') return json({ chave: env.VAPID_PUBLICA || null });
   if (m === 'POST' && (k = p.match(/^\/api\/cliente\/pedidos\/([\w-]+)\/push$/))) return assinarPush(db, request, k[1]);

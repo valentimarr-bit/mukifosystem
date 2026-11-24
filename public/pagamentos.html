@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Pagamentos</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px system-ui,sans-serif}
+header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font-size:15px}
+main{max-width:980px;margin:0 auto;padding:12px 12px 80px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.card h2{margin:0 0 8px;font-size:19px}
+.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line)}.chip.ok{color:var(--ok);border-color:var(--ok-bd)}
+label{display:block;margin:8px 0 4px;color:var(--mut);font-size:14px}input,select{width:100%;min-height:48px;font-size:17px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.btn{min-height:48px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc);font-weight:700;font-size:16px;padding:0 16px;cursor:pointer;margin-top:8px}.btn:disabled{opacity:.5}
+.rolar{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:640px}th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;font-size:15px;white-space:nowrap}th:first-child,td:first-child{text-align:left;white-space:normal;position:sticky;left:0;background:var(--card)}th{color:var(--mut);font-weight:600;cursor:pointer}tr.melhor td{color:var(--ok);font-weight:700}
+.gw{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:10px 0;flex-wrap:wrap}.gw:first-of-type{border-top:0}.gw .n{flex:1;min-width:180px}.gw code{font-size:12px;color:var(--mut)}
+#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
+</style></head><body data-sem-botao-visual>
+<header><h1>💳 Pagamentos</h1><a href="/gestao.html">Gestão</a></header>
+<main>
+  <div class="card"><h2>Quanto cada um custa para o Mukifo</h2><p class="mut">Informe o seu movimento do mês. A conta usa as taxas da tabela abaixo (podem variar por contrato: confirme na sua conta antes de decidir).</p>
+    <div class="grade"><div><label>Ticket médio (R$)</label><input id="sT" inputmode="decimal" value="40"></div><div><label>Pix por mês</label><input id="sP" inputmode="numeric" value="500"></div><div><label>Débito por mês</label><input id="sD" inputmode="numeric" value="0"></div><div><label>Crédito por mês</label><input id="sC" inputmode="numeric" value="0"></div></div>
+    <div class="rolar" style="margin-top:10px"><table id="tSim"></table></div><p class="mut" id="sNota"></p></div>
+  <div class="card"><h2>Tabela de taxas</h2><div class="rolar"><table id="tTax"></table></div><div id="notas" class="mut" style="margin-top:10px"></div></div>
+  <div class="card"><h2>Gateway ativo</h2><p class="mut">O Pix do app (pedidos, carteira e campeonato) sai pelo gateway ativo e confirma sozinho. Sem gateway, vale o Pix da chave do bar com confirmação manual. A chave Pix cadastrada continua como reserva se o gateway cair.</p><div id="gws"></div><p class="mut" id="urlAviso"></p></div>
+</main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const R$ = (n) => n == null ? '—' : Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const pct = (p, f) => (p || f) ? `${p ? String(p).replace('.', ',') + '%' : ''}${p && f ? ' + ' : ''}${f ? R$(f) : ''}` : 'grátis';
+let token = Mukifo.token(), ordem = { k: 'total', d: 1 }, sim = [];
+async function api(url, corpo, metodo) {
+  const r = await fetch(url, { method: metodo || (corpo ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); throw new Error(j.erro || 'Entre de novo'); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 4500); };
+function desenharSim() {
+  const l = [...sim].sort((a, b) => ((a[ordem.k] ?? Infinity) - (b[ordem.k] ?? Infinity)) * ordem.d);
+  const min = Math.min(...sim.map((x) => x.total));
+  $('#tSim').innerHTML = `<thead><tr><th data-k="nome">Gateway</th><th data-k="total">Total/mês</th><th data-k="pix">Pix</th><th data-k="debito">Débito</th><th data-k="credito">Crédito</th><th data-k="mensal">Mensal</th></tr></thead><tbody>${l.map((x) => `<tr class="${x.total === min ? 'melhor' : ''}"><td>${esc(x.nome)}</td><td><b>${R$(x.total)}${x.completo ? '' : ' *'}</b></td><td>${R$(x.pix)}</td><td>${R$(x.debito)}</td><td>${R$(x.credito)}</td><td>${R$(x.mensal)}</td></tr>`).join('')}</tbody>`;
+  $('#sNota').textContent = sim.some((x) => !x.completo) ? '* Não achei a taxa de débito/crédito deste gateway: o total só soma o que é conhecido.' : '';
+}
+async function simular() {
+  const q = new URLSearchParams({ ticket: $('#sT').value.replace(',', '.'), pix_qtd: $('#sP').value, debito_qtd: $('#sD').value, credito_qtd: $('#sC').value });
+  const j = await api('/api/pagamentos/comparativo?' + q); sim = j.simulacao;
+  $('#tTax').innerHTML = `<thead><tr><th>Gateway</th><th>Pix</th><th>Débito</th><th>Crédito à vista</th><th>Mensal</th><th>Integração</th></tr></thead><tbody>${j.gateways.map((g) => `<tr><td>${esc(g.nome)}</td><td>${pct(g.pix_pct, g.pix_fixo)}</td><td>${g.debito_pct == null ? '—' : pct(g.debito_pct, g.debito_fixo)}</td><td>${g.credito_pct == null ? '—' : pct(g.credito_pct, g.credito_fixo)}</td><td>${g.mensal ? R$(g.mensal) : '—'}</td><td>${g.integra === 'pronto' ? '<span class="chip ok">pronta</span>' : '<span class="chip">sob encomenda</span>'}</td></tr>`).join('')}</tbody>`;
+  $('#notas').innerHTML = j.gateways.map((g) => `<p><b>${esc(g.nome)}:</b> ${esc(g.nota)} <i>(fonte: ${esc(g.fonte)})</i></p>`).join('');
+  desenharSim();
+}
+async function gateways() {
+  const j = await api('/api/pagamentos/gateway');
+  $('#gws').innerHTML = j.gateways.map((g) => `<div class="gw"><div class="n"><b>${esc(g.nome)}</b> ${j.ativo === g.id ? '<span class="chip ok">ativo</span>' : ''}<div>${g.segredos.length ? `<code>Segredos na Cloudflare: ${esc(g.segredos.join(', '))}</code>` : ''}</div></div>${g.configurado ? '<span class="chip ok">configurado</span>' : '<span class="chip">falta o segredo</span>'}${j.ativo === g.id ? '' : `<button class="btn" style="margin:0" data-g="${g.id}" ${g.configurado ? '' : 'disabled'}>Usar este</button>`}</div>`).join('');
+  $('#urlAviso').innerHTML = `Endereço de aviso (webhook) para cadastrar no gateway: <code>${esc(j.url_aviso)}&lt;id do gateway&gt;</code>, por exemplo <code>${esc(j.url_aviso)}mercadopago</code>.`;
+}
+document.addEventListener('click', async (e) => {
+  const th = e.target.closest('#tSim th'); if (th) { ordem = { k: th.dataset.k, d: ordem.k === th.dataset.k ? -ordem.d : 1 }; return desenharSim(); }
+  const b = e.target.closest('[data-g]'); if (!b) return; b.disabled = true;
+  try { await api('/api/pagamentos/gateway', { gateway: b.dataset.g }, 'PUT'); aviso('Gateway trocado.'); } catch (er) { aviso(er.message); }
+  gateways();
+});
+['#sT', '#sP', '#sD', '#sC'].forEach((s) => $(s).addEventListener('input', () => { clearTimeout(simular.t); simular.t = setTimeout(() => simular().catch((e) => aviso(e.message)), 300); }));
+function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); simular().catch((e) => aviso(e.message)); gateways().catch((e) => aviso(e.message)); }
+iniciar();
+</script></body></html>

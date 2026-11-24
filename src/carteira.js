@@ -2,6 +2,7 @@
 import { json } from './api.js';
 import { r2, erro, id8 } from './venda.js';
 import { gerarPix } from './pagamentos/pix.js';
+import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
 import { lerPix } from './cliente.js';
 import { modoTeste } from './trava.js';
 import { clienteLogado } from './clientes.js';
@@ -43,7 +44,7 @@ export async function extrato(db, clienteId) {
     db.prepare('SELECT valor, motivo, criado_em FROM carteira_mov WHERE cliente_id = ? ORDER BY id DESC LIMIT 20').bind(clienteId).all(),
     db.prepare("SELECT id, valor, expira_em FROM recarga WHERE cliente_id = ? AND status = 'pendente' AND expira_em > datetime('now') ORDER BY criada_em DESC LIMIT 1").bind(clienteId).first()]);
   const pix = rp ? await lerPix(db) : null;
-  return { saldo: s?.saldo ?? 0, movimentos: m.results, pendente: rp ? { id: rp.id, valor: rp.valor, pix: pix?.chave ? gerarPix({ ...pix, valor: rp.valor, txid: `MKR${rp.id.replace(/\W/g, '').slice(-20)}` }) : null } : null };
+  return { saldo: s?.saldo ?? 0, movimentos: m.results, pendente: rp ? { id: rp.id, valor: rp.valor, pix: (await pixDaRef(db, rp.id)) ?? (pix?.chave ? gerarPix({ ...pix, valor: rp.valor, txid: `MKR${rp.id.replace(/\W/g, '').slice(-20)}` }) : null) } : null };
 }
 
 /** Rotas do cliente logado. */
@@ -65,6 +66,7 @@ export async function rotearCarteira(request, env, url) {
     const id = `rec-${id8()}${id8()}`;
     await db.prepare(`INSERT INTO recarga (id, cliente_id, valor, expira_em) VALUES (?, ?, ?, datetime('now', '+${VALIDADE_MIN} minutes'))`).bind(id, cli.id, valor).run();
     if (teste) await confirmarRecarga(db, id, 'teste');
+    else await cobrarPix(db, env, request, { ref: id, valor, descricao: 'Recarga da carteira Mukifo', expiraMin: VALIDADE_MIN });   // gateway ativo, se houver
     return json(await extrato(db, cli.id), 201);
   }
   return null;

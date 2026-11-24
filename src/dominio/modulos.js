@@ -31,6 +31,7 @@ export function moduloDaRota(p) {
   if (p === '/api/venda/cardapio') return null;
   if (p.startsWith('/api/venda/')) return 'venda';
   if (p.startsWith('/api/producao')) return 'producao';
+  if (p.startsWith('/api/pagamentos/') && !p.startsWith('/api/pagamentos/aviso/')) return 'financeiro';
   if (p.startsWith('/api/campeonato/gestao')) return 'campeonato';
   if (p.startsWith('/api/clientes')) return 'clientes';
   if (p.startsWith('/api/fornecedores')) return 'fornecedores';

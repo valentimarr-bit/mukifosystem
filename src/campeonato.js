@@ -6,6 +6,7 @@ import { clienteLogado } from './clientes.js';
 import { lerPix } from './cliente.js';
 import { modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
+import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
 import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio } from './dominio/chaves.js';
 
 const VALIDADE_MIN = 30;
@@ -79,7 +80,7 @@ export async function ranking(db, modalidadeNome) {
 }
 
 // ---------- inscrição (cliente logado) ----------
-async function inscrever(db, cli, modId, corpo) {
+async function inscrever(db, cli, modId, corpo, env, request) {
   const m = await db.prepare("SELECT m.*, c.status AS camp FROM modalidade m JOIN campeonato c ON c.id = m.campeonato_id WHERE m.id = ?").bind(modId).first();
   if (!m) return erro('Modalidade não encontrada.', 404);
   if (m.status !== 'inscricoes' || m.camp !== 'aberto') return erro('As inscrições desta modalidade estão encerradas.', 409);
@@ -103,13 +104,14 @@ async function inscrever(db, cli, modId, corpo) {
   } else {
     const pix = await lerPix(db); if (!pix.chave) return erro('O Pix ainda não foi liberado. Fale com o balcão.', 503);
     await db.prepare(`INSERT INTO inscricao (id, modalidade_id, cliente_id, nome, valor, status, expira_em) VALUES (?, ?, ?, ?, ?, 'pendente', datetime('now', '+${VALIDADE_MIN} minutes'))`).bind(id, modId, cli.id, cli.nome, taxa).run();
+    await cobrarPix(db, env, request, { ref: id, valor: taxa, descricao: `Inscrição ${m.nome} Mukifo`.slice(0, 60), expiraMin: VALIDADE_MIN });   // gateway ativo, se houver
   }
   return json(await estadoInscricao(db, await db.prepare('SELECT * FROM inscricao WHERE id = ?').bind(id).first(), m), 201);
 }
 
 async function estadoInscricao(db, i, m) {
   let pix = null;
-  if (i.status === 'pendente') { const p = await lerPix(db); if (p.chave) pix = gerarPix({ ...p, valor: i.valor, txid: `MKC${i.id.replace(/\W/g, '').slice(-20)}` }); }
+  if (i.status === 'pendente') { pix = await pixDaRef(db, i.id); const p = pix ? null : await lerPix(db); if (p?.chave) pix = gerarPix({ ...p, valor: i.valor, txid: `MKC${i.id.replace(/\W/g, '').slice(-20)}` }); }
   return { id: i.id, modalidade_id: i.modalidade_id, modalidade: m?.nome, status: i.status, valor: i.valor, forma: i.forma, expira_em: i.expira_em, colocacao: i.colocacao, pix };
 }
 
@@ -212,7 +214,7 @@ export async function rotearCampeonato(request, env, url) {
   let r;
   if (m === 'GET' && (r = p.match(/^\/api\/campeonato\/modalidades\/([\w-]+)$/))) { const d = await detalheModalidade(db, r[1], false); return d ? json(d) : erro('Modalidade não encontrada.', 404); }
   if (p === '/api/campeonato/minhas' && m === 'GET') { const cli = await clienteLogado(request, env); return cli ? json({ inscricoes: await minhasInscricoes(db, cli) }) : erro('Entre na sua conta.', 401); }
-  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/modalidades\/([\w-]+)\/inscrever$/))) { const cli = await clienteLogado(request, env); return cli ? inscrever(db, cli, r[1], await corpoDe(request)) : erro('Entre na sua conta para se inscrever.', 401); }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/modalidades\/([\w-]+)\/inscrever$/))) { const cli = await clienteLogado(request, env); return cli ? inscrever(db, cli, r[1], await corpoDe(request), env, request) : erro('Entre na sua conta para se inscrever.', 401); }
   if (m === 'GET' && (r = p.match(/^\/api\/campeonato\/inscricoes\/([\w-]+)$/))) {
     const cli = await clienteLogado(request, env); if (!cli) return erro('Entre na sua conta.', 401);
     const i = await db.prepare('SELECT * FROM inscricao WHERE id = ? AND cliente_id = ?').bind(r[1], cli.id).first(); return i ? json(await estadoInscricao(db, i, null)) : erro('Inscrição não encontrada.', 404);
