@@ -1,0 +1,18 @@
+P = {
+"Cachaça Ypióca Ouro":38,"Cachaça Velho Barreiro":18,"Cachaça Kariri":45,"Cachaça Ypióca Branca":25,
+"Vodka Smirnoff":38,"Vodka Absolut":90,"Whisky Passport":45,"Whisky White Horse":75,"Whisky Red Label":90,
+"Whisky Jack Daniel's":150,"Whisky Johnnie Walker Blonde":110,"Gin Gordon's":60,"Gin Tanqueray":120,
+"Infusão gin + hibisco + pimenta rosa":70,"Tequila Tequisla":45,"Tequila José Cuervo":110,"Rum Montilla Ouro":50,"Rum Montilla Prata":45,
+"Fireball":90,"Howler Head":150,"Jägermeister":95,"Aperol":55,"Campari":55,"Vermute rosso":45,"Cynar":35,
+"Cointreau":150,"Fernet":75,"Conhaque de alcatrão São João da Barra":25,"Angostura":70,"Espumante brut Salton Séries":35,
+"Vinho tinto De Cesaro":30,"Beats Green Mix LN 269ml":6,"Beats GT LN 269ml":6,"Beats Red Mix LN 269ml":6,
+"Beats Senses LN 269ml":6,"Beats Pink Lemonade LN 269ml":6,"Brahma Chopp litrão 1L":7.5,"Corona LN 330ml":7,"Heineken 0,0% LN 330ml":6.3,
+"Heineken 600ml":9.5,"Heineken lata 473ml":6.5,"Heineken LN 330ml":6.3,"Heineken Ultimate LN":7.5,
+"Original garrafa 1L":8,"Original lata 473ml":5,"Stella Artois LN 330ml":5.6,"Stella Gold s/ glúten LN":6.5,
+"Água com gás":2,"Água sem gás":1.5,"Coca-Cola lata 350ml":3.5,"Coca-Cola Zero lata 350ml":3.5,
+"Sprite lata 350ml":3,"Água tônica":3.2,"Baly tradicional":9,"Red Bull 250ml":8,"Red Bull Melancia 250ml":8,
+"Red Bull Tropical 250ml":8,"Monster Mango Loco 473ml":7.5,"Monster Original 473ml":7.5,"Monster Zero 473ml":7.5,
+"Matito (drink pronto 1 L)":12,"Xarope de açúcar (simples)":4,"Xarope de mel":30,"Xarope de gengibre":15,
+"Xarope de cranberry Monin":55,"Suco de maracujá concentrado":12,"Espuma cítrica de gengibre":0.8,
+"Limão Taiti":6,"Limão Siciliano":15,"Laranja":1,"Manjericão":4,"Hortelã":4,"Pimenta rosa":25,"Ovo":12,
+"Copo descartável 400ml":15,"Copo descartável 700ml":22,"Batata congelada para fritar":30,"Seda":2.5}

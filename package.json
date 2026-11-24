@@ -1,0 +1,17 @@
+{
+  "name": "mukifo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema do bar Mukifo: estoque por ficha técnica, compras, POS e pedidos pelo celular",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:criar": "wrangler d1 create mukifo",
+    "db:migrar:local": "wrangler d1 migrations apply mukifo --local",
+    "db:migrar": "wrangler d1 migrations apply mukifo --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

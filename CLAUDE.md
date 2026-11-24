@@ -1,0 +1,37 @@
+# Mukifo — instruções para quem desenvolve (humano ou IA)
+
+Sistema do bar Mukifo (boteco, Rua Mariante 627, Rio Branco, Porto Alegre). Objetivo: saber quanto vai em cada drink e prato, quando e quanto comprar, e onde o dinheiro se perde.
+
+## Idioma e público
+- Código, comentários, commits e telas em **português do Brasil**.
+- Quem opera tem pouca experiência com tecnologia: telas simples, botões grandes, palavras do dia a dia.
+
+## Arquitetura (tudo na Cloudflare)
+- **Worker** (`src/worker.js`): API em `/api/*`.
+- **Páginas estáticas** (`public/`): painel de gestão, app de pedidos do cliente (PWA), tela da fila.
+- **D1** (SQLite): banco único, fonte da verdade. Migrações em `migrations/`.
+- **Durable Objects**: fila em tempo real (WebSocket) para o balcão, a TV e o celular do cliente.
+- **App POS**: Android (Kotlin + Compose) para as duas **Ingenico AXIUM DX8000** do bar (Android 10, impressora térmica 58 mm, ~32 colunas). Pagamento por deeplink para o app da adquirente (provavelmente Getnet — confirmar). Fica em `pos-android/` (fase 3). Funciona offline e sincroniza com a API.
+
+## Regras de negócio
+As regras completas estão em `legado/planilha/README.md` e `legado/planilha/gerar_planilha.py` (planilha Excel usada hoje). Valem no sistema novo. Resumo:
+- Abre ter–dom. Sexta = sábado; ter/qua/qui/dom ≈ 1/3 de sábado. Segunda fechado.
+- Compras na segunda (cobre ter+qua) e na quinta (cobre qui→dom).
+- Mínimo = média de consumo dos dias cobertos × (1 + folga 20%). Sugestão = mínimo − estoque atual, com arredondamentos (inteiros p/ cima; destilados p/ garrafa mais próxima; limão e produção de 0,5 em 0,5).
+- Estoque atual = soma de `movimento_estoque`. Nunca sobrescrever.
+- Gelo = produção própria, fora das receitas e da lista de compras. Hortifruti: fornecedor principal Ceasa (módulo próprio, fase 6).
+- Histórico real de vendas: `legado/planilha/dados/historico/` (20/10 a 20/11/2026).
+
+## Fases
+1. ✅ Repositório + deploy na Cloudflare (página inicial + `/api/saude`).
+2. Banco D1 + importação da planilha e do histórico. Números têm que bater com a planilha.
+3. App POS: vender, cobrar, imprimir comanda, baixa por ficha, offline.
+4. Estoque, contagens, perdas e **lista de compras impressa na DX8000**.
+5. Painel: CMV, lucro, perdas em R$, consumo teórico × real.
+6. Hortifruti (peso/unidade, fator de limpeza).
+7. Pedidos pelo celular: PWA, Pix, fila pública, vibração/som/push quando pronto.
+
+## Como trabalhar
+- Uma fase por vez. Antes de codar uma fase, escreva o plano em `docs/` e peça aprovação.
+- Testes das regras de cálculo usando o histórico real.
+- Nunca guardar dados de cartão. Nunca commitar segredos (`.dev.vars`, tokens).

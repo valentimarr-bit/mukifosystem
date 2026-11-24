@@ -1,0 +1,22 @@
+{
+  // Configuração do Cloudflare Workers para o sistema do Mukifo.
+  // Documentação: https://developers.cloudflare.com/workers/wrangler/configuration/
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mukifo",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true },
+
+  // Páginas estáticas (painel, app de pedidos, tela da fila) ficam em /public.
+  // Tudo que não for arquivo estático (ex.: /api/...) cai no Worker.
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "single-page-application"
+  }
+
+  // FASE 2 (banco de dados): depois de rodar `npx wrangler d1 create mukifo`,
+  // descomente e cole o database_id que o comando mostrar.
+  // ,"d1_databases": [
+  //   { "binding": "DB", "database_name": "mukifo", "database_id": "COLE_AQUI" }
+  // ]
+}
