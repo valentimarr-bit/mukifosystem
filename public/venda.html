@@ -26,12 +26,14 @@ dialog{border:none;border-radius:16px;background:var(--card);color:var(--txt);wi
 input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}
 .cob{padding:10px;border:1px dashed var(--acc);border-radius:12px;margin:8px 0}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);padding:14px;border-radius:12px;z-index:20;display:none;font-size:17px}
 .ret{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:8px}
+.setor{min-height:112px;border-radius:18px;border:2px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:20px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:10px;text-align:center}.setor span{font-size:44px;line-height:1}.setor small{font-size:14px;font-weight:400;color:var(--mut)}.setor:active{transform:scale(.97)}.busca{display:block;width:100%;min-height:54px;font-size:18px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:0 0 10px}.volta{min-height:52px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:800;font-size:17px;cursor:pointer}.cabset{display:flex;align-items:center;gap:12px;margin-bottom:10px}.cabset b{font-size:20px}
+.chips{display:none!important}
 </style></head><body>
 <header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
 <div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button></div>
 
 <main id="telaV">
-  <section><div class="chips" id="chips"></div><div class="grade" id="grade"></div></section>
+  <section><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off"><div class="cabset" id="cabset" hidden></div><div class="grade" id="grade"></div></section>
   <aside class="painel"><div class="cmd" id="cmd"></div><div id="itens"></div>
     <div class="total" id="total">R$ 0,00</div><div id="cobsPend"></div>
     <button class="grande" id="bCobrar">Cobrar</button>
@@ -58,7 +60,7 @@ input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border
 <script>
 Tema.ligarSeletor(document.getElementById('tema'));
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
-let token = Mukifo.token(), cardapio = [], cat = 0, comandas = [], atual = null, maqs = [], forma = null;
+let token = Mukifo.token(), cardapio = [], cat = -1, busca = '', comandas = [], atual = null, maqs = [], forma = null;
 const msg = (t, ruim) => { const m = $('#msg'); m.textContent = t; m.style.color = ruim ? 'var(--bad)' : 'var(--txt)'; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 5000); };
 async function api(url, metodo = 'GET', corpo) {
   const r = await fetch(url, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token } });
@@ -66,11 +68,16 @@ async function api(url, metodo = 'GET', corpo) {
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
 }
 const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); recarregarCardapio(); } };
-async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; if (cat >= cardapio.length) cat = 0; desenharCardapio(); } catch {} }
+async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; if (cat >= cardapio.length) cat = -1; desenharCardapio(); } catch {} }
 
+const EMOJI = { 'Promoções e kits': '🎉', Drinks: '🍹', Doses: '🥃', 'Cervejas e long necks': '🍺', Energéticos: '⚡', 'Refrigerantes e águas': '🥤', Porções: '🍟', 'Pratos e lanches': '🍔' };
+const sem = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const prodBtn = (p) => `<button class="prod${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}><span>${p.nome}${p.restam === 0 ? '<br><small>ESGOTADO</small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`;
 function desenharCardapio() {
-  $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
-  $('#grade').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<button class="prod${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}><span>${p.nome}${p.restam === 0 ? '<br><small>ESGOTADO</small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`).join('');
+  const q = sem(busca.trim()), cab = $('#cabset');
+  if (q) { cab.hidden = true; $('#grade').innerHTML = cardapio.flatMap((c) => c.produtos.map((p) => ({ ...p, _s: c.nome }))).filter((p) => sem(p.nome).includes(q) || sem(p._s).includes(q)).map(prodBtn).join('') || '<p class="mut">Nenhum produto com esse nome.</p>';
+  } else if (cat >= 0 && cardapio[cat]) { cab.hidden = false; cab.innerHTML = `<button class="volta" id="bSetores">← Setores</button><b>${EMOJI[cardapio[cat].nome] ?? '🍽️'} ${cardapio[cat].nome}</b>`; $('#grade').innerHTML = cardapio[cat].produtos.map(prodBtn).join('');
+  } else { cat = -1; cab.hidden = true; $('#grade').innerHTML = cardapio.map((c, i) => `<button class="setor" data-i="${i}"><span>${EMOJI[c.nome] ?? '🍽️'}</span>${c.nome}<small>${c.produtos.length} ${c.produtos.length === 1 ? 'item' : 'itens'}</small></button>`).join(''); }
 }
 function desenharComanda() {
   $('#cmd').innerHTML = comandas.map((c) => `<button data-id="${c.id}" class="${atual?.id === c.id ? 'on' : ''}">Pedido ${c.numero}${c.mesa ? ' · ' + c.mesa : ''}</button>`).join('') + '<button id="nova">+ Outro pedido</button>';
@@ -89,8 +96,9 @@ const atualizarResumo = async () => { try { const r = await api('/api/venda/resu
 async function abrir(id) { atual = (await api('/api/venda/comandas/' + id)).comanda; desenharComanda(); }
 function depois(r) { recarregarCardapio(); if (r.comanda) { atual = r.comanda; if (['entregue', 'recebido', 'cancelado'].includes(atual.status)) { msg('Venda fechada ✓ ' + R$(atual.total)); atual = null; } } lerComandas(); atualizarResumo(); }
 
-$('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenharCardapio(); } };
-$('#grade').onclick = tentar(async (e) => { const b = e.target.closest('.prod'); if (!b || b.disabled) return; b.style.outline = '3px solid var(--acc)'; setTimeout(() => (b.style.outline = ''), 160); if (navigator.vibrate) navigator.vibrate(15);
+$('#cabset').onclick = (e) => { if (e.target.closest('#bSetores')) { cat = -1; desenharCardapio(); } };
+$('#busca').oninput = (e) => { busca = e.target.value; desenharCardapio(); };
+$('#grade').onclick = tentar(async (e) => { const st = e.target.closest('.setor'); if (st) { cat = +st.dataset.i; desenharCardapio(); return; } const b = e.target.closest('.prod'); if (!b || b.disabled) return; b.style.outline = '3px solid var(--acc)'; setTimeout(() => (b.style.outline = ''), 160); if (navigator.vibrate) navigator.vibrate(15);
   if (!atual) await novaComanda();   // tocou, entrou: o pedido abre sozinho, sem perguntar nada
   depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
 async function novaComanda() { const r = await api('/api/venda/comandas', 'POST', { mesa: '' }); atual = r.comanda; await lerComandas(); }

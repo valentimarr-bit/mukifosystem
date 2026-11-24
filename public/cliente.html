@@ -14,10 +14,12 @@ header{background:var(--hdr);padding:14px;position:sticky;top:0;z-index:5}header
 input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:4px 0 12px}label{color:var(--mut);font-size:14px}
 .ruim{color:var(--bad)}.mut{color:var(--mut);font-size:14px}.erro{color:var(--bad);min-height:22px}.bom{color:var(--ok)}.qr{background:#fff;padding:14px;border-radius:14px;display:inline-block}.qr img{display:block;width:min(70vw,280px)}
 .cola{word-break:break-all;font-size:12px;background:var(--input);border-radius:10px;padding:8px;max-height:80px;overflow:auto}.centro{text-align:center}
+.setor{min-height:112px;border-radius:18px;border:2px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:20px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:10px;text-align:center}.setor span{font-size:44px;line-height:1}.setor small{font-size:14px;font-weight:400;color:var(--mut)}.setor:active{transform:scale(.97)}.busca{display:block;width:100%;min-height:54px;font-size:18px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:0 0 10px}.volta{min-height:52px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:800;font-size:17px;cursor:pointer}.cabset{display:flex;align-items:center;gap:12px;margin-bottom:10px}.cabset b{font-size:20px}
+#cardapio>.busca{margin:10px 12px 0;width:calc(100% - 24px)}.cabset{padding:0 12px}.chips{display:none!important}
 </style></head><body>
 <header style="display:flex;gap:10px;align-items:center;justify-content:space-between"><div><h1>🍸 Mukifo</h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></div><button id="bConta" class="chip" style="min-height:48px;padding:0 14px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button></header>
 
-<div id="cardapio"><div class="chips" id="chips"></div><div class="lista" id="lista"></div>
+<div id="cardapio"><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off" enterkeyhint="search"><div class="cabset" id="cabset" hidden></div><div class="lista" id="lista"></div>
   <div class="barra"><button class="grande" id="bCarrinho" disabled>Toque nos produtos para pedir</button></div><div id="aviso" hidden></div></div>
 
 <div id="telaConta" class="tela" hidden>
@@ -71,23 +73,31 @@ input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:1
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 const CH = 'mukifo_pedido_app';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-let cardapio = [], cat = 0, cart = new Map(), prods = new Map(), pedido = null, timer = null;
+let cardapio = [], cat = -1, cart = new Map(), prods = new Map(), pedido = null, timer = null;
 const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
 const tela = (id) => ['cardapio', 'telaConta', 'telaDados', 'telaPix', 'telaQr', 'telaFim'].forEach((t) => $('#' + t).hidden = t !== id);
 const guardar = (p) => { try { p ? localStorage.setItem(CH, JSON.stringify(p)) : localStorage.removeItem(CH); } catch {} };
 
 const EMOJI = { 'Promoções e kits': '🎉', Drinks: '🍹', Doses: '🥃', 'Cervejas e long necks': '🍺', Energéticos: '⚡', 'Refrigerantes e águas': '🥤', Porções: '🍟', 'Pratos e lanches': '🍔' };
-const fotoDe = (p) => { const u = Fotos.url('produtos', p.id); return u ? `<img class="foto" src="${u}" alt="${esc(p.nome)}" loading="lazy" decoding="async">` : `<div class="sem" aria-hidden="true">${EMOJI[cardapio[cat]?.nome] ?? '🍽️'}</div>`; };
+const sem = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const setorDe = new Map(); let busca = '';
+const fotoDe = (p) => { const u = Fotos.url('produtos', p.id); return u ? `<img class="foto" src="${u}" alt="${esc(p.nome)}" loading="lazy" decoding="async">` : `<div class="sem" aria-hidden="true">${EMOJI[setorDe.get(p.id)] ?? '🍽️'}</div>`; };
+const prodCard = (p) => `<button class="p${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}>
+    ${fotoDe(p)}<span class="n">${esc(p.nome)}${p.restam === 0 ? '<br><small class="ruim"><b>Esgotado</b></small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`;
 function desenhar() {
-  $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
-  $('#lista').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<button class="p${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}>
-    ${fotoDe(p)}<span class="n">${esc(p.nome)}${p.restam === 0 ? '<br><small class="ruim"><b>Esgotado</b></small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`).join('');
+  setorDe.clear(); cardapio.forEach((c) => c.produtos.forEach((p) => setorDe.set(p.id, c.nome)));
+  const q = sem(busca.trim()), cab = $('#cabset');
+  if (q) { const ach = cardapio.flatMap((c) => c.produtos).filter((p) => sem(p.nome).includes(q) || sem(setorDe.get(p.id)).includes(q)); cab.hidden = true;
+    $('#lista').innerHTML = ach.map(prodCard).join('') || '<p class="mut" style="grid-column:1/-1;padding:20px 0">Nenhum produto com esse nome.</p>';
+  } else if (cat >= 0 && cardapio[cat]) { cab.hidden = false; cab.innerHTML = `<button class="volta" id="bSetores">← Setores</button><b>${EMOJI[cardapio[cat].nome] ?? '🍽️'} ${esc(cardapio[cat].nome)}</b>`; $('#lista').innerHTML = cardapio[cat].produtos.map(prodCard).join('');
+  } else { cat = -1; cab.hidden = true; $('#lista').innerHTML = cardapio.map((c, i) => `<button class="setor" data-i="${i}"><span>${EMOJI[c.nome] ?? '🍽️'}</span>${esc(c.nome)}<small>${c.produtos.length} ${c.produtos.length === 1 ? 'item' : 'itens'}</small></button>`).join(''); }
   barra();
 }
 function barra() { const n = [...cart.values()].reduce((a, b) => a + b, 0), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0);
   $('#bCarrinho').disabled = !n; $('#bCarrinho').textContent = n ? `🛒 Ver pedido · ${n} ${n > 1 ? 'itens' : 'item'} · ${R$(t)}` : 'Toque nos produtos para pedir'; }
-$('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenhar(); } };
-$('#lista').onclick = (e) => { const b = e.target.closest('.p'); if (!b || b.disabled) return; const id = +b.dataset.id, lim = Math.min(prods.get(id).restam ?? 20, 20), q = cart.get(id) ?? 0;
+$('#cabset').onclick = (e) => { if (e.target.closest('#bSetores')) { cat = -1; desenhar(); scrollTo(0, 0); } };
+$('#busca').oninput = (e) => { busca = e.target.value; desenhar(); };
+$('#lista').onclick = (e) => { const st = e.target.closest('.setor'); if (st) { cat = +st.dataset.i; desenhar(); scrollTo(0, 0); return; } const b = e.target.closest('.p'); if (!b || b.disabled) return; const id = +b.dataset.id, lim = Math.min(prods.get(id).restam ?? 20, 20), q = cart.get(id) ?? 0;
   if (q >= lim) { b.classList.add('fim'); setTimeout(() => b.classList.remove('fim'), 400); return aviso(lim >= 20 ? 'Máximo de 20 por item.' : `Só temos mais ${lim} desse.`); }
   cart.set(id, q + 1); b.classList.add('ok'); setTimeout(() => b.classList.remove('ok'), 180); if (navigator.vibrate) navigator.vibrate(15); barra(); };
 function aviso(t) { const a = $('#aviso'); a.textContent = t; a.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => a.hidden = true, 2200); }
