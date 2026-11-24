@@ -141,7 +141,7 @@
 <main>
   <section id="estoque">
     <div class="bar">
-      <label>Compra de <select id="dia"><option value="segunda">Segunda</option><option value="quinta">Quinta</option></select></label>
+      <label>Compra de <select id="dia"><option value="segunda">Segunda</option><option value="quinta">Quinta</option><option value="estoque">Pelo estoque</option></select></label>
       <input id="busca" type="search" autocomplete="off" placeholder="Buscar item" style="flex:1;min-width:160px">
       <label><input type="checkbox" id="soAlerta"> só em alerta</label>
     </div>
@@ -152,7 +152,7 @@
   <section id="lista" hidden>
     <p class="mut">Aqui fica o que o sistema <b>recomenda comprar</b>: o estoque recomendado de cada item menos o que você tem agora (as vendas já saíram do estoque). A <b>lista de compras</b> de verdade é a que sai daqui para o celular (/compras).</p>
     <div class="bar">
-      <button class="btn" data-ld="segunda">Recomendado de segunda</button><button class="btn" data-ld="quinta">Recomendado de quinta</button>
+      <button class="btn" data-ld="segunda">Recomendado de segunda</button><button class="btn" data-ld="quinta">Recomendado de quinta</button><button class="btn" data-ld="estoque">📦 Gerar pelo estoque</button>
     </div>
     <div class="bar">
       <span id="listaDia" class="mut"></span>
@@ -412,7 +412,7 @@ document.querySelectorAll('[data-ld]').forEach((b) => b.addEventListener('click'
 async function carregarLista() {
   document.querySelectorAll('[data-ld]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.ld === $('#dia').value));
   lista = await api('/api/lista-compras?dia=' + $('#dia').value);
-  $('#listaDia').textContent = `Compra recomendada de ${lista.dia === 'segunda' ? 'segunda' : 'quinta'} · total estimado ${brl(lista.total_estimado)}`;
+  $('#listaDia').textContent = `${lista.dia === 'estoque' ? 'Compra pelo estoque (o que acabou ou está faltando agora)' : 'Compra recomendada de ' + (lista.dia === 'segunda' ? 'segunda' : 'quinta')} · total estimado ${brl(lista.total_estimado)}`;
   $('#listaCorpo').innerHTML = lista.fornecedores.map((f) => `
     <div class="forn"><h3>${esc(f.fornecedor)} <span class="mut">${esc(f.como_recebe || '')}</span></h3>
     ${f.itens.map((i) => `<div>☐ ${fmt(i.quantidade)} × ${esc(i.insumo)} <span class="mut">(${esc(i.embalagem)}) · tem ${fmt(i.tem, 2)}, recomendado ${fmt(i.recomendado, 2)}${i.recomendado_manual ? '' : ' (auto)'}</span></div>`).join('')}

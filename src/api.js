@@ -17,7 +17,7 @@ import { rotearAuditoria } from './auditoria.js';
 import { rotearProducao } from './producao.js';
 import { moduloDaRota } from './dominio/modulos.js';
 import {
-  normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
+  normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha, sugestaoCompra,
 } from './dominio/estoque.js';
 
 export function json(dados, status = 200) {
@@ -74,6 +74,8 @@ async function folga(db) {
 }
 
 const diaCompra = (url) => (url.searchParams.get('dia') === 'segunda' ? 'segunda' : 'quinta');
+// 'estoque' = lista pelo que está faltando AGORA, sem depender do dia da semana.
+const modoDaLista = (v) => (v === 'estoque' ? 'estoque' : v === 'segunda' ? 'segunda' : 'quinta');
 const precoDe = (i) => i.preco_unidade ?? i.preco_referencia ?? null;
 
 // ---------------- rotas de leitura ----------------
@@ -103,21 +105,27 @@ async function getEstoque(db, url) {
 async function calcularLista(db, dia) {
   const [insumos, produtos, historico, atual, f] = await Promise.all([
     carregarInsumos(db), carregarProdutos(db), carregarHistorico(db), estoqueAtual(db), folga(db)]);
-  const painel = painelEstoque({ insumos, produtos, historico, atual, dia, folga: f });
+  const porEstoque = dia === 'estoque';
+  const painel = painelEstoque({ insumos, produtos, historico, atual, dia: porEstoque ? 'quinta' : dia, folga: f });
   const porNome = new Map(insumos.map((i) => [i.nome, i]));
   const grupos = new Map();
   const producao = [];
   for (const l of painel) {
-    if (!(l.sugestao > 0)) continue;
     const i = porNome.get(l.insumo);
-    if (i.producao_propria) { producao.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem }); continue; }
+    // Pelo estoque: entra o que acabou, o que está no nível de alerta ou o que não cobre nem até a próxima compra (recomendado de segunda);
+    // a quantidade leva o item até o maior recomendado (o de quinta, que cobre o fim de semana).
+    const alvo = Math.max(l.minimo_segunda, l.minimo_quinta);
+    const precisa = l.atual <= 0 || l.atual < l.minimo_segunda || (i.minimo_alerta != null && l.atual <= i.minimo_alerta);
+    const qtd = porEstoque ? (precisa ? sugestaoCompra(i, alvo, l.atual) : 0) : l.sugestao;
+    if (!(qtd > 0)) continue;
+    if (i.producao_propria) { producao.push({ insumo_id: i.id, insumo: l.insumo, quantidade: qtd, embalagem: i.embalagem }); continue; }
     const fo = i.fornecedor ?? 'Sem fornecedor';
     if (!grupos.has(fo)) grupos.set(fo, { fornecedor: fo, itens: [], total_estimado: 0, tem_preco_estimado: false });
     const g = grupos.get(fo);
     const preco = precoDe(i);
-    g.itens.push({ insumo_id: i.id, insumo: l.insumo, quantidade: l.sugestao, embalagem: i.embalagem, preco_unidade: preco,
-      tem: r2(l.atual), recomendado: dia === 'segunda' ? l.minimo_segunda : l.minimo_quinta, recomendado_manual: l.recomendado_manual });
-    if (preco != null) g.total_estimado = r2(g.total_estimado + preco * l.sugestao);
+    g.itens.push({ insumo_id: i.id, insumo: l.insumo, quantidade: qtd, embalagem: i.embalagem, preco_unidade: preco,
+      tem: r2(l.atual), recomendado: porEstoque ? alvo : dia === 'segunda' ? l.minimo_segunda : l.minimo_quinta, recomendado_manual: l.recomendado_manual });
+    if (preco != null) g.total_estimado = r2(g.total_estimado + preco * qtd);
     if (i.preco_unidade == null) g.tem_preco_estimado = true;
   }
   const { results: forn } = await db.prepare('SELECT nome, como_recebe FROM fornecedor').all();
@@ -129,7 +137,7 @@ async function calcularLista(db, dia) {
 const ordemFornecedor = (a, b) => (a.fornecedor === 'Ceasa') - (b.fornecedor === 'Ceasa') || a.fornecedor.localeCompare(b.fornecedor, 'pt-BR');
 
 async function getListaCompras(db, url) {
-  return json({ ...(await calcularLista(db, diaCompra(url))), gerado_em: new Date().toISOString() });
+  return json({ ...(await calcularLista(db, modoDaLista(url.searchParams.get('dia')))), gerado_em: new Date().toISOString() });
 }
 
 async function getProdutos(db) {
@@ -285,7 +293,7 @@ async function getListaAtual(db) {
 
 /** POST /api/listas { dia, usuario? } — gera a lista a partir da sugestão (cancela a lista aberta anterior). */
 async function postLista(db, body) {
-  const dia = body?.dia === 'segunda' ? 'segunda' : 'quinta';
+  const dia = modoDaLista(body?.dia);
   const calc = await calcularLista(db, dia);
   await db.prepare("UPDATE lista_compras SET status = 'cancelada' WHERE status = 'aberta'").run();
   const l = await db.prepare('INSERT INTO lista_compras (dia_compra, usuario) VALUES (?, ?) RETURNING id').bind(dia, body?.usuario ?? null).first();

@@ -112,6 +112,7 @@
   <div class="acoes" style="flex-direction:column">
     <button class="btn" data-gerar="segunda">Lista de SEGUNDA<br><small>cobre terça e quarta</small></button>
     <button class="btn" data-gerar="quinta">Lista de QUINTA<br><small>cobre quinta a domingo</small></button>
+    <button class="btn" data-gerar="estoque">📦 Gerar pelo estoque<br><small>só o que acabou ou está faltando agora</small></button>
     <button class="btn" data-fechar>Voltar</button>
   </div>
 </dialog>
@@ -204,13 +205,14 @@ function desenhar() {
     main.innerHTML = `<div class="vazio"><h2>Nenhuma lista aberta</h2>
       <p>A lista é montada com o que falta no estoque para cobrir os próximos dias.</p>
       <button class="btn ${sugerido === 'segunda' ? 'prim' : ''}" data-gerar="segunda">Gerar lista de SEGUNDA<br><small>cobre terça e quarta</small></button>
-      <button class="btn ${sugerido === 'quinta' ? 'prim' : ''}" data-gerar="quinta">Gerar lista de QUINTA<br><small>cobre quinta a domingo</small></button></div>`;
+      <button class="btn ${sugerido === 'quinta' ? 'prim' : ''}" data-gerar="quinta">Gerar lista de QUINTA<br><small>cobre quinta a domingo</small></button>
+      <button class="btn" data-gerar="estoque">📦 Gerar pelo estoque<br><small>só o que acabou ou está faltando agora</small></button></div>`;
     return;
   }
   $('#ocultar').hidden = false; $('#progresso').hidden = false; $('#rodape').hidden = false;
   const todos = itensDe(lista);
   const feitos = todos.filter((i) => i.comprado);
-  $('#titulo').textContent = `Compra de ${lista.dia_compra === 'segunda' ? 'segunda' : 'quinta'}`;
+  $('#titulo').textContent = lista.dia_compra === 'estoque' ? 'Compra pelo estoque' : `Compra de ${lista.dia_compra === 'segunda' ? 'segunda' : 'quinta'}`;
   $('#barra').style.width = (todos.length ? (feitos.length / todos.length) * 100 : 0) + '%';
   $('#contagem').textContent = `${feitos.length} de ${todos.length} comprados`;
   const estimado = todos.reduce((s, i) => s + (i.preco_unidade || 0) * i.quantidade_sugerida, 0);

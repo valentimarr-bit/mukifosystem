@@ -212,3 +212,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Para integrar outro (Asaas, AbacatePay, Getnet, InfinitePay...): criar um objeto com o mesmo contrato, registrar em `GATEWAYS` e escrever o teste com `fetch` simulado (ver `test/gateways.test.js`). Nenhum fluxo do sistema precisa mudar.
 - `src/dominio/comparativo.js` (taxas + simulador de custo) e tela `public/pagamentos.html` (gestão → "Pagamentos →"; módulo financeiro; só o superadmin troca o gateway). Taxas de fontes públicas e de comparadores, conferidas em nov/2026: confirmar na conta antes de decidir.
 - Pendente: pagamento que chega depois do pedido vencer (a baixa é ignorada e a tela avisa para devolver); estorno automático; Getnet/Asaas/InfinitePay como adaptadores; tap to pay.
+
+## Lista de compras pelo estoque
+- Novo modo `dia = 'estoque'` em `calcularLista` (`/api/lista-compras?dia=estoque`, `POST /api/listas {dia:'estoque'}`): entra o item que acabou, que está no nível de alerta ou que não cobre nem até a próxima compra (recomendado de segunda); a quantidade leva até o maior recomendado (o de quinta). Independe do dia da semana. Lista guardada com `dia_compra = 'estoque'`.
+- Botão "📦 Gerar pelo estoque" no app `/compras` (tela vazia e janela de gerar) e na lista da gestão. `sw.js` do compras no v5.

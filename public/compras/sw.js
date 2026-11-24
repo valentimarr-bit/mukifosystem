@@ -1,6 +1,6 @@
 // Service worker do app de compras: guarda a tela para abrir mesmo sem internet (Ceasa, mercado).
 // A lista em si fica salva no aparelho pelo próprio app; aqui só a "casca".
-const CACHE = 'mukifo-compras-v4';
+const CACHE = 'mukifo-compras-v5';
 const CASCA = ['/compras/', '/entrar.js', '/tema.js', '/fotos.js', '/compras/manifest.webmanifest', '/compras/icone-192.png', '/compras/icone-512.png'];
 
 self.addEventListener('install', (e) => {

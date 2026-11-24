@@ -138,3 +138,26 @@ test('alertas de estoque: define o nível, marca o item em alerta e limpa', asyn
   await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: null }] }, 'segredo-teste', 'PUT');
   assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((i) => i.insumo_id === item.insumo_id).alerta, false);
 });
+
+test('lista pelo estoque: entra só o que acabou, está em alerta ou não cobre até a próxima compra; sobe até o recomendado', async () => {
+  const calc = async () => (await chamar('/api/lista-compras?dia=estoque')).corpo;
+  const itens = (c) => c.fornecedores.flatMap((f) => f.itens);
+  const c1 = await calc();
+  assert.equal(c1.dia, 'estoque'); assert.ok(itens(c1).length > 0);
+  assert.ok(itens(c1).every((i) => i.quantidade > 0 && i.recomendado > 0));
+  const alvo = itens(c1)[0], ins = await env.DB.prepare('SELECT id FROM insumo WHERE nome = ?').bind(alvo.insumo).first();
+  assert.ok(alvo.quantidade >= alvo.recomendado - alvo.tem, 'leva até o recomendado');
+  await env.DB.prepare("INSERT INTO movimento_estoque (insumo_id, tipo, quantidade) VALUES (?, 'ajuste', ?)").bind(ins.id, 10000).run();
+  assert.ok(!itens(await calc()).some((i) => i.insumo === alvo.insumo), 'estoque cheio: não entra');
+  await env.DB.prepare('DELETE FROM movimento_estoque WHERE insumo_id = ? AND quantidade = 10000').bind(ins.id).run();
+  // um pouco abaixo do recomendado e no nível de alerta: entra, só com a diferença
+  await env.DB.prepare("INSERT INTO movimento_estoque (insumo_id, tipo, quantidade) VALUES (?, 'ajuste', ?)").bind(ins.id, alvo.recomendado - 0.5).run();
+  await env.DB.prepare('UPDATE insumo SET minimo_alerta = ? WHERE id = ?').bind(alvo.recomendado - 0.5, ins.id).run();
+  const parcial = itens(await calc()).find((i) => i.insumo === alvo.insumo);
+  assert.ok(parcial, 'no nível de alerta: entra'); assert.ok(parcial.quantidade <= 1 && parcial.quantidade > 0, 'só a diferença até o recomendado');
+  await env.DB.prepare('UPDATE insumo SET minimo_alerta = NULL WHERE id = ?').bind(ins.id).run();
+  await env.DB.prepare("DELETE FROM movimento_estoque WHERE insumo_id = ? AND tipo = 'ajuste'").bind(ins.id).run();
+  // gerar a lista de verdade guarda o modo
+  const g = await post('/api/listas', { dia: 'estoque' });
+  assert.equal(g.status, 201); assert.equal(g.corpo.lista.dia_compra, 'estoque'); assert.ok(g.corpo.lista.itens_total > 0);
+});
