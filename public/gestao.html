@@ -50,8 +50,21 @@
   main > section { min-width:0; }
   @media (max-width: 760px) { table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; } main { padding:12px; } }
   @media (max-width: 520px) {
-    table { font-size:14px; } th, td { padding:7px 3px; } th { top:118px; }
+    table { font-size:14px; } th, td { padding:7px 3px; }
     .larga { display:none; }
+  }
+  /* celular: o cabeçalho rola junto (antes ele cobria os produtos) e o estoque vira cartões */
+  @media (max-width: 760px) {
+    header { position:static; } th { position:static; }
+    #tabEstoque { display:block; overflow:visible; }
+    #tabEstoque thead, #tabEstoque tbody { display:block; }
+    #tabEstoque thead tr { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+    #tabEstoque th { border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; text-align:center; background:var(--card); cursor:pointer; }
+    #tabEstoque tbody tr { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px 10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; }
+    #tabEstoque tbody td { border:0; padding:0; text-align:left; }
+    #tabEstoque tbody td:first-child, #tabEstoque tbody td:last-child { grid-column:1 / -1; }
+    #tabEstoque tbody td[data-l]::before { content:attr(data-l); display:block; color:var(--mut); font-size:12px; }
+    #tabEstoque tbody td b { font-size:18px; }
   }
   .foto-mini { display:inline-block; border-radius:8px; object-fit:cover; vertical-align:middle; background:var(--card); border:1px solid var(--line); flex:0 0 auto; }
   .foto-mini.vazia { background:repeating-linear-gradient(45deg,var(--card),var(--card) 6px,var(--line) 6px,var(--line) 7px); }
@@ -358,8 +371,8 @@ function desenharEstoque() {
   $('#faixaAlerta').innerHTML = emAlerta.length ? `⚠ <b>${emAlerta.length} ${emAlerta.length === 1 ? 'item em alerta' : 'itens em alerta'}</b>: ${emAlerta.slice(0, 6).map((i) => esc(i.insumo)).join(', ')}${emAlerta.length > 6 ? '…' : ''}` : '';
   $('#tbEstoque').innerHTML = ordenarEstoque(estoque.filter((i) => i.insumo.toLowerCase().includes(b) && (!so || i.alerta)), dia).map((i) => `
     <tr class="${i.alerta ? 'em-alerta' : ''}"><td><div class="linha-foto">${Fotos.miniatura('insumos', i.insumo_id, 40)}<div>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}${i.minimo_alerta != null ? ` · avisa em ${fmt(i.minimo_alerta, 2)}` : ''}</div></div></div></td>
-    <td>${fmt(i.atual, 2)}</td><td>${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
-    <td><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
+    <td data-l="Tem">${fmt(i.atual, 2)}</td><td data-l="Recomendado">${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
+    <td data-l="Comprar"><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
     <td class="${i.situacao.split(' ')[0]}">${esc(i.situacao)}${i.alerta ? '<div class="selo-alerta">⚠ em alerta</div>' : ''}</td></tr>`).join('');
 }
 $('#dia').addEventListener('change', () => { carregarEstoque(); lista = null; });
