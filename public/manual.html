@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Manual do sistema</title><script src="/tema.js"></script>
+<!-- ARQUIVO GERADO por "npm run manual" a partir de docs/manual.md e docs/alteracoes.md. Não edite aqui. -->
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.55 system-ui,sans-serif}
+header{background:var(--hdr);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font-size:16px}
+.corpo{max-width:860px;margin:0 auto;padding:12px 14px 90px}
+#busca{width:100%;min-height:50px;font-size:18px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:8px 0}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}.toc a{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--txt);text-decoration:none;font-size:15px}
+h1{font-size:28px}h2{font-size:24px;margin:34px 0 8px;padding-top:6px;border-top:1px solid var(--line)}h3{font-size:20px;margin:22px 0 6px;color:var(--acc)}h4{font-size:18px}
+p,li{overflow-wrap:anywhere}li{margin:4px 0}code{background:var(--input);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.85em;overflow-wrap:anywhere}a{color:var(--acc)}
+.tab{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:16px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}
+.sec{scroll-margin-top:70px}mark{background:var(--acc);color:var(--on-acc);border-radius:4px}.nada{color:var(--mut);padding:20px 0}
+@media print{header,#busca,.toc{display:none}body{background:#fff;color:#000}}
+</style></head><body data-sem-botao-visual>
+<header><h1>📖 Manual do sistema</h1><a href="/gestao.html">Gestão</a></header>
+<div class="corpo">
+<input id="busca" type="search" placeholder="Procurar no manual (ex.: troco, fila, nota fiscal)" aria-label="Procurar no manual">
+<nav class="toc"><a href="#1-primeiros-passos">1. Primeiros passos</a><a href="#2-gestao">2. Gestão</a><a href="#3-financeiro">3. Financeiro</a><a href="#4-venda-no-balcao">4. Venda no balcão</a><a href="#5-producao">5. Produção</a><a href="#6-app-do-cliente">6. App do cliente</a><a href="#6-1-pagamentos-pelo-celular-do-cliente">6.1. Pagamentos pelo celular do cliente</a><a href="#7-campeonato-de-sinuca">7. Campeonato de sinuca</a><a href="#8-fila-da-sinuca">8. Fila da sinuca</a><a href="#9-pagamentos-e-monitor-de-pix">9. Pagamentos e Monitor de Pix</a><a href="#10-notas-fiscais-nfc-e">10. Notas fiscais (NFC-e)</a><a href="#11-excel">11. Excel</a><a href="#12-problemas-comuns">12. Problemas comuns</a><a href="#13-para-quem-mantem-o-sistema">13. Para quem mantém o sistema</a><a href="#novidades">Novidades e alterações</a></nav>
+<div id="nada" class="nada" hidden>Nada encontrado. Tente outra palavra.</div>
+<main id="texto">
+<h1 id="manual-do-mukifosystem">Manual do Mukifosystem</h1>
+<p>Este manual é para quem opera o bar: balcão, cozinha, gerência e dono. Ele é montado a partir do arquivo <code>docs/manual.md</code>. Quando algo no sistema muda, o texto muda aqui e o manual é gerado de novo (veja &quot;Para quem mantém o sistema&quot; no fim).</p>
+<h2 id="1-primeiros-passos">1. Primeiros passos</h2>
+<h3 id="entrar-e-quem-ve-o-que">Entrar e quem vê o quê</h3>
+<ul><li>Quem trabalha entra com <b>nome e senha</b>. O primeiro acesso cria o <b>superadmin</b> (o dono), usando o código de primeiro acesso guardado na Cloudflare.</li><li>O superadmin vê tudo e, na aba <b>Conta</b>, escolhe o que cada gerente pode ver (painel de permissões). O sistema também bloqueia no servidor: esconder o botão não é o único cuidado.</li><li>Módulos que podem ser liberados ou escondidos: Venda, Produção, Caixa, Estoque, Recomendado, Produtos e lucro, Combos, Níveis, Fotos, Registrar, Fornecedores, Clientes, Campeonato, Desempenho, Financeiro e Excel. <b>Desempenho, Financeiro e Excel</b> vêm desligados para gerentes novos.</li><li>A sessão fica salva no aparelho. Para trocar de pessoa, use <b>Conta → Sair</b>.</li></ul>
+<h3 id="visual-e-modo-teste">Visual e modo teste</h3>
+<ul><li>O visual (Escuro, Claro, Vinho, Alto contraste) é escolhido na gestão e fica salvo no aparelho.</li><li>O <b>modo teste</b> (só superadmin) faz os pagamentos serem aprovados sozinhos, para treinar a equipe sem dinheiro de verdade. <b>Desligue antes de abrir ao público.</b></li></ul>
+<h3 id="telas-do-sistema">Telas do sistema</h3>
+<div class="tab"><table><thead><tr><th>Tela</th><th>Endereço</th><th>Para quem</th></tr></thead><tbody><tr><td>Gestão</td><td><code>/gestao.html</code></td><td>gerência e dono</td></tr><tr><td>Venda (balcão)</td><td><code>/venda.html</code></td><td>balcão</td></tr><tr><td>Produção</td><td><code>/producao.html</code></td><td>cozinha e bar</td></tr><tr><td>Compras (celular)</td><td><code>/compras/</code></td><td>quem faz as compras</td></tr><tr><td>App do cliente</td><td><code>/cliente.html</code></td><td>clientes</td></tr><tr><td>Campeonato (jogador)</td><td><code>/campeonato.html</code></td><td>clientes</td></tr><tr><td>Mesa do campeonato</td><td><code>/torneio.html</code></td><td>equipe</td></tr><tr><td>Fila da sinuca (cliente)</td><td><code>/sinuca.html</code></td><td>clientes</td></tr><tr><td>Mesas e fila (equipe)</td><td><code>/mesas.html</code></td><td>equipe</td></tr><tr><td>Pagamentos</td><td><code>/pagamentos.html</code></td><td>financeiro</td></tr><tr><td>Monitor de Pix</td><td><code>/pix.html</code></td><td>financeiro</td></tr><tr><td>Notas fiscais</td><td><code>/fiscal.html</code></td><td>financeiro</td></tr><tr><td>Manual</td><td><code>/manual.html</code></td><td>todos</td></tr></tbody></table></div>
+<h2 id="2-gestao">2. Gestão</h2>
+<h3 id="estoque">Estoque</h3>
+<p>O estoque de cada item é a soma dos movimentos (compras, vendas, contagens, perdas). Nunca é sobrescrito. As colunas são clicáveis para ordenar: um toque ordena, o segundo inverte, o terceiro volta ao normal.</p>
+<h3 id="recomendado-lista-de-compras">Recomendado (lista de compras)</h3>
+<ul><li>Mostra o que comprar na <b>segunda</b> (cobre terça e quarta) e na <b>quinta</b> (cobre quinta a domingo).</li><li>O mínimo de cada item é a média de consumo dos dias cobertos mais 20% de folga. A sugestão é o mínimo menos o que há em estoque, com arredondamentos (inteiros para cima; destilados pela garrafa mais próxima; limão e produção de 0,5 em 0,5).</li><li>Botões de gerar: <b>Segunda</b>, <b>Quinta</b> e <b>Pelo estoque</b>. &quot;Pelo estoque&quot; monta a lista só com o que está abaixo do mínimo ou do nível de alerta, sem depender do dia da semana.</li><li>No celular (<code>/compras/</code>) marca-se cada item com um toque. Funciona sem internet e envia quando a conexão volta. Ao finalizar, o sistema cria a compra por fornecedor, dá entrada no estoque e atualiza o preço real.</li></ul>
+<h3 id="produtos-e-lucro">Produtos e lucro</h3>
+<p>Criar produto, trocar nome e preço, escolher se <b>dá baixa no estoque</b>, montar a <b>ficha técnica</b> (ingredientes e quantidades) e desativar. Mostra custo (CMV) e lucro por produto. O custo de cada drink vem da ficha técnica.</p>
+<h3 id="combos">Combos</h3>
+<p>Pacotes de produtos com preço próprio. A baixa de estoque desce nos itens de dentro do combo.</p>
+<h3 id="niveis-alertas-de-estoque">Níveis (alertas de estoque)</h3>
+<p>Define, por item, com quantas embalagens o sistema avisa que está acabando.</p>
+<h3 id="fotos">Fotos</h3>
+<p>Grade de fotos de produtos e insumos, com filtro &quot;só os que faltam&quot;, tirar ou escolher a foto e remover. A foto é reduzida no próprio aparelho antes de subir.</p>
+<h3 id="registrar">Registrar</h3>
+<p>Registro de compras, contagem de estoque e importação do relatório de vendas.</p>
+<h3 id="fornecedores-e-clientes">Fornecedores e Clientes</h3>
+<ul><li><b>Fornecedores:</b> cadastro e contatos.</li><li><b>Clientes:</b> lista de quem tem conta no app, pontos e nível, saldo da carteira e ajuste de saldo. O cliente enxerga só o <b>nível</b> (de Caramelo a Nota de 200), nunca os pontos nem quanto gastou.</li></ul>
+<h3 id="desempenho">Desempenho</h3>
+<p>Relatórios e indicadores: vendas, tempos de preparo por etapa, CMV e comparativos.</p>
+<h3 id="atividades">Atividades</h3>
+<p>Aba para o superadmin: registro de quem fez o quê no sistema.</p>
+<h2 id="3-financeiro">3. Financeiro</h2>
+<h3 id="caixa-do-turno">Caixa do turno</h3>
+<p>Qualquer pessoa logada lança <b>sangria</b> (tirar dinheiro do caixa) e <b>suprimento</b> (pôr dinheiro) e fecha o caixa contando o dinheiro. O sistema mostra a diferença entre o esperado e o contado. O dia do turno vira às 6h da manhã.</p>
+<h3 id="contas-a-pagar">Contas a pagar</h3>
+<ul><li>Cadastre contas (aluguel, luz, fornecedores). Marque <b>repete todo mês</b> nas fixas e use <b>Gerar contas do mês</b>.</li><li><b>Paguei</b> dá baixa. A lixeira apaga.</li><li><b>Nota fiscal da conta:</b> o botão <b>🧾 Lançar NF</b> guarda a chave de acesso (44 números, conferida pelo dígito verificador), número, série, emissão e CNPJ do fornecedor. Ao colar a chave, número, série e CNPJ preenchem sozinhos. A mesma nota não entra em duas contas. Dá para anexar a foto ou PDF da nota (até 900 KB) e consultar o CNPJ na Receita Federal.</li></ul>
+<h3 id="resultado-do-mes-fluxo-de-caixa-e-taxas">Resultado do mês, Fluxo de caixa e Taxas</h3>
+<ul><li><b>Resultado do mês:</b> faturamento menos taxas, custo das mercadorias e despesas.</li><li><b>Fluxo de caixa:</b> o que entra e sai por semana, com contas vencidas e o que a casa tem a receber (pelos prazos de cada forma de pagamento).</li><li><b>Taxas:</b> o quanto cada forma de pagamento (Pix, débito, crédito, dinheiro) cobra e em quantos dias o dinheiro cai.</li></ul>
+<h2 id="4-venda-no-balcao">4. Venda no balcão</h2>
+<ul><li>Produtos por categoria, com botões grandes. Escolha a forma de pagamento (Pix, débito, crédito ou dinheiro) e, quando houver mais de uma maquininha, qual delas.</li><li>Dinheiro: o sistema calcula o <b>troco</b>.</li><li>O pedido pago desce para a <b>Produção</b> e dá baixa no estoque pela ficha técnica.</li><li>A <b>trava de estoque</b> impede vender o que não tem (pode ser desligada).</li></ul>
+<h2 id="5-producao">5. Produção</h2>
+<ul><li>Quadro com três colunas: <b>Recebido</b>, <b>Em produção</b> e <b>Entregue</b>.</li><li>Cada pedido mostra o tempo de espera. É possível marcar <b>pronto por item</b> e fazer <b>entrega parcial</b> (REP 1, REP 2…), quando só parte do pedido ficou pronta.</li><li>O cliente é avisado quando o pedido fica pronto: vibração e som na tela, e notificação no celular quando os avisos push estão configurados.</li><li>No balcão, a entrega confere o <b>QR</b> do cliente. Pedido do app que ainda não foi pago aparece como <b>não pago</b>: não entregue.</li></ul>
+<h2 id="6-app-do-cliente">6. App do cliente</h2>
+<ul><li><b>A primeira tela é o login.</b> A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há &quot;esqueci a senha&quot; por e-mail, quando o envio de e-mail está configurado.</li><li><b>Pedir:</b> o cliente escolhe os itens, paga no Pix ou com saldo e <b>só então</b> o pedido é aceito. O QR do pedido é validado no balcão.</li><li><b>Carteira:</b> saldo pré-pago por recarga via Pix. O saldo pode ser usado nos pedidos e na inscrição de campeonatos.</li><li><b>Nível:</b> o cliente vê só o nível, nunca pontos ou valores gastos.</li><li>Atalhos no topo: 🏆 campeonato e 🎱 fila da sinuca.</li></ul>
+<h2 id="6-1-pagamentos-pelo-celular-do-cliente">6.1. Pagamentos pelo celular do cliente</h2>
+<p>O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona de três jeitos:</p>
+<ol><li><b>Com gateway</b> (Mercado Pago ou Woovi): o pagamento é aprovado sozinho.</li><li><b>Pix direto na chave</b> com o <b>Monitor de Pix</b> (seção 9).</li><li><b>Pix direto na chave, sem monitor:</b> a equipe confirma o pagamento à mão.</li></ol>
+<h2 id="7-campeonato-de-sinuca">7. Campeonato de sinuca</h2>
+<h3 id="para-o-jogador-campeonato-html">Para o jogador (<code>/campeonato.html</code>)</h3>
+<ul><li>Vê os campeonatos e as <b>modalidades</b> (por exemplo Bola 8, Bola 9).</li><li>Se cadastra na modalidade e paga a inscrição por <b>Pix</b> ou <b>saldo</b>. Só entra na chave depois de pago.</li><li>Acompanha a <b>chave</b> e o <b>placar ao vivo</b> (atualiza sozinho) e o <b>ranking</b> com pontos por colocação.</li></ul>
+<h3 id="para-a-equipe-torneio-html">Para a equipe (<code>/torneio.html</code>)</h3>
+<ul><li>Cria o campeonato (nome, data, local) e as modalidades (taxa, vagas, divisão do prêmio em %).</li><li>Confirma Pix de inscrição à mão e inscreve gente no balcão (dinheiro ou maquininha).</li><li><b>Sorteia a chave</b>: fecha as inscrições. Com número ímpar, os primeiros sorteados folgam na 1ª rodada. Há disputa de 3º lugar quando há 4 ou mais jogadores.</li><li>Lança o placar pelo celular com os botões + e −, finaliza a partida (sinuca não empata) e pode <b>corrigir</b> uma partida já finalizada.</li><li>O prêmio é calculado sobre o que foi arrecadado e a diferença fica com a casa.</li></ul>
+<h2 id="8-fila-da-sinuca">8. Fila da sinuca</h2>
+<h3 id="para-o-cliente-sinuca-html">Para o cliente (<code>/sinuca.html</code>)</h3>
+<ol><li>Entre na conta (a fila é só para quem tem cadastro).</li><li>Toque em <b>Entrar na fila</b> e permita a localização do celular. Você precisa estar dentro do bar.</li><li>Quando a mesa liberar, você é <b>chamado</b>: o celular vibra e mostra o aviso (com notificação, se ativada). Você tem alguns minutos para tocar <b>Cheguei na mesa</b>.</li><li>Ao terminar o jogo, toque <b>Terminei</b> para liberar.</li></ol>
+<ul><li>Viu uma mesa &quot;em jogo&quot; que já acabou? Toque em <b>Terminou</b>. Se o jogador discordar em até 60 segundos (&quot;Ainda jogando&quot;), a mesa continua e quem avisou perde pontos.</li></ul>
+<h3 id="conduta">Conduta</h3>
+<p>Todo cliente começa com 100 pontos. Perde: chamado que não aparece (−15), desistir depois de chamado (−10), aviso de &quot;terminou&quot; falso (−25), tentativas de longe do bar (−10). Ganha: terminar um jogo (+2), aviso confirmado (+3). Com 60 pontos ou menos há <b>bloqueio de 24 horas</b> (7 dias a partir do terceiro). O cliente vê só o nível: Ótima, Boa, Atenção ou Bloqueado.</p>
+<h3 id="para-a-equipe-mesas-html">Para a equipe (<code>/mesas.html</code>)</h3>
+<ul><li><b>Marcar a localização do bar:</b> fique no meio do salão e toque <b>Usar minha localização como a do bar</b>. Sem isso a fila não abre para clientes. Ajuste o raio permitido e o tempo para chegar.</li><li>Criar, desativar e <b>liberar</b> mesas; remover pessoas da fila; <b>penalizar</b> ou <b>perdoar</b> a conduta de um cliente; ligar e desligar a fila.</li></ul>
+<h2 id="9-pagamentos-e-monitor-de-pix">9. Pagamentos e Monitor de Pix</h2>
+<h3 id="gateway-pagamentos-html">Gateway (<code>/pagamentos.html</code>)</h3>
+<ul><li>Escolha como o Pix é cobrado: <b>manual</b> (chave do bar), <b>Mercado Pago</b> ou <b>Woovi</b>. Só o superadmin troca.</li><li>A tela traz a <b>tabela comparativa</b> de taxas (inclui Getnet, Asaas, AbacatePay, InfinitePay) e um <b>simulador</b> com o seu movimento.</li><li>O aviso de pagamento do gateway nunca é aceito sem conferência: o sistema consulta o gateway e só aprova se estiver pago e com o mesmo valor.</li><li>Pix pago depois que o pedido venceu não é aprovado sozinho: devolva o valor ao cliente.</li></ul>
+<h3 id="monitor-de-pix-pix-html">Monitor de Pix (<code>/pix.html</code>)</h3>
+<p>Para Pix que cai <b>direto na chave</b>, sem gateway.</p>
+<ul><li>Como o banco não avisa o sistema, um aviso chega por um <b>encaminhador de notificações</b> no celular do bar (ou pela API Pix do banco). O endereço e as instruções estão no topo da tela.</li><li>O sistema procura a cobrança esperando <b>exatamente aquele valor</b> (pedido, recarga ou inscrição). Se houver uma só, sugere; se houver duas ou mais, ou nenhuma, a equipe escolhe com <b>Aprovar: ...</b></li><li><b>Aprovação automática</b> (só superadmin liga) aprova sozinha apenas quando existe uma única cobrança com o valor e até o limite definido.</li><li>Dá para <b>lançar à mão</b> um Pix visto no app do banco.</li><li>Valor diferente nunca é aprovado: devolva ou ajuste o pedido.</li><li>O segredo do monitor funciona como senha: quem o tem consegue forjar um pagamento.</li></ul>
+<h2 id="10-notas-fiscais-nfc-e">10. Notas fiscais (NFC-e)</h2>
+<ul><li>Em <code>/fiscal.html</code>. A emissão vem <b>desligada</b>; nada vai à Receita enquanto não for configurada.</li><li><b>Para ligar:</b> contratar um emissor (Focus NFe) com certificado digital A1 e CSC da SEFAZ-RS; guardar o token na Cloudflare; informar o CNPJ e os padrões de NCM, CFOP e CSOSN (confirme com o contador); preencher os dados fiscais dos produtos; emitir em <b>homologação</b>, conferir o DANFE e só então passar para produção.</li><li><b>Emitir:</b> informe o número do pedido de hoje. Só pedido pago recebe nota, e a soma dos itens precisa bater com o total.</li><li>Produto sem NCM, CFOP ou CSOSN válido bloqueia a emissão e o sistema lista quais faltam. Cada pedido tem uma nota viva só. Nota rejeitada mostra o motivo e pode ser emitida de novo.</li><li><b>Cancelar</b> pede justificativa de 15 letras ou mais e depende do prazo da SEFAZ.</li><li>Ainda não existe: emissão automática ao pagar, modo offline (contingência), impressão do DANFE no balcão, NF-e (modelo 55) e NFS-e.</li></ul>
+<h2 id="11-excel">11. Excel</h2>
+<p>Aba <b>Excel</b>: exporta e importa planilhas (fornecedores, insumos, produtos, fichas, combos, contagem, taxas, despesas, compras e vendas). Importar com o código preenchido atualiza o registro; em branco cria um novo.</p>
+<h2 id="12-problemas-comuns">12. Problemas comuns</h2>
+<ul><li><b>Cliente pagou o Pix e o pedido não liberou:</b> abra o Monitor de Pix e veja se o aviso chegou. Se não, lance o Pix à mão. Sem monitor, confirme o pagamento no pedido.</li><li><b>A fila da sinuca não abre:</b> falta marcar a localização do bar em <code>/mesas.html</code>.</li><li><b>Cliente diz que não consegue entrar na fila:</b> pode estar longe do bar, com GPS fraco ou bloqueado por conduta. A mensagem na tela diz o motivo; a equipe pode perdoar a conduta.</li><li><b>A nota não sai:</b> confira se o emissor está ligado, se há token e se todos os itens do pedido têm NCM, CFOP e CSOSN.</li><li><b>Esqueci a senha (equipe):</b> peça ao superadmin para trocar.</li></ul>
+<h2 id="13-para-quem-mantem-o-sistema">13. Para quem mantém o sistema</h2>
+<ul><li><b>Regra de ouro:</b> toda alteração no sistema entra em dois lugares: uma linha em <code>docs/alteracoes.md</code> (o que mudou e quando) e o texto correspondente neste manual (<code>docs/manual.md</code>).</li><li>Depois de editar, rode <code>npm run manual</code> para gerar a tela <code>/manual.html</code>. O teste automático falha se o manual gerado estiver desatualizado ou se uma tela nova não for citada aqui.</li><li>Segredos da Cloudflare (nunca no código): <code>CODIGO_PRIMEIRO_ACESSO</code>, <code>ADMIN_TOKEN</code>, <code>VAPID_PUBLICA</code>, <code>VAPID_PRIVADA</code>, <code>VAPID_CONTATO</code>, <code>GOOGLE_CLIENT_ID</code>, <code>RESEND_API_KEY</code>, <code>EMAIL_REMETENTE</code>, <code>MP_ACCESS_TOKEN</code>, <code>MP_WEBHOOK_SECRET</code>, <code>FOCUSNFE_TOKEN</code>, <code>PIX_MONITOR_SECRET</code>.</li></ul>
+<h2 id="novidades">Novidades e alterações</h2>
+<p>Uma linha por alteração, mais recente em cima. Toda mudança entra aqui <b>e</b> no <code>docs/manual.md</code>; depois rode <code>npm run manual</code>. Formato: <code>- AAAA-MM-DD — o que mudou (onde ver no sistema)</code>.</p>
+<ul><li>2026-11-24 — <b>Manual do sistema</b>: botão &quot;📖 Manual&quot; na gestão abre <code>/manual.html</code>, gerado de <code>docs/manual.md</code> e deste arquivo.</li><li>2026-11-24 — <b>Monitor de Pix</b>: aprova Pix que cai direto na chave, por aviso do celular ou da API do banco (<code>/pix.html</code>).</li><li>2026-11-24 — <b>Notas fiscais (NFC-e)</b>: emissão pronta para ligar, desligada por padrão (<code>/fiscal.html</code>).</li><li>2026-11-24 — <b>Nota fiscal nas contas a pagar</b>: chave, número, CNPJ, anexo e consulta na Receita (Financeiro → Contas a pagar).</li><li>2026-11-24 — <b>Fila da sinuca</b>: entrada com cadastro e localização, chamada, aviso de término e conduta (<code>/sinuca.html</code>, <code>/mesas.html</code>).</li><li>2026-11-24 — <b>Lista de compras &quot;Pelo estoque&quot;</b>: novo botão em Recomendado.</li><li>2026-11-24 — <b>Gateways de pagamento</b> plugáveis (Mercado Pago, Woovi) e tabela comparativa com Getnet (<code>/pagamentos.html</code>).</li><li>2026-11-24 — <b>Campeonato de sinuca</b>: modalidades, inscrição por Pix, chave, placar ao vivo e ranking (<code>/campeonato.html</code>, <code>/torneio.html</code>).</li><li>2026-11-24 — <b>App do cliente</b>: a primeira tela passou a ser o login.</li></ul>
+</main></div>
+<script>
+const $ = (s) => document.querySelector(s);
+const blocos = []; let atual = null;
+for (const el of [...$('#texto').children]) { if (el.tagName === 'H2') { atual = { els: [el] }; blocos.push(atual); } else if (atual) atual.els.push(el); else (atual = { els: [el] }, blocos.push(atual)); }
+const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+$('#busca').addEventListener('input', (e) => {
+  const q = norm(e.target.value.trim()); let achou = 0;
+  for (const b of blocos) { const ok = !q || b.els.some((el) => norm(el.textContent).includes(q)); b.els.forEach((el) => (el.hidden = !ok)); if (ok) achou++; }
+  $('#nada').hidden = achou > 0;
+});
+</script></body></html>

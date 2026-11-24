@@ -34,6 +34,7 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 ## Documentos (leia antes de começar)
 - `docs/continuar.md` — passagem de bastão: regras, segredos e pendências. **Comece por aqui.**
 - `docs/andamento.md` — histórico do que foi feito, mais recente em cima.
+- `docs/manual.md` e `docs/alteracoes.md` — **manual do sistema** (botão "📖 Manual" na gestão → `/manual.html`) e registro de alterações. **A cada mudança no sistema** (tela nova, botão, regra, segredo): atualizar o texto em `docs/manual.md`, acrescentar uma linha datada no topo de `docs/alteracoes.md` e rodar `npm run manual`. O teste `test/manual.test.js` falha se o manual gerado estiver velho ou se uma tela nova não estiver citada.
 - `docs/roteiro.md` — fases e critérios.
 - `docs/decisoes.md` — decisões tomadas.
 - `docs/prompt-pos.md`, `docs/prompt-celular.md` — especificação das partes.

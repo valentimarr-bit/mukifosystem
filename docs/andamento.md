@@ -249,3 +249,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Tela:** `/pix.html` ("Monitor Pix →" na gestão): Pix recebidos com botão "Aprovar: <pedido>", cobranças esperando, lançamento manual (Pix visto no app do banco) e as instruções de ligação.
 - **Cuidados:** o segredo funciona como senha (quem o tem forja pagamentos); valor diferente nunca é aprovado (devolver/ajustar à mão); pedido vencido antes do Pix não aprova sozinho.
 - Migração `0027_pix_monitor`; `src/pixmonitor.js`; testes em `test/pixmonitor.test.js`.
+
+## Manual do sistema
+- **Botão "📖 Manual"** no topo da gestão abre `/manual.html`: manual com índice, busca e seção "Novidades e alterações". Imprime limpo (sem busca nem menu).
+- **Fonte:** `docs/manual.md` (texto) + `docs/alteracoes.md` (uma linha datada por mudança). `npm run manual` gera `public/manual.html` (`scripts/gerar_manual.mjs`, conversor em `scripts/manual_lib.mjs`, sem dependências).
+- **Não fica velho:** `test/manual.test.js` falha se `manual.html` não bate com a fonte, se uma tela de `public/` não é citada no manual ou se uma linha de `alteracoes.md` foge do formato. A regra também está no `CLAUDE.md`.
