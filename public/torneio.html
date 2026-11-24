@@ -16,9 +16,18 @@ label{display:block;margin:10px 0 4px;color:var(--mut);font-size:14px}input,sele
 .jg .j{display:flex;align-items:center;gap:8px;padding:6px 0}.jg .j .nm{flex:1;min-width:0;font-size:19px;font-weight:700;overflow-wrap:anywhere}.jg .j .pl{font-size:34px;font-weight:900;min-width:44px;text-align:center}.jg .j.v .nm{color:var(--ok)}
 .jg .t{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;margin-bottom:4px}.passo{width:56px;height:56px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:28px;font-weight:800;cursor:pointer}
 #msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}.erro{color:var(--bad)}
+.ag{display:block;width:100%;text-align:left;font:inherit;color:var(--txt);background:var(--input);border:2px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px;cursor:pointer}.ag.em_jogo{border-color:var(--bad,#e5484d)}.ag.pronta{border-color:var(--acc)}
+.ag .st{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}.ag .li{display:flex;align-items:center;gap:10px}.ag .nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ag .nm.d{text-align:right}.ag b{font-size:22px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#folha{position:fixed;inset:0;z-index:20}#folha .fundo{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+#folha .painel{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:22px 22px 0 0;padding:10px 14px calc(14px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:sobe .18s ease-out}
+#folha .pega{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 10px}#folha .jg{margin:0;border:0;padding:4px 0;background:none}#folha .jg .j .pl{font-size:44px}#folha .passo{width:64px;height:64px}
+@keyframes sobe{from{transform:translateY(40px);opacity:0}}
 </style></head><body data-sem-botao-visual>
 <header><h1>🎱 Mesa do campeonato</h1><a href="/mesas.html">Mesas e fila</a><a href="/campeonato.html" target="_blank">Ver como jogador</a><a href="/gestao.html">Gestão</a></header>
-<main id="m"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<main id="m"><div class="card mut">Carregando…</div></main>
+<div id="folha" hidden><div class="fundo" data-fechar></div><div class="painel" role="dialog" aria-modal="true" aria-label="Placar do jogo"><div class="pega"></div><div id="folhaC"></div><button class="btn sec" data-fechar>Fechar</button></div></div>
+<div id="msg" hidden></div>
+<script src="/chave.js"></script>
 <script src="/entrar.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -33,7 +42,7 @@ async function api(url, corpo, metodo) {
 }
 const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
 const ROT = { inscricoes: 'Inscrições', andamento: 'Em andamento', encerrada: 'Encerrada', aberto: 'Aberto', encerrado: 'Encerrado' };
-const fase = (f, R, c) => c === 'T' ? '3º lugar' : f === R ? 'Final' : f === R - 1 ? 'Semifinal' : f === R - 2 ? 'Quartas' : `Rodada ${f}`;
+const fase = (f, R, c) => c === 'T' ? '3º lugar' : f === R ? 'Final' : f === R - 1 ? 'Semifinal' : f === R - 2 ? 'Quartas' : f === R - 3 ? 'Oitavas' : `Rodada ${f}`;
 
 async function lista() {
   const { campeonatos } = await api(G);
@@ -49,17 +58,30 @@ function cartaoJogo(p, R) {
   const pode = p.a && p.b, fim = p.status === 'finalizada', jog = (x, pl, lado, v) => x ? `<div class="j ${v ? 'v' : ''}"><span class="nm">${esc(x.nome)}</span>${fim ? '' : `<button class="passo" data-acao="pt" data-p="${p.id}" data-lado="${lado}" data-d="-1" aria-label="menos um">−</button>`}<span class="pl">${pl}</span>${fim ? '' : `<button class="passo" data-acao="pt" data-p="${p.id}" data-lado="${lado}" data-d="1" aria-label="mais um">+</button>`}</div>` : '<div class="j"><span class="nm mut">a definir</span></div>';
   return `<div class="jg ${p.status}"><div class="t"><b>${fase(p.fase, R, p.chave)}</b><span>${{ aguardando: 'aguardando', pronta: 'pode começar', em_jogo: '🔴 em jogo', finalizada: 'terminada' }[p.status]}</span></div>
     ${jog(p.a, p.placar_a, 'a', fim && p.vencedor_id === p.a?.id)}${jog(p.b, p.placar_b, 'b', fim && p.vencedor_id === p.b?.id)}
-    ${pode && !fim ? `<div class="row" style="margin-top:6px"><input data-mesa="${p.id}" placeholder="Mesa" value="${esc(p.mesa ?? '')}" maxlength="12" style="min-height:44px"><button class="btn ok mini fixo" data-acao="fim" data-p="${p.id}">Finalizar</button></div>` : ''}
+    ${pode && !fim ? `<div class="row" style="margin-top:6px"><span class="mut fixo">Mesa</span><input data-mesa="${p.id}" placeholder="nº" value="${esc(p.mesa ?? '')}" maxlength="12" style="min-height:44px"><button class="btn ok mini fixo" data-acao="fim" data-p="${p.id}">Finalizar</button></div>` : ''}
     ${fim && p.a && p.b ? `<button class="btn sec mini" style="margin-top:6px" data-acao="corrigir" data-p="${p.id}">Corrigir resultado</button>` : ''}</div>`;
 }
+let ultimoD = null, aberta = null;   // dados mais recentes e o jogo aberto no painel
+const ROTJ = { aguardando: 'aguardando', pronta: 'pode começar', em_jogo: 'em jogo', finalizada: 'terminada' };
+function agora(d, R) {   // o que a equipe precisa ver primeiro: o que está na mesa e o que pode começar
+  const v = d.partidas.filter((p) => p.a && p.b && (p.status === 'em_jogo' || p.status === 'pronta')).sort((a, b) => (a.status === 'em_jogo' ? 0 : 1) - (b.status === 'em_jogo' ? 0 : 1) || a.fase - b.fase || a.pos - b.pos);
+  if (!v.length) return '';
+  return `<div class="card"><h3>Agora</h3>${v.map((p) => `<button class="ag ${p.status}" data-abrir="${esc(p.id)}"><span class="st">${p.status === 'em_jogo' ? '🔴 ' : ''}${fase(p.fase, R, p.chave)}${p.mesa ? ' · mesa ' + esc(p.mesa) : ''} · ${ROTJ[p.status]}</span><span class="li"><span class="nm">${esc(p.a.nome)}</span><b>${p.placar_a} × ${p.placar_b}</b><span class="nm d">${esc(p.b.nome)}</span></span></button>`).join('')}</div>`;
+}
+function abrirJogo(id) { aberta = id; desenharFolha(); }
+function fecharJogo() { aberta = null; $('#folha').hidden = true; document.body.style.overflow = ''; }
+function desenharFolha() {
+  const p = aberta && ultimoD?.partidas.find((x) => x.id === aberta); if (!p) return fecharJogo();
+  if ($('#folha').contains(document.activeElement) && document.activeElement.matches('input')) return;
+  $('#folhaC').innerHTML = cartaoJogo(p, ultimoD.rodadas); $('#folha').hidden = false; document.body.style.overflow = 'hidden';
+}
 async function modalidade() {
-  const [d, w] = await Promise.all([api(`${G}/modalidades/${modId}`), api(`${G}/whats`).catch(() => ({ configurado: false }))]), R = d.rodadas;
+  const [d, w] = await Promise.all([api(`${G}/modalidades/${modId}`), api(`${G}/whats`).catch(() => ({ configurado: false }))]), R = d.rodadas; ultimoD = d;
   const insc = d.status === 'inscricoes';
   modNome = `${d.campeonato} (${d.nome})`; modInfo = (d.taxa > 0 ? `Inscrição ${R$(d.taxa)}. ` : 'Inscrição grátis. ');
   const ins = d.inscritos.map((i) => `<div class="ins"><span class="n">${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
     ${i.status === 'pendente' ? `<button class="btn ok mini" data-acao="conf" data-i="${i.id}">Recebi o Pix</button>` : ''}${insc ? `<button class="btn sec mini" data-acao="canc" data-i="${i.id}">Tirar</button>` : ''}</div>`).join('') || '<p class="mut">Ninguém inscrito ainda.</p>';
   const pr = d.premiacao.premios.filter((x) => x.valor > 0).map((x) => `${x.colocacao}º ${R$(x.valor)}`).join(' · ');
-  const ordem = [...d.partidas].sort((a, b) => ({ em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[a.status] - { em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[b.status]) || a.fase - b.fase || a.pos - b.pos).filter((p) => p.a || p.b);
   return `<button class="btn sec" data-acao="voltar" style="margin:0 0 12px">← Campeonatos</button>
     <div class="card"><h2>${esc(d.nome)} <span class="chip">${ROT[d.status]}</span></h2><div class="mut">${esc(d.campeonato)} · ${d.pagas} pago${d.pagas === 1 ? '' : 's'} · arrecadado ${R$(d.taxa * d.pagas)}${pr ? ' · prêmios: ' + pr : ''}</div>${d.campeao ? `<h3 style="margin-top:10px">🏆 Campeão: ${esc(d.campeao)}</h3>` : ''}</div>
     ${insc ? `<div class="card"><h3>📲 Convite por WhatsApp</h3>${w.configurado
@@ -71,23 +93,25 @@ async function modalidade() {
       : '<p class="mut">Falta ligar a izapia (WhatsApp automático): guarde <b>IZAPIA_API_KEY</b> e <b>IZAPIA_SID</b> no Cloudflare. Enquanto isso, use o envio manual abaixo.</p>'}
       <details style="margin-top:8px"><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">Enviar manualmente</summary><label>WhatsApp do convidado (opcional)</label><input id="wNum" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn sec" data-acao="convidar">Abrir WhatsApp com o convite</button></details></div>` : ''}
     ${d.status !== 'encerrada' && !d.partidas.some((p) => p.status === 'em_jogo' || (p.status === 'finalizada' && p.a && p.b)) ? `<div class="card"><h3>${insc ? 'Fechar inscrições e sortear' : 'Sortear de novo'}</h3><p class="mut">Só entram jogadores com inscrição paga. Com número ímpar, os primeiros sorteados folgam na 1ª rodada.</p><button class="btn" data-acao="sortear">${insc ? '🎲 Sortear chave' : '🎲 Refazer sorteio'}</button></div>` : ''}
-    ${d.partidas.length ? `<div class="card"><h3>Jogos</h3>${ordem.map((p) => cartaoJogo(p, R)).join('') || '<p class="mut">Sem jogos.</p>'}</div>` : ''}
+    ${d.partidas.length ? agora(d, R) + `<div class="card"><h3>Chave</h3>${MukifoChave.html({ ...d, id: modId }, { editavel: true })}</div>` : ''}
     <div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${ins}${insc ? `<label>Inscrever no balcão (pagou em dinheiro ou maquininha)</label><div class="row"><input id="bNome" placeholder="Nome do jogador" maxlength="40"><button class="btn fixo" style="width:auto;margin:0" data-acao="balcao">Inscrever</button></div>` : ''}</div>`;
 }
 async function desenhar() {
   if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); desenhar(); });
   if (Date.now() < trava) return;
   const foco = document.activeElement, guarda = foco && foco.matches?.('input') && foco.value ? { chave: foco.id || foco.dataset.mesa, v: foco.value } : null;
-  try { $('#m').innerHTML = modId ? await modalidade() : await lista(); } catch (e) { if (!$('#m').children.length || $('#m').textContent === 'Carregando…') $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
+  try { MukifoChave.trocar($('#m'), modId ? await modalidade() : await lista()); if (aberta) desenharFolha(); } catch (e) { if (!$('#m').children.length || $('#m').textContent === 'Carregando…') $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
   clearInterval(timer); timer = setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input,details[open] *')) desenhar(); }, 5000);
 }
 const pega = (el, f) => el.closest('details').querySelector(`[data-f=${f}]`).value;
 document.addEventListener('click', async (e) => {
+  if (e.target.closest('[data-fechar]')) return fecharJogo();
+  const ab = e.target.closest('[data-abrir],[data-bk-p]'); if (ab) return abrirJogo(ab.dataset.abrir || ab.dataset.bkP);
   const t = e.target.closest('[data-acao],[data-mod]'); if (!t) return;
   if (t.dataset.mod) { modId = t.dataset.mod; scrollTo(0, 0); return desenhar(); }
   const a = t.dataset.acao; t.disabled = true;
   try {
-    if (a === 'voltar') { modId = null; }
+    if (a === 'voltar') { modId = null; fecharJogo(); }
     else if (a === 'novoCamp') { await api(`${G}/campeonatos`, { nome: $('#cNome').value, data: $('#cData').value, local: $('#cLocal').value }); aviso('Campeonato criado.'); }
     else if (a === 'novaMod') { const premio = pega(t, 'premio').split(',').map((x) => Number(x.trim().replace(',', '.'))).filter((x) => !Number.isNaN(x)); await api(`${G}/campeonatos/${t.dataset.camp}/modalidades`, { nome: pega(t, 'nome'), taxa: Number(pega(t, 'taxa').replace(',', '.')) || 0, vagas: pega(t, 'vagas') || null, premio }); aviso('Modalidade criada.'); }
     else if (a === 'encerrarCamp' || a === 'reabrirCamp') await api(`${G}/campeonatos/${t.dataset.camp}/${a === 'encerrarCamp' ? 'encerrar' : 'reabrir'}`, {});
@@ -101,13 +125,13 @@ document.addEventListener('click', async (e) => {
     else if (a === 'sortear') { if (!confirm('Sortear a chave agora? Isso fecha as inscrições.')) { t.disabled = false; return; } await api(`${G}/modalidades/${modId}/sortear`, {}); aviso('Chave sorteada 🎲'); }
     else if (a === 'pt') {
       const card = t.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent)), i = t.dataset.lado === 'a' ? 0 : 1;
-      pl[i] = Math.max(0, Math.min(99, pl[i] + Number(t.dataset.d)));
+      pl[i] = Math.max(0, Math.min(99, pl[i] + Number(t.dataset.d))); card.querySelectorAll('.pl')[i].textContent = pl[i];   // mostra na hora
       await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: card.querySelector('[data-mesa]')?.value ?? undefined });
     } else if (a === 'fim') {
       const card = t.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent));
       if (pl[0] === pl[1]) { aviso('Sinuca não empata: ajuste o placar.'); t.disabled = false; return; }
       if (!confirm(`Finalizar ${pl[0]} × ${pl[1]}?`)) { t.disabled = false; return; }
-      await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: card.querySelector('[data-mesa]')?.value ?? undefined, finalizar: true }); aviso('Resultado salvo. O vencedor já avançou.');
+      await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: card.querySelector('[data-mesa]')?.value ?? undefined, finalizar: true }); aviso('Resultado salvo. O vencedor já avançou.'); fecharJogo();
     } else if (a === 'corrigir') { await api(`${G}/partidas/${encodeURIComponent(t.dataset.p)}/placar`, { reabrir: true }); aviso('Reaberta: ajuste o placar e finalize.'); }
   } catch (er) { aviso(er.message); }
   t.disabled = false; trava = 0; desenhar();
@@ -117,5 +141,6 @@ document.addEventListener('change', async (e) => {
   const card = el.closest('.jg'), pl = [...card.querySelectorAll('.pl')].map((x) => Number(x.textContent)), id = el.dataset.mesa;
   try { await api(`${G}/partidas/${encodeURIComponent(id)}/placar`, { placar_a: pl[0], placar_b: pl[1], mesa: el.value }); } catch (er) { aviso(er.message); }
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && aberta) fecharJogo(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-bk-p]')) { e.preventDefault(); abrirJogo(e.target.dataset.bkP); } });
 desenhar();
 </script></body></html>

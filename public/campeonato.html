@@ -10,16 +10,16 @@ main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--ca
 .card h2,.card h3{margin:0 0 6px}.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
 .btn{width:100%;min-height:54px;border-radius:14px;border:0;font-size:18px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px}.btn:disabled{opacity:.5}
 .mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}.mod:first-of-type{border-top:0}.mod b{font-size:19px}
-.chave{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.rod{min-width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;scroll-snap-align:start}.rod>h4{margin:0;text-align:center;color:var(--mut);font-size:14px;letter-spacing:.05em}
-.jg{background:var(--input);border:1px solid var(--line);border-radius:12px;overflow:hidden}.jg.vivo{border-color:var(--warn,#ffb347);box-shadow:0 0 0 2px var(--warn,#ffb347)}.jg .l{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;font-size:16px}.jg .l+.l{border-top:1px solid var(--line)}.jg .l.v{font-weight:800;color:var(--ok)}.jg .l.vazio{color:var(--mut);font-style:italic}.jg .m{font-size:12px;color:var(--mut);padding:0 10px 6px}
 .pos{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.pos:first-of-type{border-top:0}.pos .n{width:34px;font-weight:800;text-align:center}.pos .p{flex:1;min-width:0;overflow-wrap:anywhere}.pos .pt{font-weight:800}
 select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
 .erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
+.vivos h3{display:flex;align-items:center;gap:8px}.vivos .ponto{width:10px;height:10px;border-radius:50%;background:var(--bad,#e5484d);animation:pisca 1.2s infinite}@keyframes pisca{50%{opacity:.2}}
+.vv{display:flex;align-items:center;gap:10px;padding:10px 0 2px}.vv .n{flex:1;min-width:0;font-size:18px;font-weight:600;overflow-wrap:anywhere}.vv .n.d{text-align:right}.vv .n.lid{color:var(--ok)}.vv b{font-size:30px;font-variant-numeric:tabular-nums;white-space:nowrap}.vv b i{font-style:normal;color:var(--mut);margin:0 6px;font-size:20px}.c{text-align:center}
 </style></head><body data-sem-botao-visual>
 <header><h1>🎱 Campeonato de sinuca</h1><a href="/sinuca.html">⏱ Fila</a><a href="/cliente.html">🍸 Cardápio</a></header>
 <div class="nav"><button data-aba="camps" aria-pressed="true">Campeonatos</button><button data-aba="rank" aria-pressed="false">Ranking</button></div>
 <main id="m"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
-<script src="/qrcode.js"></script>
+<script src="/qrcode.js"></script><script src="/chave.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -32,23 +32,15 @@ async function api(url, corpo) {
 const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
 const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
 const ROT = { aberto: 'Inscrições abertas', inscricoes: 'Inscrições abertas', andamento: 'Em andamento', encerrada: 'Encerrada', encerrado: 'Encerrado' };
-function rotuloFase(f, R, chave) { if (chave === 'T') return '3º lugar'; if (f === R) return 'Final'; if (f === R - 1) return 'Semifinal'; if (f === R - 2) return 'Quartas'; return `Rodada ${f}`; }
-function jogo(p) {
-  const lado = (x, pl, venc) => x ? `<div class="l ${venc ? 'v' : ''}"><span>${esc(x.nome)}</span><b>${p.status === 'aguardando' || p.status === 'pronta' ? '' : pl}</b></div>` : '<div class="l vazio"><span>a definir</span></div>';
-  const fim = p.status === 'finalizada';
-  return `<div class="jg ${p.status === 'em_jogo' ? 'vivo' : ''}">${lado(p.a, p.placar_a, fim && p.vencedor_id === p.a?.id)}${lado(p.b, p.placar_b, fim && p.vencedor_id === p.b?.id)}${p.mesa || p.status === 'em_jogo' ? `<div class="m">${p.status === 'em_jogo' ? '🔴 ao vivo' : ''}${p.mesa ? ` · mesa ${esc(p.mesa)}` : ''}</div>` : ''}</div>`;
+let foco = null;   // jogador seguido na chave (toque no nome); começa no próprio cliente
+function aoVivo(d) {
+  const v = d.partidas.filter((p) => p.status === 'em_jogo' && p.a && p.b); if (!v.length) return '';
+  return `<div class="card vivos"><h3><span class="ponto"></span>Ao vivo agora</h3>${v.map((p) => `<div class="vv"><span class="n${p.placar_a > p.placar_b ? ' lid' : ''}">${esc(p.a.nome)}</span><b>${p.placar_a}<i>×</i>${p.placar_b}</b><span class="n d${p.placar_b > p.placar_a ? ' lid' : ''}">${esc(p.b.nome)}</span></div>${p.mesa ? `<div class="mut c">Mesa ${esc(p.mesa)}</div>` : ''}`).join('')}</div>`;
 }
 function chave(d) {
-  if (!d.partidas.length) return '<p class="mut">A chave aparece aqui quando as inscrições fecharem e a equipe fizer o sorteio.</p>';
-  const R = d.rodadas, cols = [];
-  for (let f = 1; f <= R; f++) {
-    const ps = d.partidas.filter((p) => p.fase === f && p.chave === 'W').filter((p) => !(f === 1 && (!p.a || !p.b)));
-    const todos = d.partidas.filter((p) => p.fase === f && p.chave === 'W');
-    if (todos.length) cols.push(`<div class="rod"><h4>${rotuloFase(f, R, 'W').toUpperCase()}</h4>${todos.map((p) => (f === 1 && (!p.a || !p.b) ? `<div class="jg"><div class="l"><span>${esc((p.a || p.b)?.nome)}</span><span class="mut">folga</span></div></div>` : jogo(p))).join('')}</div>`);
-  }
-  const t = d.partidas.find((p) => p.chave === 'T');
-  if (t) cols.push(`<div class="rod"><h4>3º LUGAR</h4>${jogo(t)}</div>`);
-  return `<div class="chave">${cols.join('')}</div>`;
+  if (!d.partidas.length) return '<div class="card"><h3>Chave</h3><p class="mut">A chave aparece aqui quando as inscrições fecharem e a equipe fizer o sorteio.</p></div>';
+  const eu = conta?.cliente?.nome, f = foco ?? (eu && d.partidas.some((p) => [p.a, p.b].some((x) => x && x.nome.trim().toLowerCase() === eu.trim().toLowerCase())) ? eu : null);
+  return `<div class="card"><h3>Chave${f ? ` <span class="chip">seguindo ${esc(f)}</span>` : ''}</h3>${MukifoChave.html({ ...d, id: modId }, { foco: f })}</div>`;
 }
 function premiacao(d) {
   const pr = d.premiacao.premios.filter((x) => x.valor > 0); if (!pr.length) return '';
@@ -73,7 +65,7 @@ async function telaMod() {
   }
   const insc = d.inscritos.length ? `<div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${d.inscritos.map((i) => `<span class="chip">${esc(i.nome)}</span>`).join('')}</div>` : '';
   const camp = d.campeao ? `<div class="card" style="text-align:center"><div style="font-size:40px">🏆</div><h2>${esc(d.campeao)}</h2><div class="mut">Campeão · ${esc(d.nome)}</div></div>` : '';
-  return `<button class="btn sec" id="bVolta" style="margin:0 0 12px">← Campeonatos</button><div class="card"><h2>${esc(d.nome)}</h2><div class="mut">${esc(d.campeonato)} · ${ROT[d.status]}</div>${premiacao(d)}</div>${camp}${acao}<div class="card"><h3>Chave</h3>${chave(d)}</div>${insc}`;
+  return `<button class="btn sec" id="bVolta" style="margin:0 0 12px">← Campeonatos</button><div class="card"><h2>${esc(d.nome)}</h2><div class="mut">${esc(d.campeonato)} · ${ROT[d.status]}</div>${premiacao(d)}</div>${camp}${acao}${aoVivo(d)}${chave(d)}${insc}`;
 }
 function pagarHtml(i) {
   return `<div class="card pixbox"><b>Falta pagar ${R$(i.valor)}</b><p class="mut">Abra o app do seu banco e pague com Pix. A inscrição confirma sozinha quando o balcão receber.</p>${i.pix ? `<img alt="QR Pix" src="${qrImg(i.pix)}"><code>${esc(i.pix)}</code><button class="btn" id="bCopia" data-pix="${esc(i.pix)}">Copiar Pix copia e cola</button>` : '<p class="erro">Pix indisponível. Fale com o balcão.</p>'}<p class="mut">Vale por 30 minutos.</p></div>`;
@@ -86,16 +78,18 @@ async function telaRank() {
 }
 async function desenhar() {
   const ativo = document.activeElement?.id;
-  try { $('#m').innerHTML = modId ? await telaMod() : aba === 'rank' ? await telaRank() : await telaCamps(); }
-  catch (e) { $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
+  try { MukifoChave.trocar($('#m'), modId ? await telaMod() : aba === 'rank' ? await telaRank() : await telaCamps()); }
+  catch (e) { MukifoChave.trocar($('#m'), `<div class="card erro">${esc(e.message)}</div>`); }
   document.querySelectorAll('.nav button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.aba === aba && !modId)));
   clearInterval(timer); timer = setInterval(() => { if (!document.hidden && !pagando) desenhar(); }, 6000);
   if (ativo === 'rMod') $('#rMod')?.focus();
 }
 document.addEventListener('click', async (e) => {
+  const nm = e.target.closest('[data-bk-nome]'); if (nm) { const n = nm.dataset.bkNome; foco = foco === n ? '' : n; return desenhar(); }
+  if (e.target.closest('[data-bk-ir],[data-bk-z]')) return;
   const t = e.target.closest('button,[data-mod]'); if (!t) return;
   if (t.dataset.aba) { aba = t.dataset.aba; modId = null; return desenhar(); }
-  if (t.dataset.mod) { modId = t.dataset.mod; scrollTo(0, 0); return desenhar(); }
+  if (t.dataset.mod) { modId = t.dataset.mod; foco = null; scrollTo(0, 0); return desenhar(); }
   if (t.id === 'bVolta') { modId = null; return desenhar(); }
   if (t.id === 'bCopia') { try { await navigator.clipboard.writeText(t.dataset.pix); aviso('Pix copiado. Cole no app do seu banco.'); } catch { aviso('Segure o texto do Pix para copiar.'); } return; }
   if (t.id === 'bIns' || t.id === 'bInsSaldo') {

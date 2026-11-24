@@ -114,8 +114,15 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 - Vê os campeonatos e as **modalidades** (por exemplo Bola 8, Bola 9).
 - Se cadastra na modalidade e paga a inscrição por **Pix** ou **saldo**. Só entra na chave depois de pago.
 - Acompanha a **chave** e o **placar ao vivo** (atualiza sozinho) e o **ranking** com pontos por colocação.
+- **Ao vivo agora:** no topo, os jogos que estão na mesa, com placar grande e o número da mesa.
+- **A chave:** árvore com as fases lado a lado e linhas ligando cada jogo ao próximo. O caminho de quem venceu fica destacado e o campeão aparece no fim, com 🏆. Quem folgou na 1ª rodada já aparece direto na fase seguinte.
+  - **Navegar:** arraste para os lados ou toque nas abas das fases (Oitavas, Quartas, Semifinal, Final, 🏆). A chave abre na fase que está acontecendo. Os botões − e + mudam o tamanho, e o aparelho lembra a escolha.
+  - **Seguir um jogador:** toque no nome e os jogos dele ficam destacados. Quem entrou com a conta já aparece destacado. Toque de novo para parar de seguir.
+  - A tela atualiza sozinha sem piscar e sem perder o ponto onde você estava.
 
 ### Para a equipe (`/torneio.html`)
+- **Agora:** no topo da modalidade, os jogos em andamento e os que podem começar. Toque num deles para abrir o placar.
+- **Chave:** a mesma árvore do jogador. Toque num jogo para abrir o **painel de placar** (de baixo para cima): − e + grandes para cada jogador, o número da mesa e "Finalizar". Jogo terminado mostra "Corrigir resultado". Feche pelo botão, tocando fora ou com Esc.
 - **Convite por WhatsApp (automático):** com a izapia ligada, cada modalidade nova convida sozinha os clientes que **aceitaram receber** (LGPD) e têm celular. O botão "Convidar clientes agora" faz o mesmo para uma modalidade que já existe e não repete quem já foi convidado.
   - **Como sai:** em fila, poucas mensagens por minuto (4 por padrão), com teto por dia (80). A mensagem leva o primeiro nome, a taxa e o link do campeonato. Se as inscrições encerrarem antes, o que sobrou na fila é cancelado.
   - **Cuidado com o número:** a izapia usa o protocolo do WhatsApp Web, não a API oficial da Meta. Mandar muito, rápido ou para quem não conhece o bar pode bloquear o número. Use um chip só do bar, não o pessoal.
