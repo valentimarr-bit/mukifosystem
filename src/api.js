@@ -8,6 +8,10 @@ import { rotearCombos } from './combos.js';
 import { getDesempenho } from './desempenho.js';
 import { rotearFinanceiro } from './financeiro.js';
 import { rotearPlanilhas } from './planilhas.js';
+import { rotearFornecedores } from './fornecedores.js';
+import { rotearConta, rotearClientes } from './clientes.js';
+import { rotearProducao } from './producao.js';
+import { moduloDaRota } from './dominio/modulos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -84,7 +88,7 @@ async function getEstoque(db, url) {
         insumo_id: i.id, insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
         minimo_alerta: i.minimo_alerta ?? null, alerta: i.minimo_alerta != null && r2(l.atual) <= i.minimo_alerta,
         minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, auto_segunda: l.auto_segunda, auto_quinta: l.auto_quinta,
-        estoque_recomendado: i.estoque_recomendado ?? null, sugestao: l.sugestao, situacao: l.situacao,
+        estoque_recomendado_segunda: i.estoque_recomendado_segunda ?? null, estoque_recomendado_quinta: i.estoque_recomendado_quinta ?? null, sugestao: l.sugestao, situacao: l.situacao,
         fornecedor: i.fornecedor, producao_propria: i.producao_propria,
       };
     }),
@@ -358,19 +362,26 @@ async function putAlertas(db, body) {
   return json({ ok: true, salvos: stmts.length });
 }
 
-/** PUT /api/recomendados { itens: [{ insumo_id, estoque_recomendado }] } — o quanto o bar quer ter de cada item (null = automático). */
+/** PUT /api/recomendados { itens: [{ insumo_id, segunda?, quinta?, estoque_recomendado? }] } — quanto o bar quer ter de cada item
+ *  em cada dia de compra (null = automático). `estoque_recomendado` sozinho vale para os dois dias. */
 async function putRecomendados(db, body) {
   const itens = Array.isArray(body?.itens) ? body.itens : null;
   if (!itens?.length) return erro('Nenhum item para salvar.');
   const stmts = [];
+  const ler = (v) => { if (v === '' || v === undefined || v === null) return null; v = Number(v); return Number.isFinite(v) && v >= 0 && v <= 100000 ? v : NaN; };
   for (const it of itens) {
     const id = Number(it.insumo_id);
-    let v = it.estoque_recomendado;
-    if (v === '' || v === undefined) v = null;
-    if (v !== null) { v = Number(v); if (!Number.isFinite(v) || v < 0 || v > 100000) return erro('O estoque recomendado precisa ser um número maior ou igual a zero.'); }
     if (!Number.isInteger(id)) return erro('Item inválido.');
-    stmts.push(db.prepare('UPDATE insumo SET estoque_recomendado = ? WHERE id = ?').bind(v, id));
+    const set = [], b = [];
+    for (const [campo, col] of [['segunda', 'estoque_recomendado_segunda'], ['quinta', 'estoque_recomendado_quinta']]) {
+      const bruto = campo in it ? it[campo] : 'estoque_recomendado' in it ? it.estoque_recomendado : undefined;
+      if (bruto === undefined) continue;
+      const v = ler(bruto); if (Number.isNaN(v)) return erro('O estoque recomendado precisa ser um número maior ou igual a zero.');
+      set.push(`${col} = ?`); b.push(v);
+    }
+    if (set.length) stmts.push(db.prepare(`UPDATE insumo SET ${set.join(', ')} WHERE id = ?`).bind(...b, id));
   }
+  if (!stmts.length) return erro('Nenhum item para salvar.');
   await db.batch(stmts);
   return json({ ok: true, salvos: stmts.length });
 }
@@ -382,11 +393,20 @@ export async function rotearApi(request, env, url) {
   if (!db) return erro('Banco de dados ainda não configurado (fase 2: ver README)', 503);
   const m = request.method;
   const p = url.pathname;
-  if (p.startsWith('/api/auth/') || p === '/api/usuarios') return rotearAuth(request, env, url);
+  if (p.startsWith('/api/auth/') || p === '/api/usuarios' || p === '/api/modulos' || p.startsWith('/api/usuarios/')) return rotearAuth(request, env, url);
+  const modulo = moduloDaRota(p);
+  if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
+    const eu = await usuarioLogado(request, env);
+    if (eu && !eu.modulos.includes(modulo)) return erro('Seu login não tem acesso a esta parte. Peça ao superadmin.', 403);
+  }
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
   if (p.startsWith('/api/cliente/')) return rotearCliente(request, env, url);
   if (p.startsWith('/api/financeiro/')) return rotearFinanceiro(request, env, url);
+  if (p.startsWith('/api/conta/')) return rotearConta(request, env, url);
+  if (p === '/api/clientes' || p.startsWith('/api/clientes/')) return rotearClientes(request, env, url);
+  if (p === '/api/producao' || p.startsWith('/api/producao/')) return rotearProducao(request, env, url);
+  if (p === '/api/fornecedores' || p.startsWith('/api/fornecedores/')) return rotearFornecedores(request, env, url);
   if (p === '/api/planilhas' || p.startsWith('/api/planilhas/')) return rotearPlanilhas(request, env, url);
   if (p === '/api/desempenho' && request.method === 'GET') return getDesempenho(request, env, url);
   if (p === '/api/combos' || p.startsWith('/api/combos/')) return rotearCombos(request, env, url);

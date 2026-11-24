@@ -1,5 +1,6 @@
 // Módulo de venda: cardápio por categoria, comandas, cobranças (com roteirização por maquininha) e baixa do estoque.
 import { json } from './api.js';
+import { creditarPontos } from './clientes.js';
 import { usuarioLogado } from './auth.js';
 import { ordenarCategorias } from './dominio/categorias.js';
 import { escolherMaquininha } from './pagamentos/roteador.js';
@@ -64,6 +65,7 @@ async function conferirQuitacao(db, pedidoId, operador) {
     await db.prepare(`UPDATE pedido SET status = ?, pagamento = ?, pago_em = datetime('now'), terminal = ?, operador = COALESCE(operador, ?) WHERE id = ?`)
       .bind(c.origem === 'celular' ? 'recebido' : 'entregue', formas.length === 1 ? formas[0] : 'misto', ultima?.maquininha ?? null, operador, pedidoId).run();
     await darBaixa(db, pedidoId);
+    await creditarPontos(db, pedidoId);
   } else if (c.status === 'aguardando_pagamento' && !c.cobrancas.some((x) => x.status === 'pendente')) {
     await db.prepare("UPDATE pedido SET status = 'aberta' WHERE id = ?").bind(pedidoId).run();
   }
@@ -257,6 +259,14 @@ export async function rotearVenda(request, env, url) {
       `SELECT p.id, p.numero, p.mesa, p.status, p.total, p.criado_em, (SELECT COUNT(*) FROM item_pedido WHERE pedido_id = p.id) AS itens
        FROM pedido p WHERE p.origem = 'balcao' AND p.status IN ('aberta', 'aguardando_pagamento') ORDER BY p.criado_em, p.id`).all();
     return json({ comandas: results });
+  }
+  if (m === 'POST' && (k = p.match(/^\/api\/venda\/comandas\/([\w-]+)\/cliente$/))) {   // balcão: ligar a venda a um cliente (celular) para ele ganhar pontos
+    const cel = String(corpo?.celular ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    const cli = await db.prepare('SELECT id, nome FROM cliente WHERE celular = ? AND ativo = 1').bind(cel).first();
+    if (!cli) return erro('Não achei cliente com esse celular. Peça para ele criar a conta no app.', 404);
+    const r = await db.prepare("UPDATE pedido SET cliente_id = ?, nome_cliente = COALESCE(nome_cliente, ?) WHERE id = ? AND origem = 'balcao' AND status IN ('aberta', 'aguardando_pagamento')").bind(cli.id, cli.nome, k[1]).run();
+    if (!r?.meta?.changes) return erro('Essa comanda já foi fechada.', 409);
+    return json({ ok: true, cliente: cli.nome });
   }
   if (m === 'POST' && p === '/api/venda/comandas') return novaComanda(db, corpo, eu.nome);
   if (m === 'GET' && (k = p.match(/^\/api\/venda\/comandas\/([\w-]+)$/))) {

@@ -1,5 +1,5 @@
 // Módulo financeiro: despesas e contas a pagar, taxas, caixa do turno, resultado do mês e fluxo de caixa.
-// Tudo é só do superadmin, exceto o caixa do turno (qualquer pessoa logada lança sangria/suprimento e fecha o caixa).
+// Só quem tem o módulo "financeiro" no painel de permissões (o superadmin sempre tem), exceto o caixa do turno (qualquer pessoa logada lança sangria/suprimento e fecha o caixa).
 import { json } from './api.js';
 import { usuarioLogado } from './auth.js';
 import { diaDoTurno } from './venda.js';
@@ -206,7 +206,7 @@ export async function rotearFinanceiro(request, env, url) {
   if (!eu) return erro('Entre com seu nome e senha', 401);
   const db = env.DB, p = url.pathname;
   if (p.startsWith('/api/financeiro/caixa')) return caixa(db, request, url, eu);
-  if (eu.papel !== 'superadmin') return erro('O financeiro é só do superadmin.', 403);
+  if (!eu.modulos?.includes('financeiro')) return erro('Seu login não tem acesso ao financeiro.', 403);
   if (p.startsWith('/api/financeiro/despesas')) return despesas(db, request, url, eu);
   if (p === '/api/financeiro/taxas' && ['GET', 'PUT'].includes(request.method)) return taxas(db, request);
   if (p === '/api/financeiro/resumo' && request.method === 'GET') return resumo(db, url);

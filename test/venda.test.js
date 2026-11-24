@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -170,7 +170,20 @@ test('estoque recomendado manda na compra recomendada (menos o que tem)', async 
   const linha = [...lista.fornecedores.flatMap((f) => f.itens), ...lista.producao].find((x) => x.insumo_id === it.insumo_id);
   assert.equal(linha.quantidade, 7);
   await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: null }] });
-  assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id).estoque_recomendado, null);
+  const volta = (await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id);
+  assert.equal(volta.estoque_recomendado_segunda, null); assert.equal(volta.estoque_recomendado_quinta, null);
+});
+
+test('recomendado separado: segunda e quinta têm números próprios', async () => {
+  const it = (await chamar('/api/estoque?dia=segunda')).corpo.itens[1];
+  assert.equal((await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, segunda: it.atual + 9, quinta: it.atual + 3 }] })).status, 200);
+  const seg = (await chamar('/api/estoque?dia=segunda')).corpo.itens.find((x) => x.insumo_id === it.insumo_id);
+  const qui = (await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id);
+  assert.equal(seg.sugestao, 9); assert.equal(qui.sugestao, 3);
+  await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, quinta: null }] });
+  const so = (await chamar('/api/estoque?dia=segunda')).corpo.itens.find((x) => x.insumo_id === it.insumo_id);
+  assert.equal(so.estoque_recomendado_segunda, it.atual + 9); assert.equal(so.estoque_recomendado_quinta, null);
+  await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: null }] });
 });
 
 test('desempenho: indicadores do período batem com as vendas feitas', async () => {

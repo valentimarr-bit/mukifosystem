@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Produção</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}header h1{font-size:22px;margin:0;flex:1}
+header a,header select{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:48px;display:inline-flex;align-items:center;text-decoration:none;font:inherit}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;padding:12px}
+.ped{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ped.preparando{border-color:var(--warn,#ffb347)}.ped.pronto{border-color:var(--ok,#4caf50)}.ped.novo{animation:pisca 1s 3}
+@keyframes pisca{50%{background:var(--input)}}
+.topo{display:flex;align-items:baseline;gap:10px;justify-content:space-between}.num{font-size:48px;font-weight:900;line-height:1}.tempo{font-size:15px;color:var(--mut)}.tempo.atraso{color:var(--bad);font-weight:700}
+.item{border-top:1px solid var(--line);padding-top:8px}.item h3{margin:0 0 4px;font-size:21px}.item h3 b{color:var(--acc)}
+.rec{margin:0;padding-left:20px;color:var(--txt);font-size:16px}.rec li{padding:2px 0}.rec .q{font-weight:700}.sub{margin:6px 0 0 8px;padding-left:10px;border-left:3px solid var(--line)}
+.mut{color:var(--mut);font-size:14px}.btn{min-height:64px;border-radius:14px;border:0;font-size:20px;font-weight:800;cursor:pointer;background:var(--acc);color:var(--on-acc);width:100%}.btn.ok{background:var(--ok,#4caf50);color:#000}
+.vazio{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 10px;font-size:22px}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+</style></head><body>
+<header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select><a href="/venda.html">Venda</a><a href="/gestao.html">Gestão</a></header>
+<main id="fila"><div class="vazio">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const fmt = (n) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+let token = Mukifo.token(), vistos = null, som = true, timer;
+async function api(url, corpo) {
+  const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({})); if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); throw new Error(j.erro); } if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
+function bipe() { if (!som) return; try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .2; o.start(); o.stop(c.currentTime + .25); } catch {} if (navigator.vibrate) navigator.vibrate(200); }
+const rec = (l) => l.length ? `<ul class="rec">${l.map((r) => `<li><span class="q">${fmt(r.quantidade)} ${esc(r.unidade)}</span> ${esc(r.insumo)}${r.observacao ? ` <span class="mut">(${esc(r.observacao)})</span>` : ''}</li>`).join('')}</ul>` : '<p class="mut" style="margin:0">Sem ficha técnica cadastrada para este item.</p>';
+function cartao(p, novo) {
+  const itens = p.itens.map((i) => `<div class="item"><h3><b>${i.quantidade}×</b> ${esc(i.nome)}</h3>${i.combo ? i.combo.map((c) => `<div class="sub"><b>${c.quantidade}× ${esc(c.nome)}</b>${rec(c.receita)}</div>`).join('') : rec(i.receita)}</div>`).join('');
+  const atraso = p.minutos >= 10 && p.status !== 'pronto';
+  const botao = p.status === 'recebido' ? `<button class="btn" data-id="${p.id}" data-acao="preparando">▶ Começar a preparar</button>` : p.status === 'preparando' ? `<button class="btn ok" data-id="${p.id}" data-acao="pronto">✔ Pronto</button>` : '<div class="mut" style="text-align:center">Pronto · esperando o cliente mostrar o QR no balcão</div>';
+  return `<section class="ped ${p.status}${novo ? ' novo' : ''}"><div class="topo"><span class="num">${esc(p.numero)}</span><span class="tempo${atraso ? ' atraso' : ''}">${esc(p.nome_cliente || '')} · ${p.minutos ?? 0} min</span></div>${itens}${botao}</section>`;
+}
+async function atualizar() {
+  try {
+    const j = await api('/api/producao'), ids = new Set(j.pedidos.map((p) => p.id));
+    const novos = vistos ? j.pedidos.filter((p) => !vistos.has(p.id)) : []; if (novos.length) bipe(); vistos = ids;
+    $('#cont').textContent = j.pedidos.length ? `· ${j.pedidos.length} na fila` : '';
+    $('#fila').innerHTML = j.pedidos.length ? j.pedidos.map((p) => cartao(p, novos.includes(p))).join('') : '<div class="vazio">Nenhum pedido na fila 🎉<br><small>Pedidos do app aparecem aqui assim que o Pix é pago e saem quando o cliente mostra o QR.</small></div>';
+  } catch (e) { if (!/Entre/.test(e.message)) aviso(e.message); }
+}
+$('#fila').onclick = async (e) => { const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
+  try { const r = await api(`/api/producao/${b.dataset.id}/preparo`, { acao: b.dataset.acao }); aviso(b.dataset.acao === 'preparando' ? 'Cliente avisado: começou o preparo.' : 'Cliente avisado: pedido pronto.'); await atualizar(); } catch (er) { aviso(er.message); atualizar(); } };
+$('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
+function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(atualizar, 4000); }
+iniciar();
+</script></body></html>

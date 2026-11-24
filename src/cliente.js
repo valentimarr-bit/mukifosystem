@@ -3,6 +3,7 @@ import { json } from './api.js';
 import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
 import { conferirEstoque } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
+import { clienteLogado } from './clientes.js';
 
 const VALIDADE_MIN = 15;          // pedido não pago some depois disso
 const MAX_PENDENTES_CELULAR = 2;  // quantos pedidos não pagos o mesmo celular pode ter ao mesmo tempo
@@ -41,15 +42,16 @@ export async function expirarPendentes(db) {
   ]);
 }
 
-const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return /^\d{10,11}$/.test(d) ? d : null; };
+export const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return /^\d{10,11}$/.test(d) ? d : null; };
 
 async function criarPedido(db, request, corpo) {
   await expirarPendentes(db);
   const pix = await lerPix(db);
   if (!pix.chave) return erro('Os pedidos pelo celular ainda não foram liberados. Peça no balcão.', 503);
-  const nome = String(corpo?.nome ?? '').trim().slice(0, 40);
+  const conta = await clienteLogado(request, { DB: db });   // quem tem conta não precisa digitar de novo e ganha pontos
+  const nome = String(conta?.nome ?? corpo?.nome ?? '').trim().slice(0, 40);
   if (nome.length < 2) return erro('Digite seu nome.');
-  const celular = celularValido(corpo?.celular);
+  const celular = celularValido(conta?.celular ?? corpo?.celular);
   if (!celular) return erro('Digite seu celular com DDD.');
   const linhas = Array.isArray(corpo?.itens) ? corpo.itens : [];
   if (!linhas.length || linhas.length > MAX_ITENS) return erro('Escolha pelo menos um item.');
@@ -89,8 +91,8 @@ async function criarPedido(db, request, corpo) {
     const numero = `C${r.n + 1}`, id = `app-${dia}-${numero}-${id8()}`, cid = `cob-${id8()}${id8()}`;
     try {
       await db.batch([
-        db.prepare(`INSERT INTO pedido (id, numero, dia, origem, status, nome_cliente, celular, token_hash, origem_hash, expira_em, total)
-                    VALUES (?, ?, ?, 'celular', 'aguardando_pagamento', ?, ?, ?, ?, datetime('now', '+${VALIDADE_MIN} minutes'), ?)`).bind(id, numero, dia, nome, celular, tokenHash, origemHash, total),
+        db.prepare(`INSERT INTO pedido (id, numero, dia, origem, status, nome_cliente, celular, token_hash, origem_hash, expira_em, total, cliente_id)
+                    VALUES (?, ?, ?, 'celular', 'aguardando_pagamento', ?, ?, ?, ?, datetime('now', '+${VALIDADE_MIN} minutes'), ?, ?)`).bind(id, numero, dia, nome, celular, tokenHash, origemHash, total, conta?.id ?? null),
         ...itens.map((i) => db.prepare('INSERT INTO item_pedido (pedido_id, produto_id, nome, quantidade, preco) VALUES (?, ?, ?, ?, ?)').bind(id, i.id, i.nome, i.q, i.preco_venda)),
         db.prepare("INSERT INTO cobranca (id, pedido_id, forma, valor, status, operador) VALUES (?, ?, 'pix', ?, 'pendente', 'app')").bind(cid, id, total),
       ]);
@@ -111,10 +113,24 @@ async function verStatus(db, request, id) {
   const pago = ['recebido', 'preparando', 'pronto', 'entregue'].includes(c.status);
   const pix = c.status === 'aguardando_pagamento' ? await lerPix(db) : null;
   return json({
-    id: c.id, numero: c.numero, status: c.status, total: c.total, pago, retirado: c.status === 'entregue',
+    id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
     itens: c.itens.map((i) => ({ nome: i.nome, quantidade: i.quantidade, preco: i.preco })),
     pix: pix ? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` }) : null,
   });
+}
+
+/** O aparelho do cliente pede para ser avisado sobre este pedido (precisa da chave do pedido, como no status). */
+async function assinarPush(db, request, id) {
+  const chave = request.headers.get('X-Chave-Pedido') ?? '';
+  const p = await db.prepare("SELECT id, token_hash FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  if (!p || !chave || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('Pedido não encontrado.', 404);
+  let c = {}; try { c = await request.json(); } catch { /* vazio */ }
+  const e = String(c?.endpoint ?? ''), a = String(c?.keys?.p256dh ?? ''), t = String(c?.keys?.auth ?? '');
+  if (!/^https:\/\//.test(e) || e.length > 600 || !a || !t || a.length > 200 || t.length > 100) return erro('Assinatura inválida.');
+  const { n } = await db.prepare('SELECT COUNT(*) AS n FROM push_assinatura WHERE pedido_id = ?').bind(id).first();
+  if (n >= 3) return erro('Aparelhos demais para esse pedido.', 429);
+  await db.prepare('INSERT OR REPLACE INTO push_assinatura (pedido_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)').bind(id, e, a, t).run();
+  return json({ ok: true });
 }
 
 /** Aviso automático de pagamento (banco/Navi): confere a assinatura antes de acreditar em qualquer coisa. */
@@ -139,6 +155,8 @@ export async function rotearCliente(request, env, url) {
   let k;
   if (m === 'POST' && p === '/api/cliente/pedidos') { let c = {}; try { c = await request.json(); } catch { /* vazio */ } return criarPedido(db, request, c); }
   if (m === 'GET' && (k = p.match(/^\/api\/cliente\/pedidos\/([\w-]+)$/))) return verStatus(db, request, k[1]);
+  if (m === 'GET' && p === '/api/cliente/push-chave') return json({ chave: env.VAPID_PUBLICA || null });
+  if (m === 'POST' && (k = p.match(/^\/api\/cliente\/pedidos\/([\w-]+)\/push$/))) return assinarPush(db, request, k[1]);
   if (m === 'POST' && p === '/api/cliente/pagamento/webhook') return webhook(db, env, request);
   return null;
 }

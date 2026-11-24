@@ -9,6 +9,7 @@
 <script src="/fotos.js"></script>
 <script src="/planilhas.js" defer></script>
 <script src="/financeiro.js" defer></script>
+<script src="/cadastros.js" defer></script>
 <style>
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
@@ -102,9 +103,11 @@
     <button data-aba="alertas">Níveis</button>
     <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
+    <button data-aba="clientes">Clientes</button>
+    <button data-aba="fornecedores">Fornecedores</button>
     <button data-aba="financeiro">Financeiro</button>
     <button data-aba="planilhas">Excel</button>
-    <a href="/venda.html" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a>
+    <a href="/venda.html" data-modulo="venda" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a><a href="/producao.html" data-modulo="producao" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Produção →</a>
     <button data-aba="conta">Conta</button>
   </nav>
   <label class="tema">Visual <select id="tema" aria-label="Mudar o visual"></select></label>
@@ -123,6 +126,9 @@
   <section id="lista" hidden>
     <p class="mut">Aqui fica o que o sistema <b>recomenda comprar</b>: o estoque recomendado de cada item menos o que você tem agora (as vendas já saíram do estoque). A <b>lista de compras</b> de verdade é a que sai daqui para o celular (/compras).</p>
     <div class="bar">
+      <button class="btn" data-ld="segunda">Recomendado de segunda</button><button class="btn" data-ld="quinta">Recomendado de quinta</button>
+    </div>
+    <div class="bar">
       <span id="listaDia" class="mut"></span>
       <button class="btn prim" onclick="window.print()">Imprimir (58 mm)</button>
       <button class="btn" id="copiarZap">Copiar texto para WhatsApp</button>
@@ -130,6 +136,8 @@
     <div id="listaCorpo"></div>
   </section>
 
+  <section id="clientes" hidden></section>
+  <section id="fornecedores" hidden></section>
   <section id="financeiro" hidden></section>
   <section id="planilhas" hidden></section>
 
@@ -163,7 +171,7 @@
     <div class="bar"><input id="aBusca" placeholder="Buscar item" style="flex:1;min-width:140px">
       <button class="btn prim" id="aSalvar">Salvar</button></div>
     <div id="aMsg"></div>
-    <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Automático</th><th>Recomendado</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
+    <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Auto seg.</th><th class="larga">Auto qui.</th><th>Recomendado segunda</th><th>Recomendado quinta</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
   </section>
 
   <section id="fotos" hidden>
@@ -201,6 +209,9 @@
     <div id="areaSuper" hidden>
       <h3>Pessoas com acesso</h3>
       <table><thead><tr><th>Nome</th><th>Cargo</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+      <h3>O que cada pessoa enxerga</h3>
+      <p class="mut">Marque os módulos de cada gerente. O servidor bloqueia o resto, não só esconde o botão. O superadmin sempre vê tudo.</p>
+      <div id="permissoes"></div>
       <h3>Adicionar gerente</h3>
       <div class="bar"><input id="uNome" placeholder="Nome"><input id="uSenha" type="password" placeholder="Senha (mín. 6)" autocomplete="new-password"><button class="btn prim" id="uCriar">Adicionar</button></div>
       <h3>Pedidos pelo celular (Pix)</h3>
@@ -262,8 +273,10 @@ $('#relDia').value = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-pressed', x === b));
   document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== b.dataset.aba));
-  if (b.dataset.aba === 'financeiro') Financeiro.iniciar(Mukifo.usuario()?.papel === 'superadmin');
-  if (b.dataset.aba === 'planilhas') Financeiro.planilhas(Mukifo.usuario()?.papel === 'superadmin');
+  if (b.dataset.aba === 'clientes') Cadastros.clientes();
+  if (b.dataset.aba === 'fornecedores') Cadastros.fornecedores();
+  if (b.dataset.aba === 'financeiro') Financeiro.iniciar(Mukifo.usuario()?.modulos?.includes('financeiro') ?? Mukifo.usuario()?.papel === 'superadmin');
+  if (b.dataset.aba === 'planilhas') Financeiro.planilhas(true);
   if (b.dataset.aba === 'lista') carregarLista();
   if (b.dataset.aba === 'produtos') { carregarProdutos(); Planilhas.botoes($('#pExcel'), ['produtos', 'fichas'], carregarProdutos); }
   if (b.dataset.aba === 'conta') carregarConta();
@@ -335,7 +348,9 @@ $('#dia').addEventListener('change', () => { carregarEstoque(); lista = null; })
 $('#busca').addEventListener('input', desenharEstoque);
 $('#soAlerta').addEventListener('change', desenharEstoque);
 
+document.querySelectorAll('[data-ld]').forEach((b) => b.addEventListener('click', () => { $('#dia').value = b.dataset.ld; carregarLista(); }));
 async function carregarLista() {
+  document.querySelectorAll('[data-ld]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.ld === $('#dia').value));
   lista = await api('/api/lista-compras?dia=' + $('#dia').value);
   $('#listaDia').textContent = `Compra recomendada de ${lista.dia === 'segunda' ? 'segunda' : 'quinta'} · total estimado ${brl(lista.total_estimado)}`;
   $('#listaCorpo').innerHTML = lista.fornecedores.map((f) => `
@@ -555,6 +570,7 @@ async function carregarConta() {
     $('#areaSuper').hidden = usuario.papel !== 'superadmin';
     if (usuario.papel === 'superadmin') {
       const us = await chamarConta('/api/usuarios', null, 'GET');
+      Cadastros.carregarPermissoes();
       $('#tbUsuarios').innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${u.papel === 'superadmin' ? 'Superadmin' : 'Gerente'}</td><td>${u.papel === 'gerente' ? `<button class="btn" data-passar="${u.id}" data-nome="${esc(u.nome)}">Passar o cargo de superadmin</button>` : ''}</td></tr>`).join('');
       carregarVenda();
     }
@@ -653,8 +669,8 @@ function desenharAlertas() {
   const q = $('#aBusca').value.toLowerCase(), dia = $('#dia').value;
   $('#tbAlertas').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(q)).map((i) => `
     <tr class="${i.alerta ? 'em-alerta' : ''}"><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></td>
-    <td>${fmt(i.atual, 2)}</td><td class="larga">${fmt(dia === 'segunda' ? i.auto_segunda : i.auto_quinta)}</td>
-    <td><input inputmode="decimal" data-recom="${i.insumo_id}" value="${i.estoque_recomendado == null ? '' : String(i.estoque_recomendado).replace('.', ',')}" placeholder="auto"></td>
+    <td>${fmt(i.atual, 2)}</td><td class="larga">${fmt(i.auto_segunda)}</td><td class="larga">${fmt(i.auto_quinta)}</td>
+    ${['segunda', 'quinta'].map((d) => `<td><input inputmode="decimal" data-recom="${d}:${i.insumo_id}" value="${i['estoque_recomendado_' + d] == null ? '' : String(i['estoque_recomendado_' + d]).replace('.', ',')}" placeholder="auto"></td>`).join('')}
     <td><input inputmode="decimal" data-alerta="${i.insumo_id}" data-orig="${i.minimo_alerta ?? ''}" value="${i.minimo_alerta == null ? '' : String(i.minimo_alerta).replace('.', ',')}" placeholder="—"></td></tr>`).join('');
 }
 $('#aBusca').addEventListener('input', () => { guardarAlertasDigitados(); desenharAlertas(); reaplicarDigitados(); });
@@ -672,12 +688,14 @@ $('#aSalvar').addEventListener('click', async () => {
     if ((it.minimo_alerta ?? null) !== novo) itens.push({ insumo_id: it.insumo_id, minimo_alerta: novo });
   }
   const recs = [];
-  for (const [id, txt] of digRec) {
-    const it = estoque.find((x) => String(x.insumo_id) === id); if (!it) continue;
+  const porItem = new Map();
+  for (const [chave, txt] of digRec) {
+    const [dd, id] = chave.split(':'), it = estoque.find((x) => String(x.insumo_id) === id); if (!it) continue;
     const novo = txt.trim() === '' ? null : Number(txt.trim().replace(/\./g, '').replace(',', '.'));
     if (novo !== null && (!Number.isFinite(novo) || novo < 0)) return ($('#aMsg').innerHTML = `<p class="neg">Número inválido em “${esc(it.insumo)}”.</p>`);
-    if ((it.estoque_recomendado ?? null) !== novo) recs.push({ insumo_id: it.insumo_id, estoque_recomendado: novo });
+    if ((it['estoque_recomendado_' + dd] ?? null) !== novo) { const o = porItem.get(id) ?? { insumo_id: it.insumo_id }; o[dd] = novo; porItem.set(id, o); }
   }
+  recs.push(...porItem.values());
   if (!itens.length && !recs.length) return ($('#aMsg').innerHTML = '<p class="mut">Nada mudou.</p>');
   try {
     if (recs.length) { const rr = await fetch('/api/recomendados', { method: 'PUT', body: JSON.stringify({ itens: recs }), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } }); if (!rr.ok) throw new Error((await rr.json().catch(() => ({}))).erro || 'Erro ' + rr.status); digRec = new Map(); if (!itens.length) { await carregarEstoque(); desenharAlertas(); return ($('#aMsg').innerHTML = `<p class="pos">${recs.length} recomendado(s) salvo(s) ✓</p>`); } }
@@ -691,7 +709,8 @@ $('#aSalvar').addEventListener('click', async () => {
   } catch (e) { $('#aMsg').innerHTML = `<p class="neg">${esc(e.message)}</p>`; }
 });
 
-if (Mukifo.token()) carregarEstoque(); else Mukifo.pedir(carregarEstoque);
+async function aplicarPermissoes() { try { const j = await chamarConta('/api/auth/eu', null, 'GET'); Mukifo.atualizarUsuario?.(j.usuario); Cadastros.aplicarModulos(j.usuario.modulos); } catch {} }
+if (Mukifo.token()) { carregarEstoque(); window.addEventListener('load', aplicarPermissoes); } else Mukifo.pedir(() => { carregarEstoque(); aplicarPermissoes(); });
 </script>
 </body>
 </html>

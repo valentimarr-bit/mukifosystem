@@ -1,21 +1,22 @@
 // Login do Mukifo: primeiro acesso cria o superadmin; ele pode trocar a senha e passar o cargo.
 import { json } from './api.js';
+import { modulosDe, MODULOS, IDS, PADRAO_GERENTE } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
 const enc = new TextEncoder();
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
-const aleatorio = (n) => hex(crypto.getRandomValues(new Uint8Array(n)));
+export const aleatorio = (n) => hex(crypto.getRandomValues(new Uint8Array(n)));
 
-async function hashSenha(senha, sal) {
+export async function hashSenha(senha, sal) {
   const chave = await crypto.subtle.importKey('raw', enc.encode(senha), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(sal), iterations: 100000 }, chave, 256);
   return hex(bits);
 }
-const hashToken = async (t) => hex(await crypto.subtle.digest('SHA-256', enc.encode(t)));
+export const hashToken = async (t) => hex(await crypto.subtle.digest('SHA-256', enc.encode(t)));
 
-function igual(a, b) {
+export function igual(a, b) {
   if (a.length !== b.length) return false;
   let d = 0;
   for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
@@ -34,11 +35,12 @@ export async function usuarioLogado(request, env) {
   const h = request.headers.get('authorization') ?? '';
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!token) return null;
-  if (env.ADMIN_TOKEN && igual(token, env.ADMIN_TOKEN)) return { id: null, nome: 'chave-de-emergência', papel: 'superadmin' };
+  if (env.ADMIN_TOKEN && igual(token, env.ADMIN_TOKEN)) return { id: null, nome: 'chave-de-emergência', papel: 'superadmin', modulos: modulosDe({ papel: 'superadmin' }) };
   if (!env.DB) return null;
-  return env.DB.prepare(
-    `SELECT u.id, u.nome, u.papel FROM sessao s JOIN usuario u ON u.id = s.usuario_id
+  const u = await env.DB.prepare(
+    `SELECT u.id, u.nome, u.papel, u.modulos FROM sessao s JOIN usuario u ON u.id = s.usuario_id
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
+  return u ? { id: u.id, nome: u.nome, papel: u.papel, modulos: modulosDe(u) } : null;
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -48,7 +50,7 @@ export async function rotearAuth(request, env, url) {
   const m = request.method;
   const p = url.pathname;
   let corpo = {};
-  if (m === 'POST') { try { corpo = await request.json(); } catch { corpo = {}; } }
+  if (m === 'POST' || m === 'PUT') { try { corpo = await request.json(); } catch { corpo = {}; } }
 
   if (m === 'GET' && p === '/api/auth/estado') {
     const r = await db.prepare('SELECT COUNT(*) AS n FROM usuario').first();
@@ -104,13 +106,31 @@ export async function rotearAuth(request, env, url) {
     return json({ ok: true });
   }
 
+  // ---- painel de permissões (só o superadmin) ----
+  let km;
+  if (p === '/api/modulos' && m === 'GET') {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
+    return json({ modulos: MODULOS, padrao_gerente: PADRAO_GERENTE });
+  }
+  if (m === 'PUT' && (km = p.match(/^\/api\/usuarios\/(\d+)\/modulos$/))) {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
+    const alvo = await db.prepare('SELECT id, papel FROM usuario WHERE id = ?').bind(Number(km[1])).first();
+    if (!alvo) return erro('Pessoa não encontrada.', 404);
+    if (alvo.papel === 'superadmin') return erro('O superadmin sempre enxerga tudo.', 409);
+    if (corpo.padrao === true) { await db.prepare('UPDATE usuario SET modulos = NULL WHERE id = ?').bind(alvo.id).run(); return json({ ok: true, modulos: PADRAO_GERENTE }); }
+    const lista = Array.isArray(corpo.modulos) ? [...new Set(corpo.modulos.map(String))] : null;
+    if (!lista || lista.some((x) => !IDS.includes(x))) return erro('Lista de módulos inválida.');
+    await db.prepare('UPDATE usuario SET modulos = ? WHERE id = ?').bind(JSON.stringify(lista), alvo.id).run();
+    return json({ ok: true, modulos: lista });
+  }
+
   // ---- só o superadmin ----
   if (p === '/api/usuarios' || p === '/api/auth/passar-cargo') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
 
     if (m === 'GET' && p === '/api/usuarios') {
-      const { results } = await db.prepare('SELECT id, nome, papel, ativo, criado_em FROM usuario ORDER BY id').all();
-      return json(results);
+      const { results } = await db.prepare('SELECT id, nome, papel, ativo, criado_em, modulos FROM usuario ORDER BY id').all();
+      return json(results.map((u) => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo, criado_em: u.criado_em, modulos: modulosDe(u), personalizado: u.modulos != null })));
     }
     if (m === 'POST' && p === '/api/usuarios') {
       const nome = String(corpo.nome ?? '').trim();

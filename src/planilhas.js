@@ -48,7 +48,7 @@ const DATASETS = {
     colunas: [C('nome', 'Nome', 'Vodka Smirnoff 1 L'), C('tipo', 'Tipo', 'Destilados'), C('embalagem', 'Embalagem', 'Garrafa 1 L', 'Unidade de ESTOQUE'), C('unidade_ficha', 'Unidade da ficha', 'ml'),
       C('conteudo', 'Conteúdo da embalagem', 1000, 'Quantas unidades da ficha cabem em 1 embalagem'), C('arredondamento', 'Arredondamento', 'inteiro_cima', 'inteiro_cima, garrafa_proxima ou meio'),
       C('fornecedor', 'Fornecedor', 'Distribuidora X'), C('preco_referencia', 'Preço de referência (R$)', 55), C('preco_unidade', 'Preço da última compra (R$)', ''),
-      C('estoque_recomendado', 'Estoque recomendado', 6, 'Em embalagens; em branco = automático'), C('minimo_alerta', 'Avisar quando tiver', 2), C('producao_propria', 'Produção própria (sim/não)', 'não'), C('ativo', 'Ativo (sim/não)', 'sim')],
+      C('rec_segunda', 'Recomendado para segunda', 6, 'Em embalagens; em branco = automático'), C('rec_quinta', 'Recomendado para quinta', 4, 'Em embalagens; em branco = automático'), C('minimo_alerta', 'Avisar quando tiver', 2), C('producao_propria', 'Produção própria (sim/não)', 'não'), C('ativo', 'Ativo (sim/não)', 'sim')],
     async exportar(db) {
       const { results } = await db.prepare('SELECT i.*, f.nome AS fornecedor FROM insumo i LEFT JOIN fornecedor f ON f.id = i.fornecedor_id ORDER BY i.tipo, i.nome').all();
       return results.map((i) => ({ ...i, producao_propria: i.producao_propria ? 'sim' : 'não', ativo: i.ativo ? 'sim' : 'não' }));
@@ -62,7 +62,7 @@ const DATASETS = {
         const nome = txt(l.nome); if (!nome) return e('Falta o nome.');
         if (vistos.has(semAcento(nome))) return e(`O nome “${nome}” aparece mais de uma vez.`); vistos.add(semAcento(nome));
         const ex = existentes.get(semAcento(nome)), c = {};
-        for (const k2 of ['conteudo', 'preco_referencia', 'preco_unidade', 'estoque_recomendado', 'minimo_alerta']) if (!vazio(l[k2])) { c[k2] = num(l[k2]); if (!(c[k2] >= 0) || (k2 === 'conteudo' && !(c[k2] > 0))) return e(`Número inválido em “${k2}”.`); }
+        for (const k2 of ['conteudo', 'preco_referencia', 'preco_unidade', 'rec_segunda', 'rec_quinta', 'minimo_alerta']) if (!vazio(l[k2])) { c[k2] = num(l[k2]); if (!(c[k2] >= 0) || (k2 === 'conteudo' && !(c[k2] > 0))) return e(`Número inválido em “${k2}”.`); }
         let arr; if (!vazio(l.arredondamento)) { arr = ARRED[semAcento(l.arredondamento)]; if (!arr) return e('Arredondamento deve ser inteiro_cima, garrafa_proxima ou meio.'); }
         const prod = bool(l.producao_propria), ativo = bool(l.ativo);
         if (prod === undefined || ativo === undefined) return e('Use sim ou não nas colunas de sim/não.');
@@ -73,14 +73,14 @@ const DATASETS = {
           const set = [], b = [];
           const add = (col, v, sql = '?') => { set.push(`${col} = ${sql}`); if (v !== undefined) b.push(v); };
           if (txt(l.tipo)) add('tipo', txt(l.tipo)); if (txt(l.embalagem)) add('embalagem', txt(l.embalagem)); if (txt(l.unidade_ficha)) add('unidade_ficha', txt(l.unidade_ficha));
-          for (const [k2, v] of Object.entries(c)) add(k2, v); if (arr) add('arredondamento', arr); if (prod !== null) add('producao_propria', prod ? 1 : 0); if (ativo !== null) add('ativo', ativo ? 1 : 0);
+          for (const [k2, v] of Object.entries(c)) add(k2 === 'rec_segunda' ? 'estoque_recomendado_segunda' : k2 === 'rec_quinta' ? 'estoque_recomendado_quinta' : k2, v); if (arr) add('arredondamento', arr); if (prod !== null) add('producao_propria', prod ? 1 : 0); if (ativo !== null) add('ativo', ativo ? 1 : 0);
           if (fsql) add('fornecedor_id', fn, fsql);
           if (!set.length) return; r.atualizados++; r.stmts.push([`UPDATE insumo SET ${set.join(', ')} WHERE id = ?`, [...b, ex.id]]);
         } else {
           r.criados++;
-          r.stmts.push([`INSERT INTO insumo (nome, tipo, embalagem, unidade_ficha, conteudo, arredondamento, producao_propria, fornecedor_id, preco_unidade, preco_referencia, estoque_recomendado, minimo_alerta, ativo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ${fsql ?? 'NULL'}, ?, ?, ?, ?, ?)`, [nome, txt(l.tipo) || 'Outros', txt(l.embalagem) || 'un', txt(l.unidade_ficha) || 'un', c.conteudo ?? 1, arr ?? 'inteiro_cima', prod ? 1 : 0,
-            ...(fsql ? [fn] : []), c.preco_unidade ?? null, c.preco_referencia ?? null, c.estoque_recomendado ?? null, c.minimo_alerta ?? null, ativo === false ? 0 : 1]]);
+          r.stmts.push([`INSERT INTO insumo (nome, tipo, embalagem, unidade_ficha, conteudo, arredondamento, producao_propria, fornecedor_id, preco_unidade, preco_referencia, estoque_recomendado_segunda, estoque_recomendado_quinta, minimo_alerta, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ${fsql ?? 'NULL'}, ?, ?, ?, ?, ?, ?)`, [nome, txt(l.tipo) || 'Outros', txt(l.embalagem) || 'un', txt(l.unidade_ficha) || 'un', c.conteudo ?? 1, arr ?? 'inteiro_cima', prod ? 1 : 0,
+            ...(fsql ? [fn] : []), c.preco_unidade ?? null, c.preco_referencia ?? null, c.rec_segunda ?? null, c.rec_quinta ?? null, c.minimo_alerta ?? null, ativo === false ? 0 : 1]]);
         }
       });
       return r;
@@ -202,16 +202,18 @@ const DATASETS = {
 
   fornecedores: {
     nome: 'Fornecedores', super: false, descricao: 'Quem vende para o bar.',
-    colunas: [C('nome', 'Nome', 'Ceasa'), C('como_recebe', 'Como recebe o pedido', 'Presencial'), C('contato', 'Contato', ''), C('observacao', 'Observação', ''), C('ativo', 'Ativo (sim/não)', 'sim')],
-    async exportar(db) { const { results } = await db.prepare('SELECT nome, como_recebe, contato, observacao, ativo FROM fornecedor ORDER BY nome').all(); return results.map((f) => ({ ...f, ativo: f.ativo ? 'sim' : 'não' })); },
+    colunas: [C('nome', 'Nome', 'Ceasa'), C('como_recebe', 'Como recebe o pedido', 'Presencial'), C('contato', 'Contato', ''), C('cnpj', 'CNPJ', ''), C('endereco', 'Endereço', ''), C('prazo_dias', 'Prazo de pagamento (dias)', 0), C('pedido_minimo', 'Pedido mínimo (R$)', ''), C('observacao', 'Observação', ''), C('ativo', 'Ativo (sim/não)', 'sim')],
+    async exportar(db) { const { results } = await db.prepare('SELECT nome, como_recebe, contato, cnpj, endereco, prazo_dias, pedido_minimo, observacao, ativo FROM fornecedor ORDER BY nome').all(); return results.map((f) => ({ ...f, ativo: f.ativo ? 'sim' : 'não' })); },
     async importar(db, linhas) {
       const { results } = await db.prepare('SELECT id, nome FROM fornecedor').all(); const ex = new Map(results.map((f) => [semAcento(f.nome), f.id])), vistos = new Set();
       const r = { stmts: [], criados: 0, atualizados: 0, erros: [], avisos: [] };
       linhas.forEach((l, k) => {
         const e = (m) => r.erros.push({ linha: k + 2, erro: m }), nome = txt(l.nome); if (!nome) return e('Falta o nome.');
         if (vistos.has(semAcento(nome))) return e('Nome repetido.'); vistos.add(semAcento(nome)); const a = bool(l.ativo); if (a === undefined) return e('Use sim ou não.');
-        if (ex.has(semAcento(nome))) { r.atualizados++; r.stmts.push(['UPDATE fornecedor SET como_recebe = COALESCE(?, como_recebe), contato = COALESCE(?, contato), observacao = COALESCE(?, observacao), ativo = COALESCE(?, ativo) WHERE id = ?', [txt(l.como_recebe) || null, txt(l.contato) || null, txt(l.observacao) || null, a === null ? null : a ? 1 : 0, ex.get(semAcento(nome))]]); }
-        else { r.criados++; r.stmts.push(['INSERT INTO fornecedor (nome, como_recebe, contato, observacao, ativo) VALUES (?, ?, ?, ?, ?)', [nome, txt(l.como_recebe) || null, txt(l.contato) || null, txt(l.observacao) || null, a === false ? 0 : 1]]); }
+        const pz = vazio(l.prazo_dias) ? null : num(l.prazo_dias), pm = vazio(l.pedido_minimo) ? null : num(l.pedido_minimo);
+        if ((pz !== null && !(Number.isInteger(pz) && pz >= 0 && pz <= 365)) || (pm !== null && !(pm >= 0))) return e('Prazo (dias inteiros) ou pedido mínimo inválido.');
+        if (ex.has(semAcento(nome))) { r.atualizados++; r.stmts.push(['UPDATE fornecedor SET como_recebe = COALESCE(?, como_recebe), contato = COALESCE(?, contato), cnpj = COALESCE(?, cnpj), endereco = COALESCE(?, endereco), prazo_dias = COALESCE(?, prazo_dias), pedido_minimo = COALESCE(?, pedido_minimo), observacao = COALESCE(?, observacao), ativo = COALESCE(?, ativo) WHERE id = ?', [txt(l.como_recebe) || null, txt(l.contato) || null, txt(l.cnpj) || null, txt(l.endereco) || null, pz, pm, txt(l.observacao) || null, a === null ? null : a ? 1 : 0, ex.get(semAcento(nome))]]); }
+        else { r.criados++; r.stmts.push(['INSERT INTO fornecedor (nome, como_recebe, contato, cnpj, endereco, prazo_dias, pedido_minimo, observacao, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [nome, txt(l.como_recebe) || null, txt(l.contato) || null, txt(l.cnpj) || null, txt(l.endereco) || null, pz, pm, txt(l.observacao) || null, a === false ? 0 : 1]]); }
       });
       return r;
     },
@@ -313,14 +315,13 @@ async function aplicar(db, r) {
 export async function rotearPlanilhas(request, env, url) {
   const eu = await usuarioLogado(request, env); if (!eu) return erro('Entre com seu nome e senha', 401);
   const db = env.DB, p = url.pathname;
-  if (p === '/api/planilhas' && request.method === 'GET') return json({ planilhas: catalogo().filter((d) => !d.super || eu.papel === 'superadmin') });
+  if (p === '/api/planilhas' && request.method === 'GET') return json({ planilhas: catalogo().filter((d) => !d.super || eu.modulos.includes('financeiro')) });
   const k = p.match(/^\/api\/planilhas\/([a-z_]+)$/); if (!k) return null;
   const def = DATASETS[k[1]]; if (!def) return erro('Planilha não encontrada.', 404);
-  if (def.super && eu.papel !== 'superadmin') return erro('Essa planilha é só do superadmin.', 403);
+  if (def.super && !eu.modulos.includes('financeiro')) return erro('Essa planilha exige acesso ao financeiro.', 403);
   if (request.method === 'GET') return json({ colunas: def.colunas.map((c) => c.titulo), linhas: await def.exportar(db, url), chaves: def.colunas.map((c) => c.chave) });
   if (request.method === 'POST') {
     if (def.somenteExportar) return erro('Essa planilha é só para baixar.');
-    if (eu.papel !== 'superadmin') return erro('Só o superadmin importa planilhas.', 403);
     let c; try { c = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
     const linhas = Array.isArray(c?.linhas) ? c.linhas : []; if (!linhas.length) return erro('A planilha está vazia.');
     if (linhas.length > 5000) return erro('Planilha grande demais (máximo 5.000 linhas por vez).');

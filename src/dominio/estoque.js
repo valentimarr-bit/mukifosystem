@@ -154,12 +154,14 @@ export function painelEstoque({ insumos, produtos, historico, atual, dia, folga 
     const c = consumo.get(i.nome);
     const auto_segunda = estoqueMinimo(i, c, 'segunda', folga);
     const auto_quinta = estoqueMinimo(i, c, 'quinta', folga);
-    // Se o gerente definiu o estoque recomendado, ele manda; senão vale o cálculo pelas vendas.
-    const manual = i.estoque_recomendado != null && Number.isFinite(Number(i.estoque_recomendado));
-    const minimo_segunda = manual ? Number(i.estoque_recomendado) : auto_segunda;
-    const minimo_quinta = manual ? Number(i.estoque_recomendado) : auto_quinta;
+    // Se o gerente definiu o estoque recomendado do dia, ele manda; senão vale o cálculo pelas vendas.
+    const def = (v) => v != null && Number.isFinite(Number(v));
+    const manual_segunda = def(i.estoque_recomendado_segunda), manual_quinta = def(i.estoque_recomendado_quinta);
+    const minimo_segunda = manual_segunda ? Number(i.estoque_recomendado_segunda) : auto_segunda;
+    const minimo_quinta = manual_quinta ? Number(i.estoque_recomendado_quinta) : auto_quinta;
+    const manual = dia === 'segunda' ? manual_segunda : manual_quinta;
     const a = atual.get(i.nome) ?? 0;
     const sugestao = sugestaoCompra(i, dia === 'segunda' ? minimo_segunda : minimo_quinta, a);
-    return { insumo: i.nome, atual: a, minimo_segunda, minimo_quinta, auto_segunda, auto_quinta, recomendado_manual: manual, sugestao, situacao: situacao(a, sugestao), consumo_dia: c };
+    return { insumo: i.nome, atual: a, minimo_segunda, minimo_quinta, auto_segunda, auto_quinta, recomendado_manual: manual, manual_segunda, manual_quinta, sugestao, situacao: situacao(a, sugestao), consumo_dia: c };
   });
 }

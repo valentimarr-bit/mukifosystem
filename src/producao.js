@@ -1,0 +1,59 @@
+// Tela de produção: pedidos do app já pagos, com o número e a receita de cada item.
+// Saem da tela quando o cliente mostra o QR no balcão (status "entregue").
+import { json } from './api.js';
+import { usuarioLogado } from './auth.js';
+import { expirarPendentes } from './cliente.js';
+import { avisarPedido, pushLigado } from './push.js';
+
+const erro = (m, s = 400) => json({ erro: m }, s);
+const r3 = (x) => Math.round(x * 1000) / 1000;
+
+export async function listarProducao(db) {
+  await expirarPendentes(db);
+  const { results: pedidos } = await db.prepare(`SELECT id, numero, nome_cliente, status, total, pago_em, preparo_em, pronto_em,
+    CAST((julianday('now') - julianday(pago_em)) * 1440 AS INTEGER) AS minutos FROM pedido
+    WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all();
+  if (!pedidos.length) return { pedidos: [] };
+  const marcas = pedidos.map(() => '?').join(',');
+  const { results: itens } = await db.prepare(`SELECT ip.pedido_id, ip.produto_id, ip.nome, ip.quantidade FROM item_pedido ip WHERE ip.pedido_id IN (${marcas}) ORDER BY ip.id`).bind(...pedidos.map((p) => p.id)).all();
+  const prodIds = [...new Set(itens.map((i) => i.produto_id))];
+  const pm = prodIds.map(() => '?').join(',');
+  const [{ results: comps }, { results: fichas }] = await Promise.all([
+    db.prepare(`SELECT ci.combo_id, ci.produto_id, ci.quantidade, p.nome FROM combo_item ci JOIN produto p ON p.id = ci.produto_id WHERE ci.combo_id IN (${pm})`).bind(...prodIds).all(),
+    db.prepare(`SELECT ft.produto_id, i.nome AS insumo, i.unidade_ficha AS unidade, ft.quantidade, ft.observacao FROM ficha_tecnica ft JOIN insumo i ON i.id = ft.insumo_id
+                WHERE ft.produto_id IN (SELECT id FROM produto WHERE id IN (${pm}) UNION SELECT produto_id FROM combo_item WHERE combo_id IN (${pm})) ORDER BY ft.id`).bind(...prodIds, ...prodIds).all()]);
+  const ficha = new Map(); for (const f of fichas) { if (!ficha.has(f.produto_id)) ficha.set(f.produto_id, []); ficha.get(f.produto_id).push(f); }
+  const receita = (pid, q) => (ficha.get(pid) ?? []).map((f) => ({ insumo: f.insumo, quantidade: r3(f.quantidade * q), unidade: f.unidade, observacao: f.observacao }));
+  const doCombo = new Map(); for (const c of comps) { if (!doCombo.has(c.combo_id)) doCombo.set(c.combo_id, []); doCombo.get(c.combo_id).push(c); }
+  return {
+    pedidos: pedidos.map((p) => ({ ...p, itens: itens.filter((i) => i.pedido_id === p.id).map((i) => doCombo.has(i.produto_id)
+      ? { nome: i.nome, quantidade: i.quantidade, combo: doCombo.get(i.produto_id).map((c) => ({ nome: c.nome, quantidade: c.quantidade * i.quantidade, receita: receita(c.produto_id, c.quantidade * i.quantidade) })) }
+      : { nome: i.nome, quantidade: i.quantidade, receita: receita(i.produto_id, i.quantidade) }) })),
+  };
+}
+
+const AVISOS = {
+  preparando: { titulo: 'Seu pedido começou a ser preparado! 🍹', corpo: (n) => `Pedido ${n}: já estamos preparando.`, vibrar: [300, 120, 300, 120, 600] },
+  pronto: { titulo: 'Seu pedido está pronto! 🎉', corpo: (n) => `Pedido ${n}: retire no balcão mostrando o QR.`, vibrar: [600, 150, 600, 150, 600, 150, 900] },
+};
+
+export async function rotearProducao(request, env, url) {
+  if (!(await usuarioLogado(request, env))) return erro('Entre com seu nome e senha', 401);
+  const db = env.DB, m = request.method, p = url.pathname;
+  if (m === 'GET' && p === '/api/producao') return json({ ...(await listarProducao(db)), push: pushLigado(env) });
+  const k = p.match(/^\/api\/producao\/([\w-]+)\/preparo$/);
+  if (m === 'POST' && k) {
+    let c = {}; try { c = await request.json(); } catch { /* vazio */ }
+    const acao = c?.acao;
+    if (!AVISOS[acao]) return erro('Escolha “preparando” ou “pronto”.');
+    const de = acao === 'preparando' ? "('recebido')" : "('recebido', 'preparando')";
+    const col = acao === 'preparando' ? 'preparo_em' : 'pronto_em';
+    const r = await db.prepare(`UPDATE pedido SET status = ?, ${col} = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ${de}`).bind(acao, k[1]).run();
+    if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa (talvez já tenha sido retirado).', 409);
+    const ped = await db.prepare('SELECT numero FROM pedido WHERE id = ?').bind(k[1]).first();
+    const a = AVISOS[acao];
+    const push = await avisarPedido(env, k[1], { titulo: a.titulo, corpo: a.corpo(ped.numero), vibrar: a.vibrar, numero: ped.numero, etapa: acao });
+    return json({ ok: true, avisos_enviados: push.enviados ?? 0 });
+  }
+  return null;
+}

@@ -32,3 +32,9 @@
 - Excel lido no navegador (SheetJS); o servidor só recebe linhas em JSON. Reduz peso no Worker e permite o mesmo validador para tudo.
 - Fichas importadas substituem a ficha inteira do produto listado; compras passam pelo mesmo caminho de "registrar compra" (estoque e preço atualizam).
 - Despesas e resultado são só do superadmin; caixa do turno é de qualquer usuário logado.
+
+## Clientes e permissões
+- Login do cliente separado do login da equipe (tabelas e cabeçalho `X-Sessao-Cliente` próprios).
+- Pontos só depois de pago e únicos por pedido (índice único); nível usa pontos acumulados, saldo usa pontos atuais (para trocas futuras).
+- Aviso de preparo é preso ao pedido (push por pedido), então funciona também para quem não tem conta.
+- Permissões por módulo, aplicadas no servidor por prefixo de rota (`src/dominio/modulos.js`) e refletidas nas abas.
