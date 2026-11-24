@@ -38,6 +38,11 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
   <div id="cLogado" hidden>
     <div class="card centro"><div id="lEmoji" style="font-size:64px"></div><h2 id="lNivel" style="margin:4px 0"></h2><p class="mut" id="lFrase"></p>
       <p id="lPontos"></p></div>
+    <div class="card"><b>💳 Sua carteira</b><h2 id="wSaldo" style="margin:6px 0">R$ 0,00</h2>
+      <div style="display:flex;gap:8px"><input id="wValor" inputmode="decimal" placeholder="Valor (R$ 5 a 500)" style="flex:1"><button class="grande" id="wAdd" style="flex:0 0 auto;width:auto;padding:0 16px">Adicionar saldo</button></div>
+      <div class="erro" id="wErro"></div>
+      <div id="wPix" hidden><p>Pague <b id="wPixValor"></b> no Pix — o saldo entra assim que o bar confirmar:</p><div class="qr"><img id="wQr" alt="QR do Pix"></div><div class="cola" id="wCola"></div></div>
+      <div id="wExtrato" class="mut" style="margin-top:8px"></div></div>
     <div class="card"><b>Todos os níveis</b><div id="lNiveis"></div></div>
     <div class="card"><b>Seus últimos pedidos</b><div id="lPedidos" class="mut"></div></div>
     <button class="grande sec" id="lSair">Sair da conta</button>
@@ -52,7 +57,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
   <p class="mut">Com uma conta você não digita isso de novo e sobe de nível. <a href="#" id="criarAqui" style="color:var(--acc)">Criar conta</a></p></div>
   <p id="dadosConta" class="mut" hidden></p>
   <p class="mut">Usamos só para avisar sobre o pedido. O pedido só entra na fila depois que o Pix for pago, e vale por alguns minutos.</p>
-  <div class="erro" id="erro"></div><button class="grande" id="bPagar">Pagar com Pix</button><button class="grande sec" id="bVoltar">Voltar</button></div>
+  <div class="erro" id="erro"></div><button class="grande ok" id="bSaldo" hidden></button><button class="grande" id="bPagar">Pagar com Pix</button><button class="grande sec" id="bVoltar">Voltar</button></div>
 
 <div id="telaPix" class="tela centro" hidden>
   <div class="card"><b>Pedido <span id="pNum"></span></b><p>Pague <b id="pTotal"></b> no Pix:</p>
@@ -112,13 +117,16 @@ function desenharCarrinho() {
     + `<h3>Total ${R$([...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0))}</h3>`; }
 $('#resumo').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; const id = +b.dataset.id, lim = Math.min(prods.get(id).restam ?? 20, 20), q = (cart.get(id) ?? 0) + +b.dataset.d;
   if (q > lim) return aviso(lim >= 20 ? 'Máximo de 20 por item.' : `Só temos mais ${lim} desse.`); q > 0 ? cart.set(id, q) : cart.delete(id); desenharCarrinho(); };
-$('#bCarrinho').onclick = () => { $('#erro').textContent = ''; desenharCarrinho(); tela('telaDados'); };
+$('#bCarrinho').onclick = async () => { $('#erro').textContent = ''; desenharCarrinho(); tela('telaDados'); $('#bSaldo').hidden = true;
+  if (!conta) return; try { const w = await api('/api/conta/carteira'), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0); saldoAtual = w.saldo;
+    if (w.saldo >= t - 0.001 && cart.size) { $('#bSaldo').hidden = false; $('#bSaldo').textContent = `💳 Pagar com saldo (${R$(w.saldo)})`; } else if (w.saldo > 0) { $('#erro').textContent = `Seu saldo (${R$(w.saldo)}) não cobre este pedido. Adicione saldo na sua conta ou pague com Pix.`; } } catch {} };
 $('#bVoltar').onclick = () => { tela('cardapio'); desenhar(); };
 
-$('#bPagar').onclick = async () => { $('#bPagar').disabled = true; $('#erro').textContent = ''; pedirAviso();
-  try { const r = await fetch('/api/cliente/pedidos', { method: 'POST', headers: { 'content-type': 'application/json', ...cabConta() }, body: JSON.stringify({ nome: $('#nome').value, celular: $('#cel').value, itens: [...cart].map(([produto_id, quantidade]) => ({ produto_id, quantidade })) }) });
+const pagar = async (comSaldo) => { $('#bPagar').disabled = true; $('#bSaldo').disabled = true; $('#erro').textContent = ''; pedirAviso();
+  try { const r = await fetch('/api/cliente/pedidos', { method: 'POST', headers: { 'content-type': 'application/json', ...cabConta() }, body: JSON.stringify({ nome: $('#nome').value, celular: $('#cel').value, pagar_com_saldo: comSaldo, itens: [...cart].map(([produto_id, quantidade]) => ({ produto_id, quantidade })) }) });
     const j = await r.json(); if (!r.ok) throw new Error(j.erro); pedido = { id: j.id, numero: j.numero, total: j.total, chave: j.chave_qr, pix: j.pix, ate: Date.now() + j.validade_min * 60000 };
-    guardar(pedido); cart.clear(); acompanhar(); assinarPush(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; };
+    guardar(pedido); cart.clear(); acompanhar(); assinarPush(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; $('#bSaldo').disabled = false; };
+$('#bPagar').onclick = () => pagar(false); $('#bSaldo').onclick = () => pagar(true);
 async function recarregar() { try { { const d = await (await fetch('/api/venda/cardapio')).json(); cardapio = d.categorias; espera = d.espera; } prods.clear(); cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); [...cart.keys()].forEach((id) => { if (!prods.has(id) || prods.get(id).restam === 0) cart.delete(id); else if (prods.get(id).restam != null) cart.set(id, Math.min(cart.get(id), prods.get(id).restam)); }); desenhar(); } catch {} }
 
 function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 3000); }
@@ -161,10 +169,19 @@ async function abrirConta() {
   $('#cVisitante').hidden = false; $('#cLogado').hidden = true; formaConta(); botaoGoogle();
 }
 function desenharPerfil(j) { const c = j.cliente, n = c.nivel; $('#cVisitante').hidden = true; $('#cLogado').hidden = false;
-  $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
+  carteira(); $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
   $('#lPontos').innerHTML = n.proximo ? `Próximo nível: ${n.proximo.emoji} <b>${esc(n.proximo.nome)}</b>` : 'Você chegou ao topo! 💸';
   $('#lNiveis').innerHTML = (niveis?.niveis ?? []).map((x) => `<div class="cl"><span style="font-size:28px">${x.emoji}</span><span class="cn"><b${x.nivel === n.nivel ? ' class="bom"' : ''}>${esc(x.nome)}</b>${x.nivel === n.nivel ? '<br><span class="mut">você está aqui</span>' : ''}</span></div>`).join('');
   $('#lPedidos').innerHTML = j.pedidos.length ? j.pedidos.map((p) => `<b>${esc(p.numero)}</b> · ${esc(p.dia.split('-').reverse().slice(0, 2).join('/'))}<br>${p.itens.map((i) => `${i.quantidade}× ${esc(i.nome)}`).join(', ')}`).join('<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">') : 'Nenhum ainda.'; }
+const MOT = { recarga: 'Recarga', compra: 'Pedido', ajuste: 'Ajuste do bar', estorno: 'Estorno' };
+let wTimer = null, saldoAtual = 0;
+function desenharCarteira(w) { saldoAtual = w.saldo; $('#wSaldo').textContent = R$(w.saldo);
+  $('#wExtrato').innerHTML = w.movimentos.length ? w.movimentos.map((m) => `${new Date(m.criado_em.replace(' ', 'T') + 'Z').toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })} · ${MOT[m.motivo] ?? m.motivo} · <b class="${m.valor < 0 ? '' : 'bom'}">${m.valor < 0 ? '−' : '+'}${R$(Math.abs(m.valor))}</b>`).join('<br>') : 'Sem movimentos ainda.';
+  $('#wPix').hidden = !w.pendente?.pix; clearInterval(wTimer);
+  if (w.pendente?.pix) { $('#wPixValor').textContent = R$(w.pendente.valor); $('#wQr').src = qrImg(w.pendente.pix); $('#wCola').textContent = w.pendente.pix; wTimer = setInterval(async () => { if (document.hidden || $('#cLogado').hidden) return; try { desenharCarteira(await api('/api/conta/carteira')); } catch {} }, 4000); } }
+async function carteira() { try { desenharCarteira(await api('/api/conta/carteira')); } catch {} }
+$('#wAdd').onclick = async () => { $('#wErro').textContent = ''; const v = parseFloat(String($('#wValor').value).replace(',', '.')); try { desenharCarteira(await api('/api/conta/carteira/recarga', { valor: v })); $('#wValor').value = ''; } catch (e) { $('#wErro').textContent = e.message; } };
+$('#wCola').onclick = () => navigator.clipboard?.writeText($('#wCola').textContent);
 $('#bConta').onclick = abrirConta; $('#cVoltar').onclick = () => { tela('cardapio'); desenhar(); };
 $('#aEntrar').onclick = () => { modo = 'entrar'; formaConta(); }; $('#aCriar').onclick = () => { modo = 'criar'; formaConta(); };
 $('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; formaConta();

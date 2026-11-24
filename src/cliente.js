@@ -5,6 +5,7 @@ import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { clienteLogado } from './clientes.js';
 import { textosPedido } from './textos.js';
+import { debitarSaldo } from './carteira.js';
 
 const VALIDADE_MIN = 15;          // pedido não pago some depois disso
 const MAX_PENDENTES_CELULAR = 2;  // quantos pedidos não pagos o mesmo celular pode ter ao mesmo tempo
@@ -87,6 +88,11 @@ async function criarPedido(db, request, corpo) {
     db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
   if (!teste && (pc.n >= MAX_PENDENTES_CELULAR || po.n >= MAX_PENDENTES_ORIGEM)) return erro('Você já tem pedidos esperando pagamento. Pague ou aguarde alguns minutos.', 429);
 
+  const comSaldo = corpo?.pagar_com_saldo === true;
+  if (comSaldo) {
+    if (!conta) return erro('Entre na sua conta para pagar com saldo.', 401);
+    if (r2(conta.saldo ?? 0) < total) return erro('Saldo insuficiente. Adicione saldo ou pague com Pix.', 409);
+  }
   const chaveQr = segredo(), tokenHash = await sha256(chaveQr);
   for (let t = 0; t < 3; t++) {
     const dia = diaDoTurno();
@@ -104,7 +110,15 @@ async function criarPedido(db, request, corpo) {
         await db.prepare("UPDATE cobranca SET status = 'paga', paga_em = datetime('now'), operador = 'teste' WHERE id = ?").bind(cid).run();
         await conferirQuitacao(db, id, 'teste');
       }
-      return json({ id, numero, total, validade_min: VALIDADE_MIN, chave_qr: chaveQr, pix: copiaECola, teste }, 201);
+      if (comSaldo) {   // débito atômico: se o saldo não cobrir (outro pedido gastou antes), o pedido é cancelado
+        if (!(await debitarSaldo(db, conta.id, total, id))) {
+          await db.batch([db.prepare("UPDATE pedido SET status = 'cancelado' WHERE id = ?").bind(id), db.prepare("UPDATE cobranca SET status = 'cancelada' WHERE id = ?").bind(cid)]);
+          return erro('Saldo insuficiente. Adicione saldo ou pague com Pix.', 409);
+        }
+        await db.prepare("UPDATE cobranca SET status = 'paga', paga_em = datetime('now'), operador = 'saldo' WHERE id = ?").bind(cid).run();
+        await conferirQuitacao(db, id, 'saldo');
+      }
+      return json({ id, numero, total, validade_min: VALIDADE_MIN, chave_qr: chaveQr, pix: copiaECola, teste, pago_com_saldo: comSaldo }, 201);
     } catch { /* número repetido por pedidos simultâneos: tenta de novo */ }
   }
   return erro('Não consegui registrar o pedido. Tente de novo.', 409);

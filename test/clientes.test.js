@@ -11,7 +11,7 @@ import { verificarGoogle } from '../src/clientes.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
@@ -251,4 +251,31 @@ test('auditoria: registra quem fez o quê (sem senhas), só o superadmin lê, e 
   assert.equal((await chamar('/api/auditoria')).corpo.total, antes);
   // filtro só erros
   assert.ok((await chamar('/api/auditoria?so_erros=1')).corpo.registros.every((r) => r.status >= 400));
+});
+
+test('carteira: recarga por Pix só credita quando confirmada (uma vez), paga pedido com saldo, impede saldo negativo', async () => {
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Carla Saldo', celular: '(51) 98888-0001', email: 'carla@email.com', senha: 'segredo1', aceite: true }, {}, null);
+  const sess = { 'X-Sessao-Cliente': cad.corpo.token };
+  await chamar('/api/venda/pix', 'PUT', { chave: 'bar@mukifo.com' });
+  assert.equal((await chamar('/api/conta/carteira/recarga', 'POST', { valor: 1 }, sess, null)).status, 400);
+  const rec = await chamar('/api/conta/carteira/recarga', 'POST', { valor: 50 }, sess, null);
+  assert.equal(rec.status, 201); assert.equal(rec.corpo.saldo, 0); assert.ok(rec.corpo.pendente.pix.startsWith('000201'));
+  const fila = (await chamar('/api/venda/retiradas')).corpo.recargas;
+  assert.equal(fila.length >= 1, true);
+  const id = rec.corpo.pendente.id;
+  assert.equal((await chamar(`/api/venda/recargas/${id}/confirmar`, 'POST', {})).status, 200);
+  assert.equal((await chamar(`/api/venda/recargas/${id}/confirmar`, 'POST', {})).corpo.ja, true);   // não credita duas vezes
+  assert.equal((await chamar('/api/conta/carteira', 'GET', null, sess, null)).corpo.saldo, 50);
+  assert.equal((await chamar('/api/conta/eu', 'GET', null, sess, null)).corpo.cliente.saldo, 50);
+  const prod = (await env.DB.prepare('SELECT id, preco_venda FROM produto WHERE preco_venda IS NOT NULL LIMIT 1').first());
+  const ped = await chamar('/api/cliente/pedidos', 'POST', { itens: [{ produto_id: prod.id, quantidade: 1 }], pagar_com_saldo: true }, sess, null);
+  assert.equal(ped.status, 201); assert.equal(ped.corpo.pago_com_saldo, true);
+  const saldo = (await chamar('/api/conta/carteira', 'GET', null, sess, null)).corpo.saldo;
+  assert.equal(saldo, Math.round((50 - prod.preco_venda) * 100) / 100);
+  assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(ped.corpo.id).first()).status, 'recebido');
+  // saldo insuficiente
+  await chamar('/api/cliente/pedidos', 'POST', { itens: [{ produto_id: prod.id, quantidade: 20 }], pagar_com_saldo: true }, sess, null);
+  const rest = (await chamar('/api/conta/carteira', 'GET', null, sess, null)).corpo.saldo; assert.ok(rest >= 0);
+  assert.equal((await chamar(`/api/clientes/${cad.corpo.cliente.id}/saldo`, 'POST', { valor: -9999, obs: 'x' })).status, 400);
+  assert.equal((await chamar(`/api/clientes/${cad.corpo.cliente.id}/saldo`, 'POST', { valor: 10, obs: 'dinheiro no balcão' })).status, 200);
 });

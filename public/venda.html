@@ -194,9 +194,12 @@ $('#hHoje').onclick = () => { $('#hDia').value = ''; lerHistorico().catch((e) =>
 $('#aV').onclick = () => abas('V');
 $('#aR').onclick = () => { abas('R'); lerRetiradas(); setTimeout(() => $('#codigo').focus(), 50); };
 $('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
-async function lerRetiradas() { const r = await api('/api/venda/retiradas'); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
+async function lerRetiradas() { const r = await api('/api/venda/retiradas'); aguardandoRecargas(r.recargas ?? []); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
   $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
   $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
+function aguardandoRecargas(rs) { let el = $('#listaRec'); if (!el) { el = document.createElement('div'); el.id = 'listaRec'; $('#listaAg').after(el); }
+  el.innerHTML = rs.length ? `<h3>💳 Recargas de saldo esperando Pix</h3>` + rs.map((x) => `<div class="ret"><b>${x.nome}</b> · ${R$(x.valor)}<button class="grande ok" data-rec="${x.id}">Pix recebido ✓</button></div>`).join('') : ''; }
+document.addEventListener('click', tentar(async (e) => { const b = e.target.closest('[data-rec]'); if (b) { await api(`/api/venda/recargas/${b.dataset.rec}/confirmar`, 'POST', {}); lerRetiradas(); } }));
 async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
 function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="ruim">REP ${p.remessa}</b>` : '';
   const linha = (i) => i.falta > 0 ? `<li><label><input type="checkbox" data-item="${i.id}" data-max="${i.falta}" checked> ${i.falta}× ${i.nome}${i.entregue ? ` <small class="mut">(${i.entregue} já entregue)</small>` : ''}</label>${i.falta > 1 ? ` <select data-qtd="${i.id}">${Array.from({ length: i.falta }, (_, k) => `<option value="${i.falta - k}">${i.falta - k}</option>`).join('')}</select>` : ''}</li>` : `<li class="mut"><s>${i.quantidade}× ${i.nome}</s> ✓ entregue</li>`;

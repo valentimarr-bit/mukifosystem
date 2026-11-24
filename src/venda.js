@@ -7,6 +7,7 @@ import { escolherMaquininha } from './pagamentos/roteador.js';
 import { validarRetirada, listarRetiradas, lerPix, salvarPix } from './cliente.js';
 import { conferirEstoque, disponibilidade, travaLigada, modoTeste } from './trava.js';
 import { enviarCobranca, naviConfigurado } from './pagamentos/navi.js';
+import { recargasPendentes, confirmarRecarga } from './carteira.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const r2 = (x) => Math.round(x * 100) / 100;
@@ -281,7 +282,9 @@ export async function rotearVenda(request, env, url) {
     return json({ ok: true, ativa: await travaLigada(db) });
   }
   if (m === 'GET' && p === '/api/venda/historico') return historico(db, url);
-  if (m === 'GET' && p === '/api/venda/retiradas') return listarRetiradas(db);
+  if (m === 'GET' && p === '/api/venda/retiradas') { const r = await (await listarRetiradas(db)).json(); return json({ ...r, recargas: await recargasPendentes(db) }); }
+  const rc = p.match(/^\/api\/venda\/recargas\/([\w-]+)\/confirmar$/);
+  if (m === 'POST' && rc) { const r = await confirmarRecarga(db, rc[1], eu.nome); return r.erro ? erro(r.erro, r.status) : json(r); }
   if (m === 'POST' && p === '/api/venda/retirada') return validarRetirada(db, corpo, eu);
   if (m === 'PUT' && p === '/api/venda/pix') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin muda os dados do Pix.', 403);

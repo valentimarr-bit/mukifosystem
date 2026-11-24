@@ -4,6 +4,7 @@ import { hashSenha, hashToken, aleatorio, igual, usuarioLogado } from './auth.js
 import { celularValido } from './cliente.js';
 import { modoTeste } from './trava.js';
 import { NIVEIS, nivelDe } from './dominio/niveis.js';
+import { ajustarSaldo } from './carteira.js';
 
 const erro = (m, s = 400) => json({ erro: m }, s);
 const DIAS = 90, MAX_FALHAS = 5, BLOQUEIO_MIN = 10;
@@ -11,7 +12,7 @@ const emailOk = (e) => (/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(e) ? e :
 
 /** O CLIENTE só vê o nível: nunca pontos, quanto falta, progresso ou valores (decisão do dono: ele não deve saber quanto está gastando). */
 const nivelPublico = (n) => ({ nivel: n.nivel, nome: n.nome, emoji: n.emoji, frase: n.frase, proximo: n.proximo ? { nome: n.proximo.nome, emoji: n.proximo.emoji } : null });
-const paraCliente = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, nivel: nivelPublico(nivelDe(c.pontos_total)), tem_senha: !!c.senha_hash });
+const paraCliente = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, nivel: nivelPublico(nivelDe(c.pontos_total)), saldo: c.saldo ?? 0, tem_senha: !!c.senha_hash });
 const publico = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, pontos: c.pontos, pontos_total: c.pontos_total, nivel: nivelDe(c.pontos_total), tem_senha: !!c.senha_hash });
 
 async function abrirSessao(db, clienteId) {
@@ -174,14 +175,15 @@ export async function rotearClientes(request, env, url) {
     const porNivel = {}; for (const x of results) { const n = nivelDe(x.pontos_total).nome; porNivel[n] = (porNivel[n] ?? 0) + 1; }
     return json({ total: results.length, por_nivel: porNivel, clientes: results.map((x) => ({ id: x.id, nome: x.nome, celular: x.celular, email: x.email, pontos: x.pontos, pontos_total: x.pontos_total, nivel: nivelDe(x.pontos_total).nome, emoji: nivelDe(x.pontos_total).emoji, pedidos: x.pedidos, ultima_visita: x.ultima_visita, ativo: !!x.ativo, criado_em: x.criado_em })) });
   }
-  const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos|\/codigo-senha)?$/); if (!k) return null;
+  const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos|\/codigo-senha|\/saldo)?$/); if (!k) return null;
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(k[1]).first(); if (!cli) return erro('Cliente não encontrado.', 404);
   if (m === 'GET' && !k[2]) {
     const [{ results: pedidos }, { results: pontos }] = await Promise.all([
       db.prepare("SELECT numero, dia, total, status FROM pedido WHERE cliente_id = ? ORDER BY criado_em DESC LIMIT 30").bind(cli.id).all(),
       db.prepare('SELECT pontos, motivo, criado_em FROM ponto_mov WHERE cliente_id = ? ORDER BY id DESC LIMIT 30').bind(cli.id).all()]);
-    return json({ cliente: publico(cli), ativo: !!cli.ativo, aceite_em: cli.aceite_em, pedidos, pontos });
+    return json({ cliente: { ...publico(cli), saldo: cli.saldo }, ativo: !!cli.ativo, aceite_em: cli.aceite_em, pedidos, pontos });
   }
+  if (m === 'POST' && k[2] === '/saldo') { let b = {}; try { b = await request.json(); } catch { /* vazio */ } return ajustarSaldo(db, cli.id, b, eu.nome); }
   if (m === 'POST' && k[2] === '/codigo-senha') {   // cliente esqueceu a senha e está no balcão: a equipe gera um código de uso único
     if (!cli.senha_hash && !cli.google_sub) return erro('Essa conta não tem senha para trocar.', 409);
     return json({ ok: true, codigo: await gravarCodigo(db, cli.id), valido_min: RESET_MIN, celular: cli.celular });

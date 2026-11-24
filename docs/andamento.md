@@ -165,3 +165,10 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Migração `0019_entrega_parcial` (aplicar no D1): `item_pedido.entregue_qtd`, `pedido.remessa`.
 - Leitura do QR na venda: pedido de 1 item/1 unidade dá a baixa direto; senão abre a lista com caixas (e quantidade) para marcar o que está saindo. Se algo ficar faltando: o pedido continua aberto, marcador **REP 1/2/…**, e o QR muda (`MKF1.id.chave.remessa`) — o QR antigo é recusado. O app do cliente troca o QR sozinho no próximo ciclo de atualização (4 s) e mostra o que já saiu e o que falta.
 - Produção mostra só o que falta (quantidade restante) e o selo REP n. Todos os itens entregues → pedido entregue.
+
+## Carteira do cliente (saldo pré-pago)
+- Migração `0020_carteira` (aplicar no D1): `cliente.saldo`, `carteira_mov` (extrato), `recarga`.
+- Cliente: Conta → "💳 Sua carteira": adiciona saldo (R$ 5–500, teto R$ 1000) por Pix; entra quando o balcão toca "Pix recebido ✓" (aba Retiradas, bloco "Recargas de saldo") — crédito único (índice único). No modo teste credita na hora. No pedido: botão "Pagar com saldo" quando o saldo cobre; débito atômico.
+- Equipe: Gestão → cliente → "Carteira" lança +/− com motivo (recarga em dinheiro, estorno).
+- Contabilidade: recarga NÃO é venda; a venda entra quando o pedido é pago com saldo (cobrança forma pix, operador "saldo"). Saldo de cliente é dinheiro a devolver: conversar com o contador (regras de estorno/validade).
+- Apple Pay / Google Pay para recarregar: precisa de gateway com carteira digital (pendente de escolher gateway). O webhook do gateway pode chamar `confirmarRecarga`.
