@@ -32,7 +32,8 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 7. Pedidos pelo celular: PWA, Pix, fila pública, vibração/som/push quando pronto.
 
 ## Documentos (leia antes de começar)
-- `docs/andamento.md` — onde o projeto parou. **Comece por aqui.**
+- `docs/continuar.md` — passagem de bastão: regras, segredos e pendências. **Comece por aqui.**
+- `docs/andamento.md` — histórico do que foi feito, mais recente em cima.
 - `docs/roteiro.md` — fases e critérios.
 - `docs/decisoes.md` — decisões tomadas.
 - `docs/prompt-pos.md`, `docs/prompt-celular.md` — especificação das partes.
