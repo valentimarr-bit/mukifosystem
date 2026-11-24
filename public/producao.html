@@ -14,6 +14,7 @@ main{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),
 .rec{margin:0;padding-left:20px;color:var(--txt);font-size:16px}.rec li{padding:2px 0}.rec .q{font-weight:700}.sub{margin:6px 0 0 8px;padding-left:10px;border-left:3px solid var(--line)}
 .mut{color:var(--mut);font-size:14px}.btn{min-height:64px;border-radius:14px;border:0;font-size:20px;font-weight:800;cursor:pointer;background:var(--acc);color:var(--on-acc);width:100%}.btn.ok{background:var(--ok,#4caf50);color:#000}
 .vazio{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 10px;font-size:22px}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select><a href="/venda.html">Venda</a><a href="/gestao.html">Gestão</a></header>
 <main id="fila"><div class="vazio">Carregando…</div></main><div id="msg" hidden></div>

@@ -28,6 +28,7 @@ input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border
 .ret{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:8px}
 .setor{min-height:112px;border-radius:18px;border:2px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-size:20px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:10px;text-align:center}.setor span{font-size:44px;line-height:1}.setor small{font-size:14px;font-weight:400;color:var(--mut)}.setor:active{transform:scale(.97)}.busca{display:block;width:100%;min-height:54px;font-size:18px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:0 0 10px}.volta{min-height:52px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:800;font-size:17px;cursor:pointer}.cabset{display:flex;align-items:center;gap:12px;margin-bottom:10px}.cabset b{font-size:20px}
 .chips{display:none!important}
+button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style></head><body>
 <header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
 <div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button></div>
@@ -98,18 +99,43 @@ function depois(r) { recarregarCardapio(); if (r.comanda) { atual = r.comanda; i
 
 $('#cabset').onclick = (e) => { if (e.target.closest('#bSetores')) { cat = -1; desenharCardapio(); } };
 $('#busca').oninput = (e) => { busca = e.target.value; desenharCardapio(); };
-$('#grade').onclick = tentar(async (e) => { const st = e.target.closest('.setor'); if (st) { cat = +st.dataset.i; desenharCardapio(); return; } const b = e.target.closest('.prod'); if (!b || b.disabled) return; b.style.outline = '3px solid var(--acc)'; setTimeout(() => (b.style.outline = ''), 160); if (navigator.vibrate) navigator.vibrate(15);
-  if (!atual) await novaComanda();   // tocou, entrou: o pedido abre sozinho, sem perguntar nada
-  depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
-async function novaComanda() { const r = await api('/api/venda/comandas', 'POST', { mesa: '' }); atual = r.comanda; await lerComandas(); }
+// ---- toque instantâneo: o item aparece na hora e o servidor confirma por trás (1 chamada, sem recarregar o resto) ----
+let fila = Promise.resolve(), emVoo = 0; const pend = new Map(); let agenda = null;
+const nomeDe = (id) => { for (const c of cardapio) { const p = c.produtos.find((x) => x.id === id); if (p) return p; } return null; };
+function tocar(id, delta, dadosProd) {
+  const p = dadosProd ?? nomeDe(id); if (!p && delta > 0) return;
+  if (!atual) atual = { id: null, numero: '…', mesa: '', itens: [], cobrancas: [], total: 0, pago: 0, pendente: 0, restante: 0, status: 'aberta', provisoria: true };
+  const l = atual.itens.find((i) => i.produto_id === id);
+  if (l) { l.quantidade += delta; if (l.quantidade <= 0) atual.itens = atual.itens.filter((i) => i !== l); }
+  else if (delta > 0) atual.itens.push({ id: 'tmp' + id, produto_id: id, nome: p.nome, quantidade: delta, preco: p.preco });
+  atual.total = Math.round(atual.itens.reduce((t, i) => t + i.quantidade * i.preco, 0) * 100) / 100; atual.restante = Math.max(0, atual.total - atual.pago - atual.pendente);
+  desenharComanda();
+  pend.set(id, (pend.get(id) ?? 0) + delta); clearTimeout(agenda); agenda = setTimeout(enviarPend, 120);   // toques seguidos viram uma chamada só
+}
+function enviarPend() {
+  if (!pend.size) return fila; const lote = [...pend]; pend.clear(); emVoo++;
+  fila = fila.then(async () => {
+    try {
+      if (!atual.id) { const r = await api('/api/venda/comandas', 'POST', { mesa: '' }); atual = { ...atual, id: r.comanda.id, numero: r.comanda.numero, provisoria: false }; comandas.push({ id: r.comanda.id, numero: r.comanda.numero, mesa: '' }); }
+      let ultima = null; for (const [id, d] of lote) if (d !== 0) ultima = (await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: id, delta: d })).comanda;
+      if (ultima && emVoo === 1 && !pend.size) { atual = ultima; if (['entregue', 'recebido', 'cancelado'].includes(atual.status)) atual = null; desenharComanda(); }   // só confia no servidor quando não há toque novo esperando
+    } catch (e) { pend.clear(); msg(e.message, true); atual = null; await lerComandas().catch(() => {}); recarregarCardapio(); }
+    finally { emVoo--; }
+  });
+  return fila;
+}
+const esvaziar = async () => { clearTimeout(agenda); await enviarPend(); await fila; };
+$('#grade').onclick = (e) => { const st = e.target.closest('.setor'); if (st) { cat = +st.dataset.i; desenharCardapio(); return; } const b = e.target.closest('.prod'); if (!b || b.disabled) return;
+  b.style.outline = '3px solid var(--acc)'; setTimeout(() => (b.style.outline = ''), 160); if (navigator.vibrate) navigator.vibrate(15); tocar(+b.dataset.id, 1); };
+async function novaComanda() { await esvaziar(); const r = await api('/api/venda/comandas', 'POST', { mesa: '' }); atual = r.comanda; comandas.push({ id: r.comanda.id, numero: r.comanda.numero, mesa: '' }); desenharComanda(); }
 $('#cmd').onclick = tentar(async (e) => { const b = e.target.closest('button'); if (!b) return; if (b.id === 'nova') return novaComanda(); await abrir(b.dataset.id); });
-$('#itens').onclick = tentar(async (e) => { const b = e.target.closest('button[data-p]'); if (b) depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.p, delta: +b.dataset.d })); });
+$('#itens').onclick = (e) => { const b = e.target.closest('button[data-p]'); if (b) tocar(+b.dataset.p, +b.dataset.d); };
 $('#cobsPend').onclick = tentar(async (e) => { const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.conf) depois(await api(`/api/venda/cobrancas/${b.dataset.conf}/confirmar`, 'POST', {}));
   if (b.dataset.canc) depois(await api(`/api/venda/cobrancas/${b.dataset.canc}/cancelar`, 'POST', {})); });
-$('#bCancelar').onclick = tentar(async () => { if (confirm('Descartar este pedido?')) { await api(`/api/venda/comandas/${atual.id}/cancelar`, 'POST', {}); atual = null; await lerComandas(); } });
+$('#bCancelar').onclick = tentar(async () => { await esvaziar(); if (confirm('Descartar este pedido?')) { await api(`/api/venda/comandas/${atual.id}/cancelar`, 'POST', {}); atual = null; await lerComandas(); } });
 
-$('#bCobrar').onclick = () => { forma = null; $('#dErro').textContent = ''; $('#dValor').textContent = R$(atual.restante); $('#valor').value = String(atual.restante).replace('.', ',');
+$('#bCobrar').onclick = async () => { await esvaziar(); if (!atual?.id) return; forma = null; $('#dErro').textContent = ''; $('#dValor').textContent = R$(atual.restante); $('#valor').value = String(atual.restante).replace('.', ',');
   document.querySelectorAll('#formas button').forEach((b) => b.classList.remove('on')); $('#boxMaq').hidden = true;
   $('#maq').innerHTML = '<option value="">Automática (padrão)</option>' + maqs.filter((m) => m.ativa).map((m) => `<option value="${m.id}">${m.nome}</option>`).join(''); $('#dCobrar').showModal(); };
 $('#formas').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; forma = b.dataset.f; document.querySelectorAll('#formas button').forEach((x) => x.classList.toggle('on', x === b)); $('#boxMaq').hidden = forma === 'dinheiro'; };
@@ -143,5 +169,5 @@ async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukif
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();
   try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
 iniciar().catch((e) => msg(e.message, true));
-setInterval(() => { if (token && !$('#dCobrar').open) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
+setInterval(() => { if (token && !$('#dCobrar').open && !emVoo && !pend.size && !atual?.provisoria) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
 </script></body></html>
