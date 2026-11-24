@@ -1,4 +1,5 @@
 // Contas de cliente: cadastro, login (celular/e-mail + senha, ou Google), pontos e níveis; e a área de clientes da gestão.
+import { registrarConsentimento } from './whatsapp.js';
 import { json } from './api.js';
 import { hashSenha, hashToken, aleatorio, igual, usuarioLogado } from './auth.js';
 import { celularValido } from './cliente.js';
@@ -12,7 +13,7 @@ const emailOk = (e) => (/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(e) ? e :
 
 /** O CLIENTE só vê o nível: nunca pontos, quanto falta, progresso ou valores (decisão do dono: ele não deve saber quanto está gastando). */
 const nivelPublico = (n) => ({ nivel: n.nivel, nome: n.nome, emoji: n.emoji, frase: n.frase, proximo: n.proximo ? { nome: n.proximo.nome, emoji: n.proximo.emoji } : null });
-const paraCliente = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, nivel: nivelPublico(nivelDe(c.pontos_total)), saldo: c.saldo ?? 0, tem_senha: !!c.senha_hash });
+const paraCliente = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, nivel: nivelPublico(nivelDe(c.pontos_total)), saldo: c.saldo ?? 0, tem_senha: !!c.senha_hash, whats: !!c.whats_aceite_em && !c.whats_recusou });
 const publico = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, pontos: c.pontos, pontos_total: c.pontos_total, nivel: nivelDe(c.pontos_total), tem_senha: !!c.senha_hash });
 
 async function abrirSessao(db, clienteId) {
@@ -58,6 +59,7 @@ async function cadastro(db, c) {
   if (await db.prepare('SELECT 1 AS x FROM cliente WHERE celular = ? OR (email IS NOT NULL AND email = ?)').bind(celular, email).first()) return erro('Já existe uma conta com esse celular ou e-mail. Toque em “Entrar”.', 409);
   const id = 'cli-' + aleatorio(8), sal = aleatorio(16);
   await db.prepare("INSERT INTO cliente (id, nome, celular, email, senha_hash, sal, aceite_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))").bind(id, nome, celular, email, await hashSenha(senha, sal), sal).run();
+  if (c?.whats === true) await registrarConsentimento(db, { id, celular }, true, 'cadastro');   // opcional: só marca quem marcou a caixa
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(id).first();
   return json({ ok: true, token: await abrirSessao(db, id), cliente: paraCliente(cli) }, 201);
 }
@@ -156,6 +158,11 @@ export async function rotearConta(request, env, url) {
     return json({ cliente: paraCliente(cli), pedidos: results });
   }
   if (m === 'POST' && p === '/api/conta/sair') { await db.prepare('DELETE FROM cliente_sessao WHERE token_hash = ?').bind(await hashToken(request.headers.get('X-Sessao-Cliente'))).run(); return json({ ok: true }); }
+  if (m === 'PUT' && p === '/api/conta/whats') {   // o cliente liga ou desliga os convites por WhatsApp
+    if (typeof c?.aceita !== 'boolean') return erro('Diga se quer receber.');
+    if (c.aceita && !cli.celular) return erro('Cadastre um celular na sua conta para receber por WhatsApp.');
+    await registrarConsentimento(db, cli, c.aceita, 'conta'); return json({ ok: true, whats: c.aceita });
+  }
   if (m === 'PUT' && p === '/api/conta/eu') {
     const nome = String(c?.nome ?? '').replace(/\s+/g, ' ').trim().slice(0, 40); if (nome.length < 2) return erro('Digite seu nome.');
     await db.prepare('UPDATE cliente SET nome = ? WHERE id = ?').bind(nome, cli.id).run(); return json({ ok: true });

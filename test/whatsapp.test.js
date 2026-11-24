@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 import { processarFila, numeroWhats } from '../src/whatsapp.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
-const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') }, URL_PUBLICA: 'https://mukifo.test' };
+const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') }, URL_PUBLICA: 'https://mukifo.test' };
 const chamar = async (caminho, metodo = 'GET', corpo) => {
   const r = await worker.fetch(new Request('https://mukifo.test' + caminho, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '9.9.9.9', authorization: 'Bearer segredo-teste' } }), env);
   return { status: r.status, corpo: await r.json() };
@@ -29,7 +29,8 @@ test('convite automático: liga só com credencial, enfileira quem pode, manda d
   globalThis.fetch = async (url, init) => { envios.push({ url: String(url), auth: init.headers.authorization, corpo: JSON.parse(init.body) }); return resposta(); };
   try {
     for (const [id, nome, cel, ativo] of [['c1', 'Ana Souza', '51999990001', 1], ['c2', 'Bruno Lima', '(51) 99999-0002', 1], ['c3', 'Carla Dias', '51999990003', 1], ['c4', 'Diego Reis', '51999990004', 1], ['c5', 'Eva Rocha', '51999990005', 1], ['c6', 'Sem Numero', null, 1], ['c7', 'Numero Torto', '123', 1], ['c8', 'Inativo', '51999990008', 0]])
-      await sql('INSERT INTO cliente (id, nome, celular, ativo) VALUES (?, ?, ?, ?)', id, nome, cel, ativo);
+      await sql("INSERT INTO cliente (id, nome, celular, ativo, whats_aceite_em) VALUES (?, ?, ?, ?, datetime('now'))", id, nome, cel, ativo);
+    await sql("INSERT INTO cliente (id, nome, celular) VALUES ('c9', 'Nunca Aceitou', '51999990009')");           // válido, mas não aceitou receber: fica de fora
     await sql("UPDATE cliente SET whats_recusou = 1 WHERE id = 'c5'");
     const camp = (await chamar(`${G}/campeonatos`, 'POST', { nome: 'Copa Mukifo' })).corpo.id;
 
@@ -43,7 +44,7 @@ test('convite automático: liga só com credencial, enfileira quem pode, manda d
     Object.assign(env, { IZAPIA_API_KEY: 'chave', IZAPIA_SID: 'sessao-1' });
     assert.equal((await chamar(`${G}/whats`, 'PUT', { ativo: true, por_minuto: 2 })).status, 200);
     const mod = await chamar(`${G}/campeonatos/${camp}/modalidades`, 'POST', { nome: 'Bola 9', taxa: 15 });
-    assert.deepEqual(mod.corpo.convite, { na_fila: 4 });                                                // c1..c4: sem número, número torto, inativo e recusa ficam de fora
+    assert.deepEqual(mod.corpo.convite, { na_fila: 4 });                                                // c1..c4: sem número, número torto, inativo, recusa e quem não aceitou ficam de fora
     assert.equal((await chamar(`${G}/modalidades/${mod.corpo.id}/convidar`, 'POST')).corpo.na_fila, 0); // ninguém é convidado duas vezes
     const modAntiga = semLigar.corpo.id;
     assert.equal((await chamar(`${G}/modalidades/${modAntiga}/convidar`, 'POST')).corpo.na_fila, 4);
@@ -81,4 +82,31 @@ test('convite automático: liga só com credencial, enfileira quem pode, manda d
     await chamar(`${G}/whats`, 'PUT', { ativo: false });
     assert.deepEqual(await processarFila(env.DB, env), { enviados: 0, parado: 'desligado' });
   } finally { globalThis.fetch = antes; }
+});
+
+test('LGPD: só convida quem aceitou; aceite e revogação ficam registrados; o cliente liga e desliga no app', async () => {
+  const cab = (t) => ({ 'content-type': 'application/json', 'CF-Connecting-IP': '8.8.8.8', ...(t ? { 'X-Sessao-Cliente': t } : {}) });
+  const conta = async (caminho, metodo, corpo, t) => { const r = await worker.fetch(new Request('https://mukifo.test' + caminho, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: cab(t) }), env); return { status: r.status, corpo: await r.json() }; };
+  const a = await conta('/api/conta/cadastro', 'POST', { nome: 'Lia Mota', celular: '51988880001', senha: 'senha123', aceite: true, whats: true });
+  const b = await conta('/api/conta/cadastro', 'POST', { nome: 'Caio Neri', celular: '51988880002', senha: 'senha123', aceite: true });   // não marcou a caixa
+  assert.equal(a.corpo.cliente.whats, true); assert.equal(b.corpo.cliente.whats, false);
+  const aud = async () => (await chamar(`${G}/whats`)).corpo;
+  const antes = await aud();
+  assert.ok(antes.sem_consentimento >= 1);
+
+  // Caio aceita pelo app depois; Lia desliga
+  assert.equal((await conta('/api/conta/whats', 'PUT', { aceita: true }, b.corpo.token)).corpo.whats, true);
+  assert.equal((await conta('/api/conta/whats', 'PUT', { aceita: false }, a.corpo.token)).corpo.whats, false);
+  assert.equal((await conta('/api/conta/whats', 'PUT', {}, a.corpo.token)).status, 400);
+  const depois = await aud(); assert.equal(depois.audiencia, antes.audiencia);                                    // um entrou, um saiu
+  const log = (await env.DB.prepare("SELECT cliente_id, acao, origem, celular FROM consentimento_whats WHERE celular LIKE '519888800%' ORDER BY id").all()).results;
+  assert.deepEqual(log.map((x) => `${x.acao}:${x.origem}`), ['aceitou:cadastro', 'aceitou:conta', 'revogou:conta']);
+  assert.match((await um("SELECT texto FROM consentimento_whats ORDER BY id LIMIT 1")).texto, /WhatsApp/);
+
+  // recusa no balcão também revoga e fica registrada; aceitar de novo no app volta a valer
+  await chamar(`${G}/whats/recusa`, 'POST', { celular: '51988880002' });
+  assert.equal((await um("SELECT acao, origem FROM consentimento_whats WHERE cliente_id = ? ORDER BY id DESC LIMIT 1", b.corpo.cliente.id)).origem, 'balcao');
+  assert.equal((await conta('/api/conta/eu', 'GET', null, b.corpo.token)).corpo.cliente.whats, false);
+  assert.equal((await conta('/api/conta/whats', 'PUT', { aceita: true }, b.corpo.token)).corpo.whats, true);
+  assert.equal((await um('SELECT whats_recusou AS r FROM cliente WHERE id = ?', b.corpo.cliente.id)).r, 0);
 });

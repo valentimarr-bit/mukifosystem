@@ -116,10 +116,11 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 - Acompanha a **chave** e o **placar ao vivo** (atualiza sozinho) e o **ranking** com pontos por colocação.
 
 ### Para a equipe (`/torneio.html`)
-- **Convite por WhatsApp (automático):** com a izapia ligada, cada modalidade nova convida sozinha todos os clientes cadastrados que têm celular. O botão "Convidar clientes agora" faz o mesmo para uma modalidade que já existe e não repete quem já foi convidado.
+- **Convite por WhatsApp (automático):** com a izapia ligada, cada modalidade nova convida sozinha os clientes que **aceitaram receber** (LGPD) e têm celular. O botão "Convidar clientes agora" faz o mesmo para uma modalidade que já existe e não repete quem já foi convidado.
   - **Como sai:** em fila, poucas mensagens por minuto (4 por padrão), com teto por dia (80). A mensagem leva o primeiro nome, a taxa e o link do campeonato. Se as inscrições encerrarem antes, o que sobrou na fila é cancelado.
   - **Cuidado com o número:** a izapia usa o protocolo do WhatsApp Web, não a API oficial da Meta. Mandar muito, rápido ou para quem não conhece o bar pode bloquear o número. Use um chip só do bar, não o pessoal.
-  - **Quem não quer receber:** digite o celular em "Não enviar" no cartão. Esse cliente fica de fora para sempre.
+  - **Consentimento (LGPD):** ao criar a conta, o cliente vê uma caixa opcional, separada dos termos: "Quero receber convites de campeonato e novidades por WhatsApp". Quem não marcou não recebe nada. O cliente liga ou desliga quando quiser em Minha conta → "Convites por WhatsApp". Cada aceite e cada revogação ficam gravados com data, origem (cadastro, app ou balcão), celular e o texto exato mostrado. O cartão do campeonato mostra quantos clientes aceitaram e quantos ainda não.
+  - **Quem não quer receber:** digite o celular em "Não enviar" no cartão: o cliente sai da lista e a revogação fica registrada. Se ele mesmo aceitar de novo no app, volta a receber.
   - **Ligar:** crie a conta em `app.izapia.com`, leia o QR Code com o WhatsApp do bar e guarde `IZAPIA_API_KEY` e `IZAPIA_SID` no Cloudflare. Só o superadmin liga o envio.
   - **Sem a izapia:** "Enviar manualmente" abre o WhatsApp com o convite pronto e você toca em enviar.
 - Cria o campeonato (nome, data, local) e as modalidades (taxa, vagas, divisão do prêmio em %).

@@ -32,6 +32,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
     <div id="cEmailBox"><label>E-mail (opcional)</label><input id="cEmail" type="email" autocomplete="email"></div>
     <label>Senha (mínimo 6)</label><input id="cSenha" type="password" autocomplete="current-password">
     <label id="cAceiteBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cAceite" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>Li e aceito os termos e a política de privacidade. Usamos seus dados só para o pedido, o nível e avisos do Mukifo.</span></label>
+    <label id="cWhatsBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cWhats" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>(Opcional) Quero receber convites de campeonato e novidades do Mukifo por WhatsApp. Posso desativar quando quiser.</span></label>
     <div id="cRecBox" hidden><label>Código de 6 dígitos</label><input id="cCodigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><p class="mut" id="cRecDica"></p></div>
     <div class="erro" id="cErro"></div><button class="grande" id="cOk">Continuar</button><p style="text-align:center"><a href="#" id="cEsqueci">Esqueci minha senha</a></p><div id="cGoogle" style="margin-top:12px;display:flex;justify-content:center"></div>
   </div>
@@ -43,6 +44,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
       <div class="erro" id="wErro"></div>
       <div id="wPix" hidden><p>Pague <b id="wPixValor"></b> no Pix — o saldo entra assim que o bar confirmar:</p><div class="qr"><img id="wQr" alt="QR do Pix"></div><div class="cola" id="wCola"></div></div>
       <div id="wExtrato" class="mut" style="margin-top:8px"></div></div>
+    <div class="card"><b>📲 Convites por WhatsApp</b><p class="mut" id="wZapTxt"></p><div class="erro" id="wZapErro"></div><button class="grande sec" id="wZapBtn">…</button></div>
     <div class="card"><b>Todos os níveis</b><div id="lNiveis"></div></div>
     <div class="card"><b>Seus últimos pedidos</b><div id="lPedidos" class="mut"></div></div>
     <button class="grande sec" id="lSair">Sair da conta</button>
@@ -161,15 +163,16 @@ const cabConta = () => (conta?.token ? { 'X-Sessao-Cliente': conta.token } : {})
 const salvarConta = (c) => { conta = c; try { c ? localStorage.setItem(SC, JSON.stringify(c)) : localStorage.removeItem(SC); } catch {} botaoConta(); };
 function botaoConta() { const c = conta?.cliente; $('#bConta').textContent = c ? `${c.nivel.emoji} ${c.nome.split(' ')[0]}` : 'Entrar';
   $('#dadosVisitante').hidden = !c; $('#dadosVisitante').hidden = !!c; $('#dadosConta').hidden = !c; if (c) $('#dadosConta').textContent = `Pedido no nome de ${c.nome}. Seu nível sobe quando o Pix cair.`; }
-async function api(url, corpo) { const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...cabConta() }, body: corpo ? JSON.stringify(corpo) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j; }
-function formaConta() { const novo = modo === 'criar', rec = modo === 'recuperar'; $('#cRecBox').hidden = !rec; $('#cEsqueci').hidden = novo || rec; $('#cOk').textContent = rec ? 'Criar nova senha' : 'Continuar'; $('#cSenha').previousElementSibling.textContent = rec ? 'Nova senha (mínimo 6)' : 'Senha (mínimo 6)'; $('#cNomeBox').hidden = !novo; $('#cEmailBox').hidden = !novo; $('#cAceiteBox').hidden = !novo; $('#cLoginLbl').textContent = novo ? 'Celular com DDD' : 'Celular ou e-mail';
+async function api(url, corpo, metodo) { const r = await fetch(url, { method: metodo || (corpo ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', ...cabConta() }, body: corpo ? JSON.stringify(corpo) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j; }
+function formaConta() { const novo = modo === 'criar', rec = modo === 'recuperar'; $('#cRecBox').hidden = !rec; $('#cEsqueci').hidden = novo || rec; $('#cOk').textContent = rec ? 'Criar nova senha' : 'Continuar'; $('#cSenha').previousElementSibling.textContent = rec ? 'Nova senha (mínimo 6)' : 'Senha (mínimo 6)'; $('#cNomeBox').hidden = !novo; $('#cEmailBox').hidden = !novo; $('#cAceiteBox').hidden = !novo; $('#cWhatsBox').hidden = !novo; $('#cLoginLbl').textContent = novo ? 'Celular com DDD' : 'Celular ou e-mail';
   $('#aEntrar').className = 'grande' + (novo || rec ? ' sec' : ''); $('#aCriar').className = 'grande' + (novo ? '' : ' sec'); $('#cErro').textContent = ''; }
 async function abrirConta() {
   tela('telaConta'); niveis ??= await api('/api/conta/niveis').catch(() => null);
   if (conta) { try { const j = await api('/api/conta/eu'); salvarConta({ ...conta, cliente: j.cliente }); desenharPerfil(j); } catch (e) { if (e.status === 401) { salvarConta(null); abrirConta(); } } return; }
   $('#cVisitante').hidden = false; $('#cLogado').hidden = true; formaConta(); botaoGoogle(); $('#cVoltar').hidden = primeiroLogin;
 }
-function desenharPerfil(j) { const c = j.cliente, n = c.nivel; $('#cVisitante').hidden = true; $('#cLogado').hidden = false;
+function desenharZap(on) { $('#wZapTxt').textContent = on ? 'Você recebe convites de campeonato e novidades do Mukifo por WhatsApp.' : 'Você não recebe convites por WhatsApp. Quer receber convites de campeonato e novidades?'; $('#wZapBtn').textContent = on ? 'Parar de receber' : 'Quero receber'; $('#wZapBtn').dataset.on = on ? '1' : ''; }
+function desenharPerfil(j) { const c = j.cliente, n = c.nivel; desenharZap(c.whats); $('#cVisitante').hidden = true; $('#cLogado').hidden = false;
   carteira(); $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
   $('#lPontos').innerHTML = n.proximo ? `Próximo nível: ${n.proximo.emoji} <b>${esc(n.proximo.nome)}</b>` : 'Você chegou ao topo! 💸';
   $('#lNiveis').innerHTML = (niveis?.niveis ?? []).map((x) => `<div class="cl"><span style="font-size:28px">${x.emoji}</span><span class="cn"><b${x.nivel === n.nivel ? ' class="bom"' : ''}>${esc(x.nome)}</b>${x.nivel === n.nivel ? '<br><span class="mut">você está aqui</span>' : ''}</span></div>`).join('');
@@ -191,9 +194,10 @@ $('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; 
   try { const j = await api('/api/conta/esqueci', { login: $('#cLogin').value }); $('#cRecDica').textContent = j.mensagem; } catch (er) { $('#cErro').textContent = er.message; } };
 $('#criarAqui').onclick = (e) => { e.preventDefault(); modo = 'criar'; abrirConta(); };
 $('#cOk').onclick = async () => { $('#cErro').textContent = ''; $('#cOk').disabled = true;
-  try { const j = modo === 'recuperar' ? await api('/api/conta/redefinir', { login: $('#cLogin').value, codigo: $('#cCodigo').value, senha: $('#cSenha').value }) : modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked })
+  try { const j = modo === 'recuperar' ? await api('/api/conta/redefinir', { login: $('#cLogin').value, codigo: $('#cCodigo').value, senha: $('#cSenha').value }) : modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked, whats: $('#cWhats').checked })
       : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; if (primeiroLogin) { primeiroLogin = false; tela('cardapio'); desenhar(); } else abrirConta(); }
   catch (e) { $('#cErro').textContent = e.message; } $('#cOk').disabled = false; };
+$('#wZapBtn').onclick = async () => { $('#wZapErro').textContent = ''; const quer = !$('#wZapBtn').dataset.on; try { const r = await api('/api/conta/whats', { aceita: quer }, 'PUT'); desenharZap(r.whats); } catch (e) { $('#wZapErro').textContent = e.message; } };
 $('#lSair').onclick = async () => { try { await api('/api/conta/sair', {}); } catch {} salvarConta(null); tela('cardapio'); desenhar(); };
 function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGoogle').dataset.ok) return; $('#cGoogle').dataset.ok = 1;
   const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = () => { google.accounts.id.initialize({ client_id: id, callback: async (r) => { try { const j = await api('/api/conta/google', { credential: r.credential, aceite: true }); salvarConta({ token: j.token, cliente: j.cliente }); abrirConta(); } catch (e) { $('#cErro').textContent = e.message; } } }); google.accounts.id.renderButton($('#cGoogle'), { theme: 'filled_black', size: 'large', text: 'continue_with', locale: 'pt-BR' }); }; document.head.appendChild(s); }

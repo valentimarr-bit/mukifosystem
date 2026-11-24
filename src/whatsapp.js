@@ -31,10 +31,19 @@ async function ajustes(db) {
 }
 const set = (db, k, v) => db.prepare('INSERT INTO configuracao (chave, valor) VALUES (?, ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor').bind(k, String(v));
 
+export const TEXTO_CONSENTIMENTO = 'Quero receber convites de campeonato e novidades do Mukifo por WhatsApp. Posso desativar quando quiser.';
+/** Registra aceite ou revogação (com prova). Aceitar limpa a recusa do balcão: quem aceitou de novo quer receber. */
+export async function registrarConsentimento(db, cliente, aceitou, origem) {
+  await db.batch([
+    db.prepare(aceitou ? "UPDATE cliente SET whats_aceite_em = datetime('now'), whats_recusou = 0 WHERE id = ?" : 'UPDATE cliente SET whats_aceite_em = NULL WHERE id = ?').bind(cliente.id),
+    db.prepare('INSERT INTO consentimento_whats (cliente_id, acao, origem, celular, texto) VALUES (?, ?, ?, ?, ?)').bind(cliente.id, aceitou ? 'aceitou' : 'revogou', origem, cliente.celular ?? null, TEXTO_CONSENTIMENTO),
+  ]);
+}
+
 const primeiroNome = (n) => String(n ?? '').trim().split(/\s+/)[0] || '';
 export function montarConvite({ cliente, campeonato, modalidade, taxa, link }) {
   const quem = primeiroNome(cliente);
-  return `${quem ? `Oi, ${quem}! ` : 'Oi! '}🎱 Estão abertas as inscrições do ${campeonato} (${modalidade}) no Mukifo. ${taxa > 0 ? `Inscrição R$ ${Number(taxa).toFixed(2).replace('.', ',')}.` : 'Inscrição grátis.'} Garanta sua vaga: ${link}\nPara não receber mais convites, avise no balcão.`;
+  return `${quem ? `Oi, ${quem}! ` : 'Oi! '}🎱 Estão abertas as inscrições do ${campeonato} (${modalidade}) no Mukifo. ${taxa > 0 ? `Inscrição R$ ${Number(taxa).toFixed(2).replace('.', ',')}.` : 'Inscrição grátis.'} Garanta sua vaga: ${link}\nPara não receber mais, desative em Minha conta no app ou avise no balcão.`;
 }
 
 /** Põe na fila o convite de todos os clientes elegíveis que ainda não receberam esta modalidade. Devolve quantos entraram. */
@@ -42,7 +51,7 @@ export async function enfileirar(db, modalidadeId, link) {
   const mod = await db.prepare("SELECT m.id, m.nome, m.taxa, m.status, c.nome AS campeonato FROM modalidade m JOIN campeonato c ON c.id = m.campeonato_id WHERE m.id = ?").bind(modalidadeId).first();
   if (!mod) return { erro: 'Modalidade não encontrada.', status: 404 };
   if (mod.status !== 'inscricoes') return { erro: 'As inscrições desta modalidade estão encerradas.', status: 409 };
-  const { results } = await db.prepare("SELECT id, nome, celular FROM cliente WHERE ativo = 1 AND whats_recusou = 0 AND celular IS NOT NULL AND id NOT IN (SELECT cliente_id FROM convite_whats WHERE modalidade_id = ?)").bind(modalidadeId).all();
+  const { results } = await db.prepare("SELECT id, nome, celular FROM cliente WHERE ativo = 1 AND whats_aceite_em IS NOT NULL AND whats_recusou = 0 AND celular IS NOT NULL AND id NOT IN (SELECT cliente_id FROM convite_whats WHERE modalidade_id = ?)").bind(modalidadeId).all();
   const ops = [];
   for (const c of results) {
     const num = numeroWhats(c.celular); if (!num) continue;
@@ -65,8 +74,8 @@ export async function processarFila(db, env) {
   for (const q of results) {
     if (tentados >= vez) break;
     if (q.mstatus !== 'inscricoes') { await db.prepare("UPDATE convite_whats SET status = 'cancelado', erro = 'inscrições encerradas' WHERE id = ?").bind(q.id).run(); continue; }
-    const rec = await db.prepare('SELECT whats_recusou FROM cliente WHERE id = ?').bind(q.cliente_id).first();
-    if (!rec || rec.whats_recusou) { await db.prepare("UPDATE convite_whats SET status = 'cancelado', erro = 'cliente não quer receber' WHERE id = ?").bind(q.id).run(); continue; }
+    const rec = await db.prepare('SELECT whats_recusou, whats_aceite_em FROM cliente WHERE id = ?').bind(q.cliente_id).first();
+    if (!rec || rec.whats_recusou || !rec.whats_aceite_em) { await db.prepare("UPDATE convite_whats SET status = 'cancelado', erro = 'cliente não quer receber' WHERE id = ?").bind(q.id).run(); continue; }
     tentados++;
     const r = await enviarTexto(env, q.celular, q.texto);
     if (r.ok) { enviados++; await db.prepare("UPDATE convite_whats SET status = 'enviado', enviado_em = datetime('now'), erro = NULL WHERE id = ?").bind(q.id).run(); continue; }
@@ -81,10 +90,11 @@ export async function processarFila(db, env) {
 export async function estadoWhats(db, env) {
   const cfg = await ajustes(db);
   const cont = Object.fromEntries((await db.prepare('SELECT status, COUNT(*) AS n FROM convite_whats GROUP BY status').all()).results.map((x) => [x.status, x.n]));
-  const aud = (await db.prepare("SELECT COUNT(*) AS n FROM cliente WHERE ativo = 1 AND whats_recusou = 0 AND celular IS NOT NULL").first()).n;
+  const aud = (await db.prepare("SELECT COUNT(*) AS n FROM cliente WHERE ativo = 1 AND whats_aceite_em IS NOT NULL AND whats_recusou = 0 AND celular IS NOT NULL").first()).n;
+  const sem = (await db.prepare("SELECT COUNT(*) AS n FROM cliente WHERE ativo = 1 AND whats_aceite_em IS NULL AND celular IS NOT NULL").first()).n;
   const hoje = (await db.prepare("SELECT COUNT(*) AS n FROM convite_whats WHERE status = 'enviado' AND date(enviado_em, '-3 hours') = date('now', '-3 hours')").first()).n;
   return { configurado: configurado(env), ativo: cfg.whats_ativo === 'sim', auto: cfg.whats_auto_convite !== 'nao', por_minuto: Number(cfg.whats_por_minuto), max_dia: Number(cfg.whats_max_dia),
-    audiencia: aud, fila: cont.fila ?? 0, enviados: cont.enviado ?? 0, erros: cont.erro ?? 0, enviados_hoje: hoje, ultimo_erro: cfg.whats_ultimo_erro || null };
+    audiencia: aud, sem_consentimento: sem, fila: cont.fila ?? 0, enviados: cont.enviado ?? 0, erros: cont.erro ?? 0, enviados_hoje: hoje, ultimo_erro: cfg.whats_ultimo_erro || null };
 }
 
 export async function salvarConfigWhats(db, env, c) {

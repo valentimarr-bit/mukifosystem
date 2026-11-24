@@ -7,7 +7,7 @@ import { lerPix } from './cliente.js';
 import { modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
-import { enfileirar, estadoWhats, salvarConfigWhats, numeroWhats } from './whatsapp.js';
+import { enfileirar, estadoWhats, salvarConfigWhats, numeroWhats, registrarConsentimento } from './whatsapp.js';
 import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio } from './dominio/chaves.js';
 
 const VALIDADE_MIN = 30;
@@ -279,8 +279,9 @@ export async function rotearCampeonato(request, env, url) {
   }
   if (m === 'POST' && p === '/api/campeonato/gestao/whats/recusa') {   // cliente pediu no balcão para não receber convites
     const c = await corpoDe(request), num = numeroWhats(c.celular); if (!num) return erro('Informe o celular com DDD.');
-    const u = await db.prepare('UPDATE cliente SET whats_recusou = ? WHERE celular = ? OR celular = ?').bind(c.recusou === false ? 0 : 1, num, num.slice(2)).run();
-    return u?.meta?.changes ? json({ ok: true }) : erro('Nenhum cliente com esse celular.', 404);
+    const cli = await db.prepare('SELECT id, celular FROM cliente WHERE celular = ? OR celular = ?').bind(num, num.slice(2)).first(); if (!cli) return erro('Nenhum cliente com esse celular.', 404);
+    await db.prepare('UPDATE cliente SET whats_recusou = 1 WHERE id = ?').bind(cli.id).run(); await registrarConsentimento(db, cli, false, 'balcao');
+    return json({ ok: true });
   }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/sortear$/))) return sortear(db, r[1]);
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/partidas\/([\w:.-]+)\/placar$/))) return lancarPlacar(db, r[1], await corpoDe(request));

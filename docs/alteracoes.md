@@ -3,6 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-24 — **LGPD no WhatsApp**: só recebe convite quem aceitou (caixa opcional no cadastro e opção em Minha conta), com registro de aceite e revogação.
 - 2026-11-24 — **Campeonato**: convite por WhatsApp automático pela izapia (fila, ritmo, teto por dia e recusa) na mesa do campeonato (`/torneio.html`).
 - 2026-11-24 — **iFood e 99Food**: pedidos das plataformas entram na Produção, baixam estoque e a plataforma é avisada do andamento (`/canais.html`).
 - 2026-11-24 — **Manual do sistema**: botão "📖 Manual" na gestão abre `/manual.html`, gerado de `docs/manual.md` e deste arquivo.
