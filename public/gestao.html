@@ -90,7 +90,7 @@
   }
 </style>
 </head>
-<body>
+<body data-sem-botao-visual>
 <script src="/entrar.js"></script>
 <header>
   <b>MUKIFO</b>
@@ -110,13 +110,12 @@
     <a href="/venda.html" data-modulo="venda" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a><a href="/producao.html" data-modulo="producao" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Produção →</a>
     <button data-aba="conta">Conta</button>
   </nav>
-  <label class="tema">Visual <select id="tema" aria-label="Mudar o visual"></select></label>
 </header>
 <main>
   <section id="estoque">
     <div class="bar">
       <label>Compra de <select id="dia"><option value="segunda">Segunda</option><option value="quinta">Quinta</option></select></label>
-      <input id="busca" placeholder="Buscar item" style="flex:1;min-width:160px">
+      <input id="busca" type="search" autocomplete="off" placeholder="Buscar item" style="flex:1;min-width:160px">
       <label><input type="checkbox" id="soAlerta"> só em alerta</label>
     </div>
     <div id="faixaAlerta" class="faixa-alerta" hidden></div>
@@ -142,7 +141,7 @@
   <section id="planilhas" hidden></section>
 
   <section id="produtos" hidden>
-    <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
+    <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" type="search" autocomplete="off" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
     <div id="pExcel"></div>
     <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
@@ -168,7 +167,7 @@
   <section id="alertas" hidden>
     <p class="mut"><b>Recomendado</b> = quanto você quer ter de cada item. Se deixar em branco, o sistema calcula pelas vendas (automático). A compra recomendada é: recomendado − o que tem.</p>
     <p class="mut">Em <b>Avisar</b>, defina com quantas embalagens (garrafas, latas, kg...) o sistema deve <b>avisar</b>. Quando o estoque chegar nesse número ou menos, o item fica em destaque no Estoque. Deixe em branco para não avisar.</p>
-    <div class="bar"><input id="aBusca" placeholder="Buscar item" style="flex:1;min-width:140px">
+    <div class="bar"><input id="aBusca" type="search" autocomplete="off" placeholder="Buscar item" style="flex:1;min-width:140px">
       <button class="btn prim" id="aSalvar">Salvar</button></div>
     <div id="aMsg"></div>
     <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Auto seg.</th><th class="larga">Auto qui.</th><th>Recomendado segunda</th><th>Recomendado quinta</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
@@ -177,7 +176,7 @@
   <section id="fotos" hidden>
     <div class="bar">
       <label>Fotos de <select id="fTipo"><option value="produtos">Produtos (o que vende)</option><option value="insumos">Insumos (o que compra)</option></select></label>
-      <input id="fBusca" placeholder="Buscar" style="flex:1;min-width:140px">
+      <input id="fBusca" type="search" autocomplete="off" placeholder="Buscar" style="flex:1;min-width:140px">
       <label><input type="checkbox" id="fSo"> só os que faltam</label>
     </div>
     <p class="mut" id="fResumo"></p>
@@ -203,8 +202,12 @@
     <h3 id="contaOla"></h3>
     <p class="mut" id="contaPapel"></p>
 
+    <h3>🎨 Design</h3>
+    <div class="bar"><label>Tema <select id="tema" aria-label="Mudar o visual"></select></label><button class="btn prim" id="abrirVisual" type="button">Editar design (cores, botões, fonte, marca)</button></div>
+    <p class="mut">Vale para este aparelho. O superadmin pode salvar como padrão da casa dentro do editor.</p>
+
     <h3>Trocar minha senha</h3>
-    <div class="bar"><input id="cSenhaAtual" type="password" placeholder="Senha atual" autocomplete="current-password"><input id="cSenhaNova" type="password" placeholder="Senha nova (mín. 6)" autocomplete="new-password"><button class="btn prim" id="cTrocar">Trocar senha</button></div>
+    <div class="bar"><input type="text" autocomplete="username" hidden aria-hidden="true" tabindex="-1"><input id="cSenhaAtual" type="password" placeholder="Senha atual" autocomplete="current-password"><input id="cSenhaNova" type="password" placeholder="Senha nova (mín. 6)" autocomplete="new-password"><button class="btn prim" id="cTrocar">Trocar senha</button></div>
 
     <div id="areaSuper" hidden>
       <h3>Pessoas com acesso</h3>
@@ -590,6 +593,7 @@ async function carregarVenda() {
     <label><input type="checkbox" data-m="${m.id}" data-c="ativa" ${m.ativa ? 'checked' : ''}> ativa</label><label><input type="radio" name="maqPadrao" data-m="${m.id}" data-c="padrao" ${m.padrao ? 'checked' : ''}> padrão</label>
     <button class="btn" data-salvarmaq="${m.id}">Salvar</button></div>`).join('');
 }
+$('#abrirVisual').onclick = () => window.Tema.painel();
 $('#modoTeste').onchange = async (e) => { try { const r = await fetch('/api/teste', { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + window.Mukifo.token() }, body: JSON.stringify({ ativo: e.target.checked }) }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'Erro ' + r.status); msgConta(e.target.checked ? 'Modo teste LIGADO: pagamentos simulados.' : 'Modo teste desligado.'); location.reload(); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#travaEstoque').onchange = async (e) => { try { await chamarConta('/api/venda/trava', { ativa: e.target.checked }, 'PUT'); msgConta(e.target.checked ? 'Trava de estoque ligada.' : 'Trava de estoque desligada: vai vender mesmo sem estoque.'); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#pixSalvar').onclick = async () => { try { await chamarConta('/api/venda/pix', { chave: $('#pixChave').value, nome: $('#pixNome').value, cidade: $('#pixCidade').value }, 'PUT'); msgConta('Pix salvo.'); } catch (e) { msgConta(e.message, 'neg'); } };

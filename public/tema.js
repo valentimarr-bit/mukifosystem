@@ -109,7 +109,7 @@
     if (!d.open) d.showModal();
   }
   function botaoVisual() {
-    if (document.getElementById('mkBtnVisual')) return;
+    if (document.getElementById('mkBtnVisual') || document.body.hasAttribute('data-sem-botao-visual')) return;   // na gestão o editor fica na aba Conta
     const b = document.createElement('button'); b.id = 'mkBtnVisual'; b.type = 'button'; b.textContent = '🎨'; b.setAttribute('aria-label', 'Personalizar o visual');
     b.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:30;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:22px;cursor:pointer;opacity:.85;padding:0;touch-action:manipulation';
     b.onclick = painel; document.body.appendChild(b);
