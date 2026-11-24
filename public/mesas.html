@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icone.svg">
+<title>Mukifo · Mesas e fila da sinuca</title><script src="/tema.js"></script>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+header{background:var(--hdr);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px;flex:1}
+header a,.nav button{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;font:inherit;font-size:15px;cursor:pointer}
+.nav{display:flex;gap:8px;padding:10px 12px;max-width:760px;margin:0 auto}.nav button{flex:1;justify-content:center}.nav button[aria-pressed=true]{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
+main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2,.card h3{margin:0 0 6px}.mut{color:var(--mut);font-size:14px}.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;background:var(--input);border:1px solid var(--line);margin-right:6px}
+.btn{width:100%;min-height:54px;border-radius:14px;border:0;font-size:18px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}.btn.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px}.btn:disabled{opacity:.5}
+.mod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}.mod:first-of-type{border-top:0}.mod b{font-size:19px}
+.chave{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}.rod{min-width:210px;display:flex;flex-direction:column;justify-content:space-around;gap:10px;scroll-snap-align:start}.rod>h4{margin:0;text-align:center;color:var(--mut);font-size:14px;letter-spacing:.05em}
+.jg{background:var(--input);border:1px solid var(--line);border-radius:12px;overflow:hidden}.jg.vivo{border-color:var(--warn,#ffb347);box-shadow:0 0 0 2px var(--warn,#ffb347)}.jg .l{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;font-size:16px}.jg .l+.l{border-top:1px solid var(--line)}.jg .l.v{font-weight:800;color:var(--ok)}.jg .l.vazio{color:var(--mut);font-style:italic}.jg .m{font-size:12px;color:var(--mut);padding:0 10px 6px}
+.pos{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.pos:first-of-type{border-top:0}.pos .n{width:34px;font-weight:800;text-align:center}.pos .p{flex:1;min-width:0;overflow-wrap:anywhere}.pos .pt{font-weight:800}
+select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
+.erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
+.big{font-size:46px;font-weight:900;text-align:center;margin:6px 0}.mesa{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:10px 0}.mesa:first-of-type{border-top:0}.st{border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:var(--input);border:1px solid var(--line)}.st.livre{color:var(--ok,#3ddc84)}.st.ocupada,.st.liberando{color:var(--warn,#ffb347)}.st.chamando{color:var(--acc)}.btn.pq{min-height:44px;font-size:16px;width:auto;padding:0 16px;margin:0}.btn.ruim{background:var(--bad,#e5484d);color:#fff}</style></head><body data-sem-botao-visual>
+<header><h1>🎱 Mesas e fila</h1><a href="/torneio.html">Campeonato</a><a href="/gestao.html">Gestão</a></header>
+<main id="m" style="padding-top:12px"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
+<script src="/entrar.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const G = '/api/sinuca/gestao'; let token = Mukifo.token(), d = null;
+async function api(url, corpo) {
+  const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); throw new Error(j.erro || 'Entre de novo'); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
+const ROT = { livre: 'Livre', chamando: 'Chamando', ocupada: 'Em jogo', liberando: 'Terminando…' }, FILA = { esperando: 'esperando', chamado: 'chamado', jogando: 'jogando' };
+function desenhar() {
+  const c = d.config;
+  const cfg = `<div class="card"><h3>Localização do bar</h3><div class="mut">${c.lat != null ? `Marcada (raio de ${c.raio_m} m).` : '<b class="erro">Ainda não marcada: a fila não abre para clientes.</b>'} Fique dentro do bar, no meio do salão, e toque no botão.</div>
+    <label class="mut">Raio permitido (metros)</label><input id="raio" type="number" inputmode="numeric" min="30" max="1000" value="${c.raio_m}"><label class="mut">Minutos para o chamado chegar na mesa</label><input id="chg" type="number" inputmode="numeric" min="1" max="30" value="${c.chegada_min}">
+    <button class="btn" data-a="local">📍 Usar minha localização como a do bar</button><button class="btn sec" data-a="ativa">${c.ativa ? 'Desligar a fila' : 'Ligar a fila'}</button></div>`;
+  const mesas = `<div class="card"><h3>Mesas</h3>${d.mesas.map((m) => `<div class="mesa"><div><b>${esc(m.nome)}</b> <span class="st ${m.status}">${ROT[m.status]}</span>${m.ativa ? '' : ' <span class="chip">desativada</span>'}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${m.status !== 'livre' ? `<button class="btn sec pq" data-a="liberar" data-id="${esc(m.id)}">Liberar</button>` : ''}<button class="btn sec pq" data-a="ativar" data-id="${esc(m.id)}" data-v="${m.ativa ? 0 : 1}">${m.ativa ? 'Desativar' : 'Ativar'}</button></div></div>`).join('') || '<div class="mut">Nenhuma mesa.</div>'}
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="nm" maxlength="30" placeholder="Nova mesa (ex.: Mesa 2)"><button class="btn pq" data-a="mesa">Criar</button></div></div>`;
+  const fila = `<div class="card"><h3>Fila e quem está jogando (${d.fila.length})</h3>${d.fila.map((f) => `<div class="pos"><span class="p">${esc(f.nome)}<div class="mut">${FILA[f.status]}${f.dist_m != null ? ` · entrou a ${Math.round(f.dist_m)} m` : ''}${f.pontos != null ? ` · conduta ${f.pontos}` : ''}</div></span>${f.status !== 'jogando' ? `<button class="btn sec pq" data-a="remover" data-id="${esc(f.id)}">Remover</button>` : ''}<button class="btn sec pq" data-a="penal" data-id="${esc(f.cliente_id)}">Penalizar</button></div>`).join('') || '<div class="mut">Ninguém na fila.</div>'}</div>`;
+  const ruins = `<div class="card"><h3>Conduta (quem perdeu pontos)</h3>${d.conduta.map((x) => `<div class="pos"><span class="p">${esc(x.nome)}<div class="mut">${x.pontos} pontos · ${x.bloqueios} bloqueio(s)${x.bloqueado_ate ? ' · bloqueado até ' + esc(x.bloqueado_ate) + ' (UTC)' : ''}</div></span><button class="btn sec pq" data-a="perdoar" data-id="${esc(x.cliente_id)}">Perdoar</button></div>`).join('') || '<div class="mut">Todo mundo com conduta ótima.</div>'}</div>`;
+  const foco = document.activeElement; if (foco?.matches?.('input') && foco.value && foco.id === 'nm') return;
+  $('#m').innerHTML = cfg + mesas + fila + ruins;
+}
+async function carregar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); try { d = await api(G); desenhar(); } catch (e) { if (!d) $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
+const pos = () => new Promise((ok, no) => navigator.geolocation ? navigator.geolocation.getCurrentPosition((p) => ok(p.coords), () => no(new Error('Permita a localização.')), { enableHighAccuracy: true, timeout: 20000 }) : no(new Error('Sem localização neste aparelho.')));
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a, id = t.dataset.id; t.disabled = true;
+  try {
+    if (a === 'local') { aviso('Pegando a localização…'); const p = await pos(); if (p.accuracy > 60 && !confirm(`O GPS está com erro de ${Math.round(p.accuracy)} m. Marcar mesmo assim?`)) { t.disabled = false; return; } await api(`${G}/local`, { lat: p.latitude, lng: p.longitude, raio_m: Number($('#raio').value), chegada_min: Number($('#chg').value) }); aviso('Localização do bar salva ✅'); }
+    else if (a === 'ativa') await api(`${G}/local`, { lat: d.config.lat ?? 0, lng: d.config.lng ?? 0, ativa: !d.config.ativa });
+    else if (a === 'mesa') { await api(`${G}/mesas`, { nome: $('#nm').value }); }
+    else if (a === 'liberar') { if (!confirm('Liberar essa mesa agora?')) { t.disabled = false; return; } await api(`${G}/mesas/${id}/liberar`, {}); }
+    else if (a === 'ativar') await fetch(`${G}/mesas/${id}`, { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: JSON.stringify({ ativa: t.dataset.v === '1' }) });
+    else if (a === 'remover') { if (!confirm('Tirar da fila?')) { t.disabled = false; return; } await api(`${G}/fila/${id}/remover`, {}); }
+    else if (a === 'penal') { const p = prompt('Quantos pontos tirar? (1 a 100)', '15'); if (!p) { t.disabled = false; return; } const m = prompt('Motivo:', ''); await api(`${G}/clientes/${id}/penalizar`, { pontos: Number(p), motivo: m || '' }); aviso('Penalidade aplicada.'); }
+    else if (a === 'perdoar') { await api(`${G}/clientes/${id}/perdoar`, { motivo: 'perdoado pela equipe' }); aviso('Conduta restaurada.'); }
+  } catch (er) { aviso(er.message); }
+  t.disabled = false; carregar();
+});
+setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input')) carregar(); }, 5000);
+carregar();
+</script></body></html>

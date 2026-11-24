@@ -32,7 +32,7 @@ export function moduloDaRota(p) {
   if (p.startsWith('/api/venda/')) return 'venda';
   if (p.startsWith('/api/producao')) return 'producao';
   if (p.startsWith('/api/pagamentos/') && !p.startsWith('/api/pagamentos/aviso/')) return 'financeiro';
-  if (p.startsWith('/api/campeonato/gestao')) return 'campeonato';
+  if (p.startsWith('/api/campeonato/gestao') || p.startsWith('/api/sinuca/gestao')) return 'campeonato';
   if (p.startsWith('/api/clientes')) return 'clientes';
   if (p.startsWith('/api/fornecedores')) return 'fornecedores';
   if (p.startsWith('/api/planilhas')) return 'excel';

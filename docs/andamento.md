@@ -216,3 +216,13 @@ Atualize no fim de cada sessão. Mais recente em cima.
 ## Lista de compras pelo estoque
 - Novo modo `dia = 'estoque'` em `calcularLista` (`/api/lista-compras?dia=estoque`, `POST /api/listas {dia:'estoque'}`): entra o item que acabou, que está no nível de alerta ou que não cobre nem até a próxima compra (recomendado de segunda); a quantidade leva até o maior recomendado (o de quinta). Independe do dia da semana. Lista guardada com `dia_compra = 'estoque'`.
 - Botão "📦 Gerar pelo estoque" no app `/compras` (tela vazia e janela de gerar) e na lista da gestão. `sw.js` do compras no v5.
+
+## Fila da sinuca (mesas, chamada e conduta)
+- **Quem usa:** só cliente com cadastro (login do app). Página `/sinuca.html` (atalho 🎱 no app do cliente e no campeonato); equipe usa `/mesas.html` (módulo `campeonato`; atalho "Mesas e fila" na mesa do campeonato).
+- **Fluxo:** cliente entra na fila (nome + localização) → quando uma mesa libera, o primeiro é **chamado** (push se houver VAPID; senão o app confere a cada 5 s, vibra e mostra aviso) → tem `chegada_min` (5) para tocar "Cheguei" → joga → "Terminei" libera e chama o próximo.
+- **"Outro cliente avisa que terminou":** o próprio jogador libera na hora. Qualquer outro cliente (no bar) abre uma janela de 60 s; o jogador pode contestar ("Ainda jogando"); sem contestação a mesa libera. Dois clientes diferentes confirmando liberam na hora. Contestado = aviso falso (−25 pontos) e o autor perde o direito de avisar por 24 h enquanto estiver com menos de 80 pontos.
+- **Localização:** entrar, "Cheguei" e avisar "terminou" exigem GPS dentro do raio do bar (padrão 120 m, precisão ≤150 m). A equipe marca o ponto do bar pelo celular em `/mesas.html` ("Usar minha localização como a do bar"). Sem ponto marcado a fila não abre (exceto modo teste). 3 tentativas de longe em 1 h = −10 pontos. A posição não é guardada, só a distância na entrada.
+- **Conduta (começa em 100):** não apareceu −15; desistiu depois de chamado −10; aviso falso −25; terminou jogo +2; aviso confirmado +3. Com ≤60 pontos: bloqueio de 24 h e volta a 70 (3º bloqueio = 7 dias). Cliente vê só o nível (Ótima/Boa/Atenção/Bloqueado); equipe vê pontos, pode penalizar, perdoar e remover da fila.
+- **Limites:** uma vaga por pessoa (índice único), fila de até 30, 5 entradas por hora por cliente.
+- **Técnico:** migração `0024_sinuca`; `src/sinuca.js`; avanço por tempo é "preguiçoso" (roda a cada consulta, sem cron). Testes em `test/sinuca.test.js`.
+- **Pendente:** definir a localização do bar em produção; push do "é a sua vez" depende dos segredos VAPID; vincular cliente de balcão à fila.
