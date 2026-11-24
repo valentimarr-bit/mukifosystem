@@ -57,6 +57,10 @@
   #dlgProduto input:not([type=checkbox]), #dlgProduto select { width:100%; }
   #dlgProduto .lfi { display:grid; grid-template-columns:1fr 84px 38px 42px; gap:6px; align-items:center; margin-bottom:6px; }
   #dlgProduto .acoes { display:flex; gap:8px; margin-top:14px; } #dlgProduto .acoes .btn { flex:1; }
+  .faixa-alerta { background:var(--aviso-bg); color:var(--aviso-txt); border-radius:10px; padding:10px 14px; margin-bottom:12px; }
+  tr.em-alerta td:first-child { box-shadow:inset 4px 0 0 var(--bad); }
+  .selo-alerta { color:var(--bad); font-weight:600; font-size:13px; }
+  #tbAlertas input { width:90px; text-align:center; }
   #cupom { display:none; }
   @media print {
     body { background:#fff; color:#000; } header, main > *:not(#cupom) { display:none !important; }
@@ -72,6 +76,7 @@
     <button data-aba="estoque" aria-pressed="true">Estoque</button>
     <button data-aba="lista">Lista de compras</button>
     <button data-aba="produtos">Produtos e lucro</button>
+    <button data-aba="alertas">Alertas</button>
     <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
     <button data-aba="conta">Conta</button>
@@ -83,7 +88,9 @@
     <div class="bar">
       <label>Compra de <select id="dia"><option value="segunda">Segunda</option><option value="quinta">Quinta</option></select></label>
       <input id="busca" placeholder="Buscar item" style="flex:1;min-width:160px">
+      <label><input type="checkbox" id="soAlerta"> só em alerta</label>
     </div>
+    <div id="faixaAlerta" class="faixa-alerta" hidden></div>
     <table><thead><tr><th>Item</th><th>Tem</th><th>Mínimo</th><th>Comprar</th><th>Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
   </section>
 
@@ -100,6 +107,14 @@
     <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
     <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
+  </section>
+
+  <section id="alertas" hidden>
+    <p class="mut">Defina, para cada item, com quantas embalagens (garrafas, latas, kg...) o sistema deve <b>avisar</b>. Quando o estoque chegar nesse número ou menos, o item fica em destaque no Estoque. Deixe em branco para não avisar.</p>
+    <div class="bar"><input id="aBusca" placeholder="Buscar item" style="flex:1;min-width:140px">
+      <button class="btn prim" id="aSalvar">Salvar alertas</button></div>
+    <div id="aMsg"></div>
+    <table><thead><tr><th>Item</th><th>Tem</th><th class="larga">Mínimo automático</th><th>Avisar quando tiver</th></tr></thead><tbody id="tbAlertas"></tbody></table>
   </section>
 
   <section id="fotos" hidden>
@@ -191,6 +206,7 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   if (b.dataset.aba === 'produtos') carregarProdutos();
   if (b.dataset.aba === 'conta') carregarConta();
   if (b.dataset.aba === 'fotos') carregarFotos();
+  if (b.dataset.aba === 'alertas') desenharAlertas();
 }));
 
 async function api(caminho, corpo) {
@@ -211,15 +227,19 @@ async function carregarEstoque() {
   } catch (e) { $('#tbEstoque').innerHTML = `<tr><td colspan="5" class="neg">${esc(e.message)}</td></tr>`; }
 }
 function desenharEstoque() {
-  const b = $('#busca').value.toLowerCase(), dia = $('#dia').value;
-  $('#tbEstoque').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(b)).map((i) => `
-    <tr><td><div class="linha-foto">${Fotos.miniatura('insumos', i.insumo_id, 40)}<div>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></div></div></td>
+  const b = $('#busca').value.toLowerCase(), dia = $('#dia').value, so = $('#soAlerta').checked;
+  const emAlerta = estoque.filter((i) => i.alerta);
+  $('#faixaAlerta').hidden = !emAlerta.length;
+  $('#faixaAlerta').innerHTML = emAlerta.length ? `⚠ <b>${emAlerta.length} ${emAlerta.length === 1 ? 'item em alerta' : 'itens em alerta'}</b>: ${emAlerta.slice(0, 6).map((i) => esc(i.insumo)).join(', ')}${emAlerta.length > 6 ? '…' : ''}` : '';
+  $('#tbEstoque').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(b) && (!so || i.alerta)).map((i) => `
+    <tr class="${i.alerta ? 'em-alerta' : ''}"><td><div class="linha-foto">${Fotos.miniatura('insumos', i.insumo_id, 40)}<div>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}${i.minimo_alerta != null ? ` · avisa em ${fmt(i.minimo_alerta, 2)}` : ''}</div></div></div></td>
     <td>${fmt(i.atual, 2)}</td><td>${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
     <td><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
-    <td class="${i.situacao.split(' ')[0]}">${esc(i.situacao)}</td></tr>`).join('');
+    <td class="${i.situacao.split(' ')[0]}">${esc(i.situacao)}${i.alerta ? '<div class="selo-alerta">⚠ em alerta</div>' : ''}</td></tr>`).join('');
 }
 $('#dia').addEventListener('change', () => { carregarEstoque(); lista = null; });
 $('#busca').addEventListener('input', desenharEstoque);
+$('#soAlerta').addEventListener('change', desenharEstoque);
 
 async function carregarLista() {
   lista = await api('/api/lista-compras?dia=' + $('#dia').value);
@@ -438,6 +458,39 @@ $('#fotoRemover').addEventListener('click', async () => {
   catch (e) { $('#fotoMsg').textContent = e.message; }
 });
 $('#fotoFechar').addEventListener('click', () => $('#dlgFoto').close());
+
+// ---- alertas de estoque ----
+function desenharAlertas() {
+  const q = $('#aBusca').value.toLowerCase(), dia = $('#dia').value;
+  $('#tbAlertas').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(q)).map((i) => `
+    <tr class="${i.alerta ? 'em-alerta' : ''}"><td>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}</div></td>
+    <td>${fmt(i.atual, 2)}</td><td class="larga">${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
+    <td><input inputmode="decimal" data-alerta="${i.insumo_id}" data-orig="${i.minimo_alerta ?? ''}" value="${i.minimo_alerta == null ? '' : String(i.minimo_alerta).replace('.', ',')}" placeholder="—"></td></tr>`).join('');
+}
+$('#aBusca').addEventListener('input', () => { guardarAlertasDigitados(); desenharAlertas(); reaplicarDigitados(); });
+let digitados = new Map();
+function guardarAlertasDigitados() { document.querySelectorAll('#tbAlertas input').forEach((el) => digitados.set(el.dataset.alerta, el.value)); }
+function reaplicarDigitados() { document.querySelectorAll('#tbAlertas input').forEach((el) => { if (digitados.has(el.dataset.alerta)) el.value = digitados.get(el.dataset.alerta); }); }
+$('#aSalvar').addEventListener('click', async () => {
+  guardarAlertasDigitados();
+  const itens = [];
+  for (const [id, txt] of digitados) {
+    const it = estoque.find((x) => String(x.insumo_id) === id); if (!it) continue;
+    const novo = txt.trim() === '' ? null : Number(txt.trim().replace(/\./g, '').replace(',', '.'));
+    if (novo !== null && (!Number.isFinite(novo) || novo < 0)) return ($('#aMsg').innerHTML = `<p class="neg">Número inválido em “${esc(it.insumo)}”.</p>`);
+    if ((it.minimo_alerta ?? null) !== novo) itens.push({ insumo_id: it.insumo_id, minimo_alerta: novo });
+  }
+  if (!itens.length) return ($('#aMsg').innerHTML = '<p class="mut">Nada mudou.</p>');
+  try {
+    const r = await fetch('/api/alertas', { method: 'PUT', body: JSON.stringify({ itens }), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { Mukifo.pedir(() => {}); throw new Error('Entre com seu nome e senha.'); }
+    if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+    digitados = new Map();
+    await carregarEstoque(); desenharAlertas();
+    $('#aMsg').innerHTML = `<p class="pos">${j.salvos} alerta(s) salvo(s) ✓</p>`;
+  } catch (e) { $('#aMsg').innerHTML = `<p class="neg">${esc(e.message)}</p>`; }
+});
 
 if (Mukifo.token()) carregarEstoque(); else Mukifo.pedir(carregarEstoque);
 </script>

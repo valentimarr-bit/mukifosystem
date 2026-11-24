@@ -8,7 +8,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../seed/seed.sql')]),
+  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../migrations/0005_alerta_estoque.sql'), arq('../seed/seed.sql')]),
   ADMIN_TOKEN: 'segredo-teste',
   ASSETS: { fetch: () => new Response('estatico') },
 };
@@ -112,4 +112,29 @@ test('lista no celular: gerar, marcar, ajustar, adicionar esquecido, finalizar �
   assert.ok(prod.length);
   r = await post(`/api/listas/${lista.id}/itens/${limao.id}`, { comprado: false }, undefined, 'PATCH');
   assert.equal(r.status, 409, 'lista finalizada não muda');
+});
+
+test('alertas de estoque: define o nível, marca o item em alerta e limpa', async () => {
+  const antes = await chamar('/api/estoque?dia=quinta');
+  const item = antes.corpo.itens[0];
+  assert.equal(item.alerta, false);
+  assert.equal(item.minimo_alerta, null);
+
+  assert.equal((await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: 3 }] }, 'token-errado', 'PUT')).status, 401);
+  assert.equal((await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: -1 }] }, 'segredo-teste', 'PUT')).status, 400);
+  assert.equal((await post('/api/alertas', { itens: [] }, 'segredo-teste', 'PUT')).status, 400);
+
+  assert.equal((await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: 3 }] }, 'segredo-teste', 'PUT')).status, 200);
+  const depois = (await chamar('/api/estoque?dia=quinta')).corpo.itens.find((i) => i.insumo_id === item.insumo_id);
+  assert.equal(depois.minimo_alerta, 3);
+  assert.equal(depois.alerta, depois.atual <= 3);
+
+  await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: 1e9 }] }, 'segredo-teste', 'PUT');
+  assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((i) => i.insumo_id === item.insumo_id).alerta, true);
+  await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: 0 }] }, 'segredo-teste', 'PUT');
+  const zero = (await chamar('/api/estoque?dia=quinta')).corpo.itens.find((i) => i.insumo_id === item.insumo_id);
+  assert.equal(zero.alerta, zero.atual <= 0);
+
+  await post('/api/alertas', { itens: [{ insumo_id: item.insumo_id, minimo_alerta: null }] }, 'segredo-teste', 'PUT');
+  assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((i) => i.insumo_id === item.insumo_id).alerta, false);
 });

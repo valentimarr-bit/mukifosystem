@@ -76,6 +76,7 @@ async function getEstoque(db, url) {
       const i = porNome.get(l.insumo);
       return {
         insumo_id: i.id, insumo: l.insumo, tipo: i.tipo, embalagem: i.embalagem, atual: r2(l.atual),
+        minimo_alerta: i.minimo_alerta ?? null, alerta: i.minimo_alerta != null && r2(l.atual) <= i.minimo_alerta,
         minimo_segunda: l.minimo_segunda, minimo_quinta: l.minimo_quinta, sugestao: l.sugestao, situacao: l.situacao,
         fornecedor: i.fornecedor, producao_propria: i.producao_propria,
       };
@@ -330,6 +331,23 @@ async function finalizarLista(db, id, body) {
   return json({ ok: true, compras, faltaram });
 }
 
+/** PUT /api/alertas { itens: [{ insumo_id, minimo_alerta }] } — define (ou limpa, com null) o nível de alerta de cada item. */
+async function putAlertas(db, body) {
+  const itens = Array.isArray(body?.itens) ? body.itens : null;
+  if (!itens?.length) return erro('Nenhum item para salvar.');
+  const stmts = [];
+  for (const it of itens) {
+    const id = Number(it.insumo_id);
+    let v = it.minimo_alerta;
+    if (v === '' || v === undefined) v = null;
+    if (v !== null) { v = Number(v); if (!Number.isFinite(v) || v < 0) return erro('O nível de alerta precisa ser um número maior ou igual a zero.'); }
+    if (!Number.isInteger(id)) return erro('Item inválido.');
+    stmts.push(db.prepare('UPDATE insumo SET minimo_alerta = ? WHERE id = ?').bind(v, id));
+  }
+  await db.batch(stmts);
+  return json({ ok: true, salvos: stmts.length });
+}
+
 // ---------------- roteador ----------------
 
 export async function rotearApi(request, env, url) {
@@ -359,6 +377,11 @@ export async function rotearApi(request, env, url) {
     if (m === 'PATCH' && (k = p.match(/^\/api\/listas\/(\d+)\/itens\/(\d+)$/))) return patchItemLista(db, Number(k[1]), Number(k[2]), body);
     if (m === 'POST' && (k = p.match(/^\/api\/listas\/(\d+)\/finalizar$/))) return finalizarLista(db, Number(k[1]), body);
     return null;
+  }
+  if (m === 'PUT' && p === '/api/alertas') {
+    if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
+    let body; try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
+    return putAlertas(db, body);
   }
   if (m === 'POST' && ['/api/vendas/relatorio', '/api/contagem', '/api/compras'].includes(p)) {
     if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
