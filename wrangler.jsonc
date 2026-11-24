@@ -2,7 +2,7 @@
   // Configuração do Cloudflare Workers para o sistema do Mukifo.
   // Documentação: https://developers.cloudflare.com/workers/wrangler/configuration/
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mukifo",
+  "name": "mukifosystem",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },

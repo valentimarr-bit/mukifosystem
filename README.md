@@ -12,10 +12,10 @@ npm run dev          # abre em http://localhost:8787
 ## Publicar na Cloudflare (só pelo site, sem terminal)
 1. Em [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Import a repository** → escolha `mukifosystem` → **Deploy**.
    O banco D1 `mukifo` é criado sozinho no deploy; as tabelas e os dados da planilha entram no primeiro acesso.
-2. No Worker `mukifo` → **Settings** → **Variables and Secrets** → **Add**, tipo **Secret**:
+2. No Worker `mukifosystem` → **Settings** → **Variables and Secrets** → **Add**, tipo **Secret**:
    - `CODIGO_PRIMEIRO_ACESSO` — um código só seu (obrigatório: sem ele ninguém consegue o primeiro acesso).
    - `ADMIN_TOKEN` — chave de emergência (opcional; serve se todos esquecerem a senha).
-3. Abra `https://mukifo.<seu-subdominio>.workers.dev/gestao.html`, digite nome, senha e o código: **você vira o superadmin**.
+3. Abra `https://mukifosystem.<seu-subdominio>.workers.dev/gestao.html`, digite nome, senha e o código: **você vira o superadmin**.
    Na aba **Conta** dá para trocar a senha, adicionar gerentes e passar o cargo de superadmin.
 
 Depois disso, todo push na `main` publica sozinho.
