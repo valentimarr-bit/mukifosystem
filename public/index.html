@@ -17,6 +17,7 @@
     main { max-width: 420px; width: 100%; text-align: center; }
     h1 { font-size: 44px; letter-spacing: .06em; margin: 0 0 4px; }
     p { color: var(--mut); margin: 0 0 24px; }
+    .menu { display:grid; gap:12px; margin:24px 0; } .grande { display:flex; align-items:center; justify-content:center; min-height:68px; border-radius:16px; background:var(--acc); color:var(--on-acc); font-size:22px; font-weight:700; text-decoration:none; } .grande:active { transform:scale(.97); }
     .status { font-size: 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; }
     .ok { color: var(--ok); border-color: var(--ok-bd); }
     .erro { color: var(--bad); border-color: var(--bad-bd); }
@@ -27,10 +28,12 @@
     <h1>MUKIFO</h1>
     <p>Sistema do bar — em construção</p>
     <div id="status" class="status">Verificando o servidor…</div>
-    <p style="margin-top:24px"><a href="/compras/" style="color:var(--acc);font-size:20px">Lista de compras (celular) →</a></p>
-    <p style="margin-top:24px"><a href="/venda.html" style="color:var(--acc);font-size:20px">Venda (balcão) →</a></p>
-    <p><a href="/cliente.html" style="color:var(--acc);font-size:20px">Pedido do cliente (celular) →</a></p>
-    <p><a href="/gestao.html" style="color:var(--acc);font-size:20px">Gestão →</a></p>
+    <nav class="menu">
+      <a class="grande" href="/venda.html">🍸 Venda (balcão)</a>
+      <a class="grande" href="/cliente.html">📱 Pedido do cliente</a>
+      <a class="grande" href="/compras/">🛒 Lista de compras</a>
+      <a class="grande" href="/gestao.html">📊 Gestão</a>
+    </nav>
   </main>
   <script>
     fetch("/api/saude")

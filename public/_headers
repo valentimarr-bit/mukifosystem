@@ -1,0 +1,6 @@
+/qrcode.js
+  Cache-Control: public, max-age=86400
+/fotos.js
+  Cache-Control: public, max-age=300
+/tema.js
+  Cache-Control: public, max-age=300

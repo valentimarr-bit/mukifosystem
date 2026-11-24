@@ -60,10 +60,13 @@ async function criarPedido(db, request, corpo) {
     if (!Number.isInteger(id) || !Number.isInteger(q) || q < 1 || q > MAX_QTD) return erro('Quantidade inválida.');
     agregado.set(id, (agregado.get(id) ?? 0) + q);
   }
+  const ids = [...agregado.keys()];
+  const { results: achados } = await db.prepare(`SELECT id, nome, preco_venda FROM produto WHERE ativo = 1 AND id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all();
+  const porId = new Map(achados.map((p) => [p.id, p]));
   const itens = [];
   for (const [id, q] of agregado) {
     if (q > MAX_QTD) return erro('Quantidade inválida.');
-    const p = await db.prepare('SELECT id, nome, preco_venda FROM produto WHERE id = ? AND ativo = 1').bind(id).first();
+    const p = porId.get(id);
     if (!p || p.preco_venda == null) return erro('Um dos itens não está mais disponível.', 409);
     itens.push({ ...p, q });   // o preço vem SEMPRE do servidor, nunca do aparelho do cliente
   }

@@ -99,3 +99,11 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Aba **Desempenho** na gestão (`GET /api/desempenho?de=&ate=`, exige login): faturamento, vendas, ticket médio, itens por venda, lucro bruto estimado e margem (pela ficha técnica), perdas/diferenças de contagem, compras, estoque esgotado/em alerta; comparação com o período anterior; faturamento por dia, horário de pico, média por dia da semana, mais vendidos, quem mais dá lucro, margem baixa, categorias, formas de pagamento, por maquininha, origem da venda, vendidos sem ficha e um bloco "O que olhar".
 - Relatório importado (1 linha por dia) soma no faturamento, mas não conta em nº de vendas, ticket nem horário.
 - Próximos indicadores sugeridos: CMV real (consumo contado ÷ faturamento), giro/cobertura de estoque em dias, ruptura (horas com item esgotado), tempo de atendimento, cortesias/descontos, ranking por operador, previsão de demanda por dia/clima, fechamento de caixa por turno.
+
+## Botões grandes e otimização
+- Toda a interface com alvos de toque ≥ 48 px e fonte 16 px (gestão, venda, cliente, compras, início com botões grandes).
+- Banco: índices novos (migração 0011) para pedidos, itens, cobranças, movimentos, fichas, combos.
+- Cardápio público com cache de 5 s (alivia o D1 quando muitos clientes abrem); a trava de estoque continua conferida no servidor a cada item. Tela do balcão ignora o cache.
+- Criação de pedido do app: 1 consulta para todos os produtos (antes 1 por item). `public/_headers` com cache para scripts estáveis.
+- Fotos já saem com cache de 1 ano (URL leva a versão).
+- Ideias futuras: PWA/offline para o app do cliente e para a venda; compactar fotos no envio em WebP; medir tempos com o plugin backend-performance-review.

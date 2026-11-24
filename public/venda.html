@@ -66,7 +66,7 @@ async function api(url, metodo = 'GET', corpo) {
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
 }
 const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); recarregarCardapio(); } };
-async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; if (cat >= cardapio.length) cat = 0; desenharCardapio(); } catch {} }
+async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; if (cat >= cardapio.length) cat = 0; desenharCardapio(); } catch {} }
 
 function desenharCardapio() {
   $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
@@ -130,7 +130,7 @@ $('#bCam').onclick = tentar(async () => {
   laco(); });
 
 async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); });
-  cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; desenharCardapio();
+  cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();
   try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
 iniciar().catch((e) => msg(e.message, true));
 setInterval(() => { if (token && !$('#dCobrar').open) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);

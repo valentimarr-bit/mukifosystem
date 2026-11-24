@@ -32,6 +32,12 @@
   .neg { color:var(--bad); } .pos { color:var(--ok); }
   .larga { display:table-cell; }
   select, input, textarea, .btn { max-width:100%; }
+  /* alvos de toque grandes (mín. 48 px) e fonte 16 px para o celular não dar zoom */
+  nav button, .btn, select, input:not([type=checkbox]):not([type=radio]), textarea { min-height:48px; font-size:16px; }
+  nav button, .btn { padding:12px 16px; font-weight:600; } nav { display:flex; flex-wrap:wrap; gap:8px; }
+  input[type=checkbox], input[type=radio] { width:24px; height:24px; accent-color:var(--acc); vertical-align:middle; }
+  label.chk, label:has(> input[type=checkbox]), label:has(> input[type=radio]) { display:inline-flex; align-items:center; gap:10px; min-height:48px; }
+  td .btn, td button { min-height:44px; } .btn:active, nav button:active { transform:scale(.97); }
   .dp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr)); gap:10px; margin-bottom:12px; }
   .dp-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; } .dp-v { font-size:24px; font-weight:700; margin:2px 0; word-break:break-word; }
   .dp-lin { display:grid; grid-template-columns:minmax(80px,38%) 1fr auto; gap:8px; align-items:center; margin:5px 0; font-size:14px; } .dp-r { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -81,7 +81,9 @@ async function getCardapio(db) {
     const r = disp.get(p.id);   // quantas dá para vender; só informado quando é pouco (não expõe o estoque todo)
     porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco, restam: r != null && r <= 20 ? r : null });
   }
-  return json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })) });
+  const r = json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })) });
+  r.headers.set('cache-control', 'public, max-age=5, s-maxage=10');   // o cardápio é lido por todo cliente; 5 s alivia o banco (a trava no servidor continua valendo)
+  return r;
 }
 
 async function maquininhasEModo(db) {
