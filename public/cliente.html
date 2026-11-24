@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Peça aqui</title><script src="/tema.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px system-ui,sans-serif;padding-bottom:110px}
+header{background:var(--hdr);padding:14px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:22px}header p{margin:2px 0 0;color:var(--mut);font-size:14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;position:sticky;top:64px;background:var(--bg);z-index:4}.chips button{white-space:nowrap;min-height:46px;padding:0 16px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px}.chips button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
+.lista{padding:0 12px}.p{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px}.p .n{flex:1}.p b{color:var(--acc);font-size:18px}
+.q{display:flex;align-items:center;gap:8px}.q button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--input);color:var(--txt);font-size:24px}.q span{min-width:22px;text-align:center;font-weight:700}
+.barra{position:fixed;left:0;right:0;bottom:0;background:var(--hdr);padding:12px;border-top:1px solid var(--line)}
+.grande{width:100%;min-height:58px;border-radius:14px;border:0;font-size:19px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer}.grande:disabled{opacity:.5}.grande.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px;min-height:48px;margin-top:8px}
+.tela{padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:4px 0 12px}label{color:var(--mut);font-size:14px}
+.mut{color:var(--mut);font-size:14px}.erro{color:var(--bad);min-height:22px}.bom{color:var(--ok)}.qr{background:#fff;padding:14px;border-radius:14px;display:inline-block}.qr img{display:block;width:min(70vw,280px)}
+.cola{word-break:break-all;font-size:12px;background:var(--input);border-radius:10px;padding:8px;max-height:80px;overflow:auto}.centro{text-align:center}
+</style></head><body>
+<header><h1>🍸 Mukifo</h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></header>
+
+<div id="cardapio"><div class="chips" id="chips"></div><div class="lista" id="lista"></div>
+  <div class="barra"><button class="grande" id="bCarrinho" disabled>Escolha seus itens</button></div></div>
+
+<div id="telaDados" class="tela" hidden>
+  <div class="card"><b>Seu pedido</b><div id="resumo"></div></div>
+  <label>Seu nome</label><input id="nome" autocomplete="name" maxlength="40">
+  <label>Seu celular (com DDD)</label><input id="cel" inputmode="tel" autocomplete="tel" placeholder="(51) 99999-9999">
+  <p class="mut">Usamos só para avisar sobre o pedido. O pedido só entra na fila depois que o Pix for pago, e vale por alguns minutos.</p>
+  <div class="erro" id="erro"></div><button class="grande" id="bPagar">Pagar com Pix</button><button class="grande sec" id="bVoltar">Voltar</button></div>
+
+<div id="telaPix" class="tela centro" hidden>
+  <div class="card"><b>Pedido <span id="pNum"></span></b><p>Pague <b id="pTotal"></b> no Pix:</p>
+    <div class="qr"><img id="qrPix" alt="QR do Pix"></div>
+    <p class="mut">Ou use o Pix copia e cola:</p><div class="cola" id="pCola"></div>
+    <button class="grande sec" id="bCopiar">Copiar código Pix</button>
+    <p class="mut" id="pTempo"></p></div>
+  <p class="mut">Assim que o pagamento chegar, seu QR de retirada aparece aqui. Não feche esta página.</p></div>
+
+<div id="telaQr" class="tela centro" hidden>
+  <div class="card"><h2 class="bom" style="margin-top:0">✔ Pago!</h2><p>Pedido <b id="qNum"></b> · mostre este QR no balcão</p>
+    <div class="qr"><img id="qrRet" alt="QR de retirada"></div>
+    <p class="mut">Vale uma vez só. Não mostre para outras pessoas.</p><div id="qItens" class="mut"></div></div></div>
+
+<div id="telaFim" class="tela centro" hidden><div class="card"><h2 id="fTitulo"></h2><p id="fTexto" class="mut"></p><button class="grande" id="bNovo">Fazer outro pedido</button></div></div>
+
+<script src="/qrcode.js"></script>
+<script>
+const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+const CH = 'mukifo_pedido_app';
+let cardapio = [], cat = 0, cart = new Map(), prods = new Map(), pedido = null, timer = null;
+const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
+const tela = (id) => ['cardapio', 'telaDados', 'telaPix', 'telaQr', 'telaFim'].forEach((t) => $('#' + t).hidden = t !== id);
+const guardar = (p) => { try { p ? localStorage.setItem(CH, JSON.stringify(p)) : localStorage.removeItem(CH); } catch {} };
+
+function desenhar() {
+  $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
+  $('#lista').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<div class="p"><div class="n">${p.nome}<br><b>${R$(p.preco)}</b></div>
+    <div class="q"><button data-id="${p.id}" data-d="-1">−</button><span>${cart.get(p.id) ?? 0}</span><button data-id="${p.id}" data-d="1">+</button></div></div>`).join('');
+  const n = [...cart.values()].reduce((a, b) => a + b, 0), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0);
+  $('#bCarrinho').disabled = !n; $('#bCarrinho').textContent = n ? `Ver pedido · ${n} ${n > 1 ? 'itens' : 'item'} · ${R$(t)}` : 'Escolha seus itens';
+}
+$('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenhar(); } };
+$('#lista').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; const id = +b.dataset.id, q = Math.max(0, Math.min(20, (cart.get(id) ?? 0) + +b.dataset.d)); q ? cart.set(id, q) : cart.delete(id); desenhar(); };
+$('#bCarrinho').onclick = () => { $('#resumo').innerHTML = [...cart].map(([id, q]) => `<div>${q}× ${prods.get(id).nome} — ${R$(q * prods.get(id).preco)}</div>`).join('')
+  + `<h3>Total ${R$([...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0))}</h3>`; $('#erro').textContent = ''; tela('telaDados'); };
+$('#bVoltar').onclick = () => tela('cardapio');
+
+$('#bPagar').onclick = async () => { $('#bPagar').disabled = true; $('#erro').textContent = '';
+  try { const r = await fetch('/api/cliente/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nome: $('#nome').value, celular: $('#cel').value, itens: [...cart].map(([produto_id, quantidade]) => ({ produto_id, quantidade })) }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.erro); pedido = { id: j.id, numero: j.numero, total: j.total, chave: j.chave_qr, pix: j.pix, ate: Date.now() + j.validade_min * 60000 };
+    guardar(pedido); cart.clear(); acompanhar(); } catch (e) { $('#erro').textContent = e.message; } $('#bPagar').disabled = false; };
+
+function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(consultar, 3000); }
+function mostrarPix() { $('#pNum').textContent = pedido.numero; $('#pTotal').textContent = R$(pedido.total); $('#pCola').textContent = pedido.pix; $('#qrPix').src = qrImg(pedido.pix); tela('telaPix'); }
+$('#bCopiar').onclick = async () => { try { await navigator.clipboard.writeText(pedido.pix); $('#bCopiar').textContent = 'Copiado ✓'; } catch { $('#pCola').focus(); } };
+async function consultar() {
+  if (!pedido) return;
+  const r = await fetch('/api/cliente/pedidos/' + pedido.id, { headers: { 'X-Chave-Pedido': pedido.chave } }).catch(() => null); if (!r) return;
+  if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
+  const s = await r.json();
+  if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
+  if (s.pago) { clearInterval(timer); timer = setInterval(consultar, 8000); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
+    $('#qItens').innerHTML = s.itens.map((i) => `${i.quantidade}× ${i.nome}`).join('<br>'); return tela('telaQr'); }
+  if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
+  const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;
+}
+function fim(t, x) { clearInterval(timer); pedido = null; guardar(null); $('#fTitulo').textContent = t; $('#fTexto').textContent = x; tela('telaFim'); }
+$('#bNovo').onclick = () => tela('cardapio');
+
+(async () => {
+  cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); desenhar();
+  try { pedido = JSON.parse(localStorage.getItem(CH) || 'null'); } catch {} if (pedido) acompanhar();
+})();
+</script></body></html>

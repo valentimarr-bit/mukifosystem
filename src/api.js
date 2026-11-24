@@ -2,6 +2,8 @@
 import { usuarioLogado, rotearAuth } from './auth.js';
 import { rotearFotos } from './fotos.js';
 import { rotearProdutos } from './produtos.js';
+import { rotearVenda } from './venda.js';
+import { rotearCliente } from './cliente.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -35,7 +37,7 @@ async function carregarHistorico(db) {
   const [{ results }, { results: fora }] = await Promise.all([
     db.prepare(`SELECT p.dia, ip.nome AS produto, SUM(ip.quantidade) AS quantidade
                 FROM item_pedido ip JOIN pedido p ON p.id = ip.pedido_id
-                WHERE p.status NOT IN ('cancelado', 'aguardando_pagamento')
+                WHERE p.status NOT IN ('cancelado', 'aguardando_pagamento', 'aberta')
                 GROUP BY p.dia, ip.nome ORDER BY p.dia`).all(),
     db.prepare('SELECT dia, motivo FROM dia_fora_da_media').all(),
   ]);
@@ -124,7 +126,7 @@ async function getProdutos(db) {
     const c = cmv(p, porNome, precos);
     const lucro = p.preco_venda != null ? p.preco_venda - c : null;
     return {
-      id: p.id, produto: p.nome, preco_venda: p.preco_venda, cmv: r2(c), lucro: lucro == null ? null : r2(lucro),
+      id: p.id, produto: p.nome, categoria: p.categoria ?? null, preco_venda: p.preco_venda, cmv: r2(c), lucro: lucro == null ? null : r2(lucro),
       lucro_pct: lucro == null || !p.preco_venda ? null : Math.round((lucro / p.preco_venda) * 1000) / 10,
       tem_ficha: p.ficha.length > 0 || !p.baixa_estoque, ficha: p.ficha,
     };
@@ -162,6 +164,8 @@ async function postRelatorio(db, body) {
   const itens = lerRelatorioCSV(body.csv ?? '');
   if (!itens.length) return erro('Não encontrei nenhuma linha de venda no relatório');
   const id = `rel-${body.dia}`;
+  const doBalcao = await db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem IN ('balcao', 'celular') AND dia = ? AND status NOT IN ('cancelado', 'aberta', 'aguardando_pagamento')").bind(body.dia).first();
+  if (doBalcao.n && !body.forcar) return erro(`Esse dia já tem ${doBalcao.n} venda(s) lançadas na tela de venda do Mukifo. Importar o relatório também contaria tudo em dobro no estoque.`, 409);
   if (await db.prepare('SELECT 1 FROM pedido WHERE id = ?').bind(id).first()) return erro(`O relatório de ${body.dia} já foi importado`, 409);
 
   const [insumos, produtos] = await Promise.all([carregarInsumos(db), carregarProdutos(db)]);
@@ -357,6 +361,8 @@ export async function rotearApi(request, env, url) {
   const p = url.pathname;
   if (p.startsWith('/api/auth/') || p === '/api/usuarios') return rotearAuth(request, env, url);
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
+  if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
+  if (p.startsWith('/api/cliente/')) return rotearCliente(request, env, url);
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);

@@ -1,6 +1,7 @@
 // Monta o banco sozinho: aplica migrações pendentes e, se o banco estava vazio, carrega a planilha (seed).
 // Cada etapa roda num lote do D1 (tudo ou nada); a linha em _mukifo_migracao impede rodar duas vezes.
 import { MIGRACOES, SEED } from './sql.js';
+import { categoriaDoProduto } from '../dominio/categorias.js';
 
 const prontos = new WeakMap(); // uma vez por banco em cada instância do Worker
 
@@ -31,6 +32,15 @@ async function executar(db) {
     await lote(db, m.nome, m.comandos);
   }
   if (!feitas.has('seed')) await lote(db, 'seed', SEED);
+
+  // Passo de dados (uma vez): sugere categoria para os produtos que ainda não têm. O gerente ajusta depois.
+  if (!feitas.has('categorias-v1')) {
+    const { results } = await db.prepare('SELECT id, nome FROM produto WHERE categoria IS NULL').all();
+    const upd = results.map((p) => db.prepare('UPDATE produto SET categoria = ? WHERE id = ?').bind(categoriaDoProduto(p.nome), p.id));
+    await db.batch([db.prepare("INSERT INTO _mukifo_migracao (nome) VALUES ('categorias-v1')"), ...upd]).catch(async (e) => {
+      if (!(await db.prepare("SELECT 1 AS ok FROM _mukifo_migracao WHERE nome = 'categorias-v1'").first())) throw e;
+    });
+  }
 }
 
 async function lote(db, nome, comandos) {

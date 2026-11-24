@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<title>Mukifo · Venda</title><script src="/tema.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:17px system-ui,sans-serif}
+header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header h1{font-size:20px;margin:0;flex:1}header a,header select{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;font-size:15px}
+.abas{display:flex;gap:8px;padding:10px 14px}.abas button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px;font-weight:600}
+.abas button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+main{display:grid;grid-template-columns:1fr 380px;gap:12px;padding:0 14px 90px}@media(max-width:900px){main{grid-template-columns:1fr}}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}.chips button{white-space:nowrap;min-height:48px;padding:0 16px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px}
+.chips button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.prod{min-height:104px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);padding:10px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;font-size:16px;cursor:pointer}
+.prod:active{transform:scale(.97)}.prod b{font-size:22px;color:var(--acc)}.prod span{line-height:1.2}
+.painel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;align-self:start;position:sticky;top:70px}
+.cmd{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px}.cmd button{white-space:nowrap;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}.cmd button.on{border-color:var(--acc);color:var(--acc);font-weight:700}
+.lin{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.lin .n{flex:1}.lin button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt);font-size:24px}
+.total{font-size:30px;font-weight:800;text-align:right;margin:10px 0}.grande{width:100%;min-height:60px;border-radius:14px;border:0;font-size:20px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer;margin-top:8px}
+.grande.sec{background:var(--input);color:var(--txt);border:1px solid var(--line);font-size:16px;min-height:48px;font-weight:500}.grande.ok{background:var(--ok);color:var(--on-ok)}
+.mut{color:var(--mut);font-size:14px}.ruim{color:var(--bad)}.bom{color:var(--ok)}
+dialog{border:none;border-radius:16px;background:var(--card);color:var(--txt);width:min(94vw,440px);padding:18px}dialog::backdrop{background:#000b}
+.formas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.formas button{min-height:72px;border-radius:14px;border:2px solid var(--line);background:var(--input);color:var(--txt);font-size:19px;font-weight:600}.formas button.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc)}
+input,select.f{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}
+.cob{padding:10px;border:1px dashed var(--acc);border-radius:12px;margin:8px 0}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);padding:14px;border-radius:12px;z-index:20;display:none;font-size:17px}
+.ret{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:8px}
+</style></head><body>
+<header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
+<div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button></div>
+
+<main id="telaV">
+  <section><div class="chips" id="chips"></div><div class="grade" id="grade"></div></section>
+  <aside class="painel"><div class="cmd" id="cmd"></div><div id="itens"></div>
+    <div class="total" id="total">R$ 0,00</div><div id="cobsPend"></div>
+    <button class="grande" id="bCobrar">Cobrar</button>
+    <button class="grande sec" id="bCancelar">Cancelar comanda</button></aside>
+</main>
+
+<main id="telaR" hidden style="grid-template-columns:1fr">
+  <section><div class="painel" style="position:static"><b>Conferir QR do cliente</b>
+    <video id="cam" playsinline style="width:100%;border-radius:12px;margin:8px 0;display:none"></video>
+    <button class="grande" id="bCam">📷 Abrir câmera e ler QR</button>
+    <p class="mut">Ou cole/digite o código do QR:</p><input id="codigo" placeholder="MKF1...." autocomplete="off">
+    <button class="grande sec" id="bConferir">Conferir código</button><div id="confRes"></div></div>
+    <h3>Pix do app esperando conferência</h3><p class="mut">Só toque em “Pix recebido” depois de ver o dinheiro na conta do banco.</p><div id="listaAg"></div>
+    <h3>Pedidos do app pagos, esperando retirada</h3><div id="listaRet"></div></section>
+</main>
+
+<dialog id="dCobrar"><h3 style="margin:0">Cobrar <span id="dValor"></span></h3>
+  <div class="formas" id="formas"><button data-f="pix">Pix</button><button data-f="debito">Débito</button><button data-f="credito">Crédito</button><button data-f="dinheiro">Dinheiro</button></div>
+  <div id="boxMaq"><label class="mut">Maquininha</label><select class="f" id="maq"></select></div>
+  <label class="mut">Valor desta cobrança (para dividir a conta, diminua)</label><input id="valor" inputmode="decimal">
+  <div class="mut ruim" id="dErro"></div><button class="grande" id="dOk">Cobrar</button><button class="grande sec" id="dFecha">Voltar</button></dialog>
+<div id="msg"></div>
+<script src="/entrar.js"></script><script src="/tema.js"></script>
+<script>
+Tema.ligarSeletor(document.getElementById('tema'));
+const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+let token = Mukifo.token(), cardapio = [], cat = 0, comandas = [], atual = null, maqs = [], forma = null;
+const msg = (t, ruim) => { const m = $('#msg'); m.textContent = t; m.style.color = ruim ? 'var(--bad)' : 'var(--txt)'; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 5000); };
+async function api(url, metodo = 'GET', corpo) {
+  const r = await fetch(url, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token } });
+  const j = await r.json().catch(() => ({})); if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); throw new Error(j.erro); }
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
+}
+const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); } };
+
+function desenharCardapio() {
+  $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
+  $('#grade').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<button class="prod" data-id="${p.id}"><span>${p.nome}</span><b>${R$(p.preco)}</b></button>`).join('');
+}
+function desenharComanda() {
+  $('#cmd').innerHTML = comandas.map((c) => `<button data-id="${c.id}" class="${atual?.id === c.id ? 'on' : ''}">#${c.numero}${c.mesa ? ' · ' + c.mesa : ''}</button>`).join('') + '<button id="nova">+ Nova</button>';
+  const c = atual;
+  $('#itens').innerHTML = !c ? '<p class="mut">Toque em “+ Nova” para abrir uma comanda.</p>' : (c.itens.length ? c.itens.map((i) =>
+    `<div class="lin"><span class="n">${i.nome}<br><span class="mut">${R$(i.preco)}</span></span><button data-p="${i.produto_id}" data-d="-1">−</button><b>${i.quantidade}</b><button data-p="${i.produto_id}" data-d="1">+</button></div>`).join('') : '<p class="mut">Comanda vazia. Toque nos produtos.</p>');
+  $('#total').textContent = R$(c?.total ?? 0);
+  $('#cobsPend').innerHTML = (c?.cobrancas ?? []).filter((x) => x.status === 'pendente').map((x) =>
+    `<div class="cob"><b>${R$(x.valor)}</b> · ${x.forma}${x.maquininha ? ' na <b>' + x.maquininha + '</b>' : ''}<br>
+     <button class="grande ok" data-conf="${x.id}">Recebido ✓</button><button class="grande sec" data-canc="${x.id}">Cancelar cobrança</button></div>`).join('')
+    + (c && c.pago ? `<p class="bom">Já pago: ${R$(c.pago)}</p>` : '');
+  $('#bCobrar').disabled = !c || c.restante <= 0; $('#bCancelar').style.display = c && !c.pago ? '' : 'none';
+}
+const lerComandas = async () => { comandas = (await api('/api/venda/comandas')).comandas; if (atual && !comandas.find((c) => c.id === atual.id)) atual = null; if (!atual && comandas[0]) atual = (await api('/api/venda/comandas/' + comandas[0].id)).comanda; desenharComanda(); };
+const atualizarResumo = async () => { try { const r = await api('/api/venda/resumo'); $('#resumo').textContent = `Hoje: ${r.vendas} vendas · ${R$(r.total)}`; } catch {} };
+async function abrir(id) { atual = (await api('/api/venda/comandas/' + id)).comanda; desenharComanda(); }
+function depois(r) { if (r.comanda) { atual = r.comanda; if (['entregue', 'recebido', 'cancelado'].includes(atual.status)) { msg('Venda fechada ✓ ' + R$(atual.total)); atual = null; } } lerComandas(); atualizarResumo(); }
+
+$('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenharCardapio(); } };
+$('#grade').onclick = tentar(async (e) => { const b = e.target.closest('.prod'); if (!b) return; if (!atual) await novaComanda(); depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
+async function novaComanda() { const mesa = prompt('Mesa ou nome (pode deixar em branco):') ?? ''; const r = await api('/api/venda/comandas', 'POST', { mesa }); atual = r.comanda; await lerComandas(); }
+$('#cmd').onclick = tentar(async (e) => { const b = e.target.closest('button'); if (!b) return; if (b.id === 'nova') return novaComanda(); await abrir(b.dataset.id); });
+$('#itens').onclick = tentar(async (e) => { const b = e.target.closest('button[data-p]'); if (b) depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.p, delta: +b.dataset.d })); });
+$('#cobsPend').onclick = tentar(async (e) => { const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.conf) depois(await api(`/api/venda/cobrancas/${b.dataset.conf}/confirmar`, 'POST', {}));
+  if (b.dataset.canc) depois(await api(`/api/venda/cobrancas/${b.dataset.canc}/cancelar`, 'POST', {})); });
+$('#bCancelar').onclick = tentar(async () => { if (confirm('Cancelar esta comanda?')) { await api(`/api/venda/comandas/${atual.id}/cancelar`, 'POST', {}); atual = null; await lerComandas(); } });
+
+$('#bCobrar').onclick = () => { forma = null; $('#dErro').textContent = ''; $('#dValor').textContent = R$(atual.restante); $('#valor').value = String(atual.restante).replace('.', ',');
+  document.querySelectorAll('#formas button').forEach((b) => b.classList.remove('on')); $('#boxMaq').hidden = true;
+  $('#maq').innerHTML = '<option value="">Automática (padrão)</option>' + maqs.filter((m) => m.ativa).map((m) => `<option value="${m.id}">${m.nome}</option>`).join(''); $('#dCobrar').showModal(); };
+$('#formas').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; forma = b.dataset.f; document.querySelectorAll('#formas button').forEach((x) => x.classList.toggle('on', x === b)); $('#boxMaq').hidden = forma === 'dinheiro'; };
+$('#dFecha').onclick = () => $('#dCobrar').close();
+$('#dOk').onclick = async () => { try { if (!forma) throw new Error('Escolha a forma de pagamento.');
+  const r = await api(`/api/venda/comandas/${atual.id}/cobrar`, 'POST', { forma, valor: parseFloat(String($('#valor').value).replace(',', '.')), maquininha_id: $('#maq').value ? +$('#maq').value : undefined });
+  $('#dCobrar').close(); if (r.maquininha) msg(`Passe ${R$(r.comanda.pendente)} na ${r.maquininha}, depois toque em “Recebido ✓”.`); depois(r); } catch (e) { $('#dErro').textContent = e.message; } };
+
+// ---- retirada do app ----
+$('#aV').onclick = () => { $('#telaV').hidden = false; $('#telaR').hidden = true; $('#aV').classList.add('on'); $('#aR').classList.remove('on'); };
+$('#aR').onclick = () => { $('#telaV').hidden = true; $('#telaR').hidden = false; $('#aR').classList.add('on'); $('#aV').classList.remove('on'); lerRetiradas(); };
+$('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
+async function lerRetiradas() { const r = await api('/api/venda/retiradas'); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
+  $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
+  $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
+async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
+function mostrar(r, codigo) { const p = r.pedido; $('#confRes').innerHTML = `<div class="ret"><b class="bom">✔ Pago e válido</b><br><b>#${p.numero}</b> ${p.nome ?? ''} · ${R$(p.total)}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${i.nome}</li>`).join('')}</ul>` +
+  (r.entregue ? '<b class="bom">Entregue ✓ (QR já foi usado)</b>' : `<button class="grande ok" id="bEntregar">Entregar ✓</button>`) + '</div>';
+  const b = $('#bEntregar'); if (b) b.onclick = tentar(async () => { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); }); }
+const checar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { mostrar(await conferir(codigo, false), codigo); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; } });
+$('#bConferir').onclick = () => checar($('#codigo').value.trim());
+let stream = null;
+$('#bCam').onclick = tentar(async () => {
+  if (!('BarcodeDetector' in window)) throw new Error('Este aparelho não lê QR pela câmera aqui. Use o código digitado ou a câmera do celular.');
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); const v = $('#cam'); v.srcObject = stream; v.style.display = 'block'; await v.play();
+  const det = new BarcodeDetector({ formats: ['qr_code'] });
+  const laco = async () => { if (!stream) return; try { const [c] = await det.detect(v); if (c) { stream.getTracks().forEach((t) => t.stop()); stream = null; v.style.display = 'none'; $('#codigo').value = c.rawValue; return checar(c.rawValue); } } catch {} setTimeout(laco, 300); };
+  laco(); });
+
+async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); });
+  cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; desenharCardapio();
+  try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
+iniciar().catch((e) => msg(e.message, true));
+setInterval(() => { if (token && !$('#dCobrar').open) { lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
+</script></body></html>

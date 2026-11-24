@@ -17,3 +17,9 @@
 - Provedor de Pix/cartão para o app do celular.
 - Logo do Mukifo (arquivo original ou print do @mukifopoa).
 - Respostas sobre o hortifruti.
+
+## Venda e app do cliente
+- Comanda = linha em `pedido` (origem `balcao`); pedido do app = origem `celular` com número `C1`, `C2`… O "dia" vira às 6h (horário de Brasília).
+- Pedido do app nasce `aguardando_pagamento` e só vira `recebido` quando a cobrança Pix é paga; `entregue` só pelo QR no balcão.
+- Pix estático (BR Code) com valor e identificador do pedido: simples, sem provedor, mas a confirmação é manual até haver webhook. Aceitamos isso para ter um primeiro app funcionando sem credenciais.
+- Não guardamos dados de cartão. Celular do cliente só para contato; IP guardado apenas como hash para limitar abuso.

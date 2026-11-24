@@ -7,7 +7,7 @@ class Stmt {
   bind(...p) { return new Stmt(this.db, this.sql, p); }
   async all() { return { results: this.db.prepare(this.sql).all(...this.params) }; }
   async first() { return this.db.prepare(this.sql).get(...this.params) ?? null; }
-  async run() { this.db.prepare(this.sql).run(...this.params); return { success: true }; }
+  async run() { const r = this.db.prepare(this.sql).run(...this.params); return { success: true, meta: { changes: Number(r.changes) } }; }
   runSync() { this.db.prepare(this.sql).run(...this.params); }
 }
 

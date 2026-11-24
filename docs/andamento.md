@@ -69,3 +69,11 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Logo do Mukifo (arquivo original ou print do @mukifopoa).
 - Respostas do hortifruti (`docs/hortifruti-perguntas.md`).
 - Provedor de Pix/cartão para o app do celular.
+
+## Sessão: módulo de venda + app do cliente
+- **Venda no balcão** (`/venda.html`): produtos por categoria (categorias sugeridas automaticamente 1 vez; o gerente ajusta no editor de produto), botões grandes com preço, várias comandas abertas, dividir a conta, cobrança por forma (Pix/débito/crédito/dinheiro) com **escolha da maquininha por cobrança** (padrão ou equilibrar; superadmin configura na aba Conta). Fechou o pagamento → comanda vira venda e dá baixa no estoque pela ficha técnica (uma vez só).
+- **Navi (maquininhas POS)**: ainda NÃO integrado. `src/pagamentos/navi.js` é um stub: o operador passa o valor na maquininha escolhida e toca "Recebido ✓". Falta: documentação/API do Navi + segredos `NAVI_API_URL` e `NAVI_TOKEN`.
+- **App do cliente** (`/cliente.html`): cardápio, nome + celular, Pix copia-e-cola com valor exato. **Pedido só entra na fila depois de pago**; não pago vence em 15 min.
+- **Segurança**: preço sempre vem do servidor; QR de retirada com segredo de 128 bits (só o hash fica no banco), uso único (atualização atômica), vale só no dia do turno; o balcão recusa pedido não pago, vencido, de outro dia ou já usado; limite de pedidos não pagos por celular (2) e por aparelho/rede (6); a consulta de status exige a chave do pedido (erro idêntico para "não existe" e "chave errada"); aviso automático de pagamento só vale com assinatura HMAC (`PAGAMENTO_WEBHOOK_SECRET`).
+- **Pendente**: confirmação AUTOMÁTICA do Pix (hoje o balcão toca "Pix recebido ✓" depois de ver o dinheiro no banco). Precisa de um provedor Pix (banco/PSP com cobrança e webhook) ou do Navi; o endpoint `/api/cliente/pagamento/webhook` já existe e confere a assinatura.
+- Importar o relatório de vendas de um dia que já tem vendas lançadas aqui retorna 409 (evita contar em dobro no estoque); use `forcar` só se souber o que faz.
