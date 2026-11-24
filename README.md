@@ -15,6 +15,9 @@ npx wrangler login   # só na primeira vez
 npm run deploy
 ```
 
+## Trabalhar de qualquer conta Claude ou aparelho
+Ver [docs/colaborar.md](docs/colaborar.md): colaboradores no GitHub, `main` protegida, deploy automático pela Cloudflare (Workers Builds) e `docs/andamento.md` atualizado em toda sessão.
+
 ## Pastas
 | Pasta | O que tem |
 |---|---|

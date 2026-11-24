@@ -31,7 +31,17 @@ As regras completas estão em `legado/planilha/README.md` e `legado/planilha/ger
 6. Hortifruti (peso/unidade, fator de limpeza).
 7. Pedidos pelo celular: PWA, Pix, fila pública, vibração/som/push quando pronto.
 
+## Documentos (leia antes de começar)
+- `docs/andamento.md` — onde o projeto parou. **Comece por aqui.**
+- `docs/roteiro.md` — fases e critérios.
+- `docs/decisoes.md` — decisões tomadas.
+- `docs/prompt-pos.md`, `docs/prompt-celular.md` — especificação das partes.
+- `docs/historico-pos.md`, `docs/hortifruti-perguntas.md` — pendências de informação.
+- `docs/colaborar.md` — como várias contas Claude trabalham no mesmo repo.
+
 ## Como trabalhar
+- Trabalhe numa branch e abra pull request; a `main` é protegida e publica sozinha na Cloudflare.
+- **No fim de cada sessão, atualize `docs/andamento.md`** (feito / próximo / em aberto) e registre decisões em `docs/decisoes.md`. Outras contas e aparelhos dependem disso para continuar.
 - Uma fase por vez. Antes de codar uma fase, escreva o plano em `docs/` e peça aprovação.
 - Testes das regras de cálculo usando o histórico real.
 - Nunca guardar dados de cartão. Nunca commitar segredos (`.dev.vars`, tokens).
