@@ -82,3 +82,10 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Aba **Combos** na gestão: combo = produto vendável (categoria "Promoções e kits") formado por outros produtos; custo e lucro calculados pelos componentes; ao vender, o estoque baixa pela ficha de cada produto do combo (sem combo dentro de combo). Combos antigos da planilha (KIT…) continuam como produtos comuns com ficha própria.
 - Limitação: o cálculo de estoque mínimo por histórico de vendas ainda não "abre" combos.
 - **Pergunta em aberto (Pix):** em qual conta/banco o Pix cai? Define o provedor para confirmação automática (webhook).
+
+## Trava de estoque (não vender o que não tem)
+- Balcão e app do cliente recusam item sem estoque (409 com mensagem simples). Produto esgotado aparece "ESGOTADO" e desabilitado; com 5 ou menos aparece "restam N".
+- Reserva: itens de comandas abertas e de pedidos do app ainda não pagos (até vencer) contam como comprometidos, para dois operadores não venderem a última unidade duas vezes. Comanda esquecida aberta reserva estoque: cancele-a.
+- Combos conferem o estoque pelos ingredientes dos produtos que levam.
+- A trava só vale para ingredientes **já contados ou com entrada** (compra/ajuste/produção). Vendas sozinhas não contam; por isso, **antes da primeira contagem nada trava**. Depois da contagem passa a travar.
+- Superadmin liga/desliga em Conta → "Trava de estoque" (padrão: ligada).

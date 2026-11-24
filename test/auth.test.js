@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../migrations/0005_alerta_estoque.sql'), arq('../migrations/0006_venda.sql'), arq('../migrations/0007_cliente.sql'), arq('../migrations/0008_combos.sql'), arq('../seed/seed.sql')]),
+  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../migrations/0005_alerta_estoque.sql'), arq('../migrations/0006_venda.sql'), arq('../migrations/0007_cliente.sql'), arq('../migrations/0008_combos.sql'), arq('../migrations/0009_trava_estoque.sql'), arq('../seed/seed.sql')]),
   ASSETS: { fetch: () => new Response('estatico') },
   CODIGO_PRIMEIRO_ACESSO: 'codigo-teste',
 };

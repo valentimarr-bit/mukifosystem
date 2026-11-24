@@ -1,6 +1,7 @@
 // App do cliente: o pedido só entra na fila DEPOIS de pago. A retirada é feita por QR de uso único, conferido no balcão.
 import { json } from './api.js';
 import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
+import { conferirEstoque } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 
 const VALIDADE_MIN = 15;          // pedido não pago some depois disso
@@ -66,6 +67,8 @@ async function criarPedido(db, request, corpo) {
     if (!p || p.preco_venda == null) return erro('Um dos itens não está mais disponível.', 409);
     itens.push({ ...p, q });   // o preço vem SEMPRE do servidor, nunca do aparelho do cliente
   }
+  const falta = await conferirEstoque(db, new Map(itens.map((i) => [i.id, i.q])), { nomes: new Map(itens.map((i) => [i.id, i.nome])) });
+  if (falta) return erro(falta.erro, 409);
   const total = r2(itens.reduce((s, i) => s + i.q * i.preco_venda, 0));
   if (total <= 0 || total > MAX_TOTAL) return erro('Valor do pedido fora do permitido.');
 

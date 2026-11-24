@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -129,4 +129,31 @@ test('combos: cria, valida e baixa o estoque pelos produtos do combo', async () 
   const mov = await env.DB.prepare("SELECT COUNT(*) AS n FROM movimento_estoque WHERE tipo = 'venda' AND referencia = ?").bind(c.id).first();
   assert.ok(mov.n >= 1);
   assert.equal((await chamar(`/api/combos/${id}`, 'DELETE')).status, 200);
+});
+
+test('trava: não vende o que não tem no estoque (balcão e app), respeitando reservas', async () => {
+  const lista = (await chamar('/api/produtos')).corpo.filter((x) => x.ficha.length && x.preco_venda);
+  const prod = lista.find((x) => x.ficha.length === 1) ?? lista[0];
+  const ins = (await chamar('/api/insumos')).corpo.find((i) => i.nome === prod.ficha[0].insumo);
+  // zera o insumo e deixa só o necessário para 2 unidades
+  const atual = (await chamar('/api/estoque')).corpo.itens.find((i) => i.insumo === ins.nome).atual;
+  const porUn = prod.ficha[0].quantidade / (ins.conteudo ?? 1);
+  await chamar('/api/contagem', 'POST', { momento: 'abertura', itens: [{ insumo: ins.nome, contado: Math.round(porUn * 2 * 1e6) / 1e6 }] });
+  const cardapio = async () => (await chamar('/api/venda/cardapio', 'GET', null, { token: null })).corpo.categorias.flatMap((c) => c.produtos).find((p) => p.id === prod.id);
+  assert.equal((await cardapio()).restam, 2);
+  const c1 = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda;
+  assert.equal((await chamar(`/api/venda/comandas/${c1.id}/itens`, 'POST', { produto_id: prod.id, delta: 2 })).status, 200);
+  assert.equal((await chamar(`/api/venda/comandas/${c1.id}/itens`, 'POST', { produto_id: prod.id, delta: 1 })).status, 409);
+  assert.equal((await cardapio()).restam, 0);                       // reservado na comanda 1
+  const c2 = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda;
+  const r = await chamar(`/api/venda/comandas/${c2.id}/itens`, 'POST', { produto_id: prod.id, delta: 1 });
+  assert.equal(r.status, 409); assert.match(r.corpo.erro, /esgotado|Sem estoque/);
+  const app = await chamar('/api/cliente/pedidos', 'POST', { nome: 'Caio', celular: '51977776666', itens: [{ produto_id: prod.id, quantidade: 1 }] }, { token: null });
+  assert.equal(app.status, 409);
+  // desligar a trava libera
+  assert.equal((await chamar('/api/venda/trava', 'PUT', { ativa: false })).status, 200);
+  assert.equal((await chamar(`/api/venda/comandas/${c2.id}/itens`, 'POST', { produto_id: prod.id, delta: 1 })).status, 200);
+  await chamar('/api/venda/trava', 'PUT', { ativa: true });
+  await chamar(`/api/venda/comandas/${c1.id}/cancelar`, 'POST', {}); await chamar(`/api/venda/comandas/${c2.id}/cancelar`, 'POST', {});
+  assert.ok(atual !== undefined);
 });

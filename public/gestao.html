@@ -180,6 +180,9 @@
       <h3>Pedidos pelo celular (Pix)</h3>
       <p class="mut">Os clientes só conseguem pedir depois que você colocar a chave Pix do bar. Link para o cliente: <b>/cliente.html</b></p>
       <div class="bar"><input id="pixChave" placeholder="Chave Pix (CNPJ, e-mail, celular...)"><input id="pixNome" placeholder="Nome no Pix (máx. 25)"><input id="pixCidade" placeholder="Cidade (máx. 15)"><button class="btn prim" id="pixSalvar">Salvar Pix</button></div>
+      <h3>Trava de estoque</h3>
+      <label class="chk"><input type="checkbox" id="travaEstoque"> Não deixar vender o que não tem no estoque</label>
+      <p class="mut">Só vale para ingredientes que já foram contados ou comprados. Faça a primeira contagem para a trava funcionar em tudo.</p>
       <h3>Maquininhas</h3>
       <div id="listaMaq"></div>
       <div class="bar"><label>Escolha da maquininha:</label><select id="modoRot"><option value="padrao">Sempre a padrão (eu escolho outra se quiser)</option><option value="equilibrar">Equilibrar entre as maquininhas</option></select><button class="btn" id="rotSalvar">Salvar</button></div>
@@ -496,11 +499,13 @@ let maqLista = [];
 async function carregarVenda() {
   const pix = await chamarConta('/api/venda/pix', null, 'GET');
   $('#pixChave').value = pix.chave; $('#pixNome').value = pix.nome; $('#pixCidade').value = pix.cidade;
+  $('#travaEstoque').checked = (await chamarConta('/api/venda/trava', null, 'GET')).ativa;
   const r = await chamarConta('/api/venda/maquininhas', null, 'GET'); maqLista = r.maquininhas; $('#modoRot').value = r.modo;
   $('#listaMaq').innerHTML = maqLista.map((m) => `<div class="bar"><input data-m="${m.id}" data-c="nome" value="${esc(m.nome)}"><input data-m="${m.id}" data-c="serie" placeholder="Nº de série" value="${esc(m.serie ?? '')}">
     <label><input type="checkbox" data-m="${m.id}" data-c="ativa" ${m.ativa ? 'checked' : ''}> ativa</label><label><input type="radio" name="maqPadrao" data-m="${m.id}" data-c="padrao" ${m.padrao ? 'checked' : ''}> padrão</label>
     <button class="btn" data-salvarmaq="${m.id}">Salvar</button></div>`).join('');
 }
+$('#travaEstoque').onchange = async (e) => { try { await chamarConta('/api/venda/trava', { ativa: e.target.checked }, 'PUT'); msgConta(e.target.checked ? 'Trava de estoque ligada.' : 'Trava de estoque desligada: vai vender mesmo sem estoque.'); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#pixSalvar').onclick = async () => { try { await chamarConta('/api/venda/pix', { chave: $('#pixChave').value, nome: $('#pixNome').value, cidade: $('#pixCidade').value }, 'PUT'); msgConta('Pix salvo.'); } catch (e) { msgConta(e.message, 'neg'); } };
 $('#rotSalvar').onclick = async () => { try { await chamarConta('/api/venda/roteamento', { modo: $('#modoRot').value }, 'PUT'); msgConta('Escolha da maquininha salva.'); } catch (e) { msgConta(e.message, 'neg'); } };
 $('#listaMaq').onclick = async (e) => { const b = e.target.closest('[data-salvarmaq]'); if (!b) return; const id = b.dataset.salvarmaq, q = (c) => document.querySelector(`[data-m="${id}"][data-c="${c}"]`);

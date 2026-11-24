@@ -4,6 +4,7 @@ import { usuarioLogado } from './auth.js';
 import { ordenarCategorias } from './dominio/categorias.js';
 import { escolherMaquininha } from './pagamentos/roteador.js';
 import { validarRetirada, listarRetiradas, lerPix, salvarPix } from './cliente.js';
+import { conferirEstoque, disponibilidade, travaLigada } from './trava.js';
 import { enviarCobranca, naviConfigurado } from './pagamentos/navi.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
@@ -72,11 +73,13 @@ async function conferirQuitacao(db, pedidoId, operador) {
 async function getCardapio(db) {
   const { results } = await db.prepare(
     `SELECT id, nome, categoria, preco_venda AS preco FROM produto WHERE ativo = 1 AND preco_venda IS NOT NULL ORDER BY nome`).all();
+  const disp = await disponibilidade(db, results.map((p) => p.id));
   const porCat = new Map();
   for (const p of results) {
     const c = p.categoria ?? 'Outros';
     if (!porCat.has(c)) porCat.set(c, []);
-    porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco });
+    const r = disp.get(p.id);   // quantas dá para vender; só informado quando é pouco (não expõe o estoque todo)
+    porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco, restam: r != null && r <= 20 ? r : null });
   }
   return json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })) });
 }
@@ -111,6 +114,12 @@ async function mudarItem(db, id, corpo) {
   const p = await db.prepare('SELECT id, nome, preco_venda FROM produto WHERE id = ? AND ativo = 1').bind(Number(corpo?.produto_id)).first();
   if (!p || p.preco_venda == null) return erro('Produto não encontrado ou sem preço.', 404);
   const linha = c.itens.find((i) => i.produto_id === p.id);
+  if (delta > 0) {
+    const demanda = new Map(c.itens.map((i) => [i.produto_id, i.quantidade]));
+    demanda.set(p.id, (linha?.quantidade ?? 0) + delta);
+    const falta = await conferirEstoque(db, demanda, { exceto: id, nomes: new Map([[p.id, p.nome]]) });
+    if (falta) return erro(falta.erro, 409);
+  }
   if (linha) {
     const q = linha.quantidade + delta;
     await (q > 0 ? db.prepare('UPDATE item_pedido SET quantidade = ? WHERE id = ?').bind(q, linha.id)
@@ -228,6 +237,12 @@ export async function rotearVenda(request, env, url) {
     return configurarMaquininha(db, Number(k[1]), corpo);
   }
 
+  if (m === 'GET' && p === '/api/venda/trava') return json({ ativa: await travaLigada(db) });
+  if (m === 'PUT' && p === '/api/venda/trava') {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin liga ou desliga a trava de estoque.', 403);
+    await db.prepare("INSERT INTO configuracao (chave, valor) VALUES ('travar_estoque', ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor").bind(corpo?.ativa === false ? 'nao' : 'sim').run();
+    return json({ ok: true, ativa: await travaLigada(db) });
+  }
   if (m === 'GET' && p === '/api/venda/retiradas') return listarRetiradas(db);
   if (m === 'POST' && p === '/api/venda/retirada') return validarRetirada(db, corpo, eu);
   if (m === 'PUT' && p === '/api/venda/pix') {

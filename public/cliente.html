@@ -11,7 +11,7 @@ header{background:var(--hdr);padding:14px;position:sticky;top:0;z-index:5}header
 .grande{width:100%;min-height:58px;border-radius:14px;border:0;font-size:19px;font-weight:700;background:var(--acc);color:var(--on-acc);cursor:pointer}.grande:disabled{opacity:.5}.grande.sec{background:var(--card);color:var(--txt);border:1px solid var(--line);font-weight:500;font-size:16px;min-height:48px;margin-top:8px}
 .tela{padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
 input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt);margin:4px 0 12px}label{color:var(--mut);font-size:14px}
-.mut{color:var(--mut);font-size:14px}.erro{color:var(--bad);min-height:22px}.bom{color:var(--ok)}.qr{background:#fff;padding:14px;border-radius:14px;display:inline-block}.qr img{display:block;width:min(70vw,280px)}
+.ruim{color:var(--bad)}.mut{color:var(--mut);font-size:14px}.erro{color:var(--bad);min-height:22px}.bom{color:var(--ok)}.qr{background:#fff;padding:14px;border-radius:14px;display:inline-block}.qr img{display:block;width:min(70vw,280px)}
 .cola{word-break:break-all;font-size:12px;background:var(--input);border-radius:10px;padding:8px;max-height:80px;overflow:auto}.centro{text-align:center}
 </style></head><body>
 <header><h1>🍸 Mukifo</h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></header>
@@ -53,12 +53,12 @@ const guardar = (p) => { try { p ? localStorage.setItem(CH, JSON.stringify(p)) :
 function desenhar() {
   $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
   $('#lista').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<div class="p"><div class="n">${p.nome}<br><b>${R$(p.preco)}</b></div>
-    <div class="q"><button data-id="${p.id}" data-d="-1">−</button><span>${cart.get(p.id) ?? 0}</span><button data-id="${p.id}" data-d="1">+</button></div></div>`).join('');
+    ${p.restam === 0 ? '<b class="ruim">Esgotado</b>' : `<div class="q"><button data-id="${p.id}" data-d="-1">−</button><span>${cart.get(p.id) ?? 0}</span><button data-id="${p.id}" data-d="1">+</button></div>`}</div>`).join('');
   const n = [...cart.values()].reduce((a, b) => a + b, 0), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0);
   $('#bCarrinho').disabled = !n; $('#bCarrinho').textContent = n ? `Ver pedido · ${n} ${n > 1 ? 'itens' : 'item'} · ${R$(t)}` : 'Escolha seus itens';
 }
 $('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenhar(); } };
-$('#lista').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; const id = +b.dataset.id, q = Math.max(0, Math.min(20, (cart.get(id) ?? 0) + +b.dataset.d)); q ? cart.set(id, q) : cart.delete(id); desenhar(); };
+$('#lista').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; const id = +b.dataset.id, q = Math.max(0, Math.min(prods.get(id).restam ?? 20, 20, (cart.get(id) ?? 0) + +b.dataset.d)); q ? cart.set(id, q) : cart.delete(id); desenhar(); };
 $('#bCarrinho').onclick = () => { $('#resumo').innerHTML = [...cart].map(([id, q]) => `<div>${q}× ${prods.get(id).nome} — ${R$(q * prods.get(id).preco)}</div>`).join('')
   + `<h3>Total ${R$([...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0))}</h3>`; $('#erro').textContent = ''; tela('telaDados'); };
 $('#bVoltar').onclick = () => tela('cardapio');
@@ -66,7 +66,8 @@ $('#bVoltar').onclick = () => tela('cardapio');
 $('#bPagar').onclick = async () => { $('#bPagar').disabled = true; $('#erro').textContent = '';
   try { const r = await fetch('/api/cliente/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nome: $('#nome').value, celular: $('#cel').value, itens: [...cart].map(([produto_id, quantidade]) => ({ produto_id, quantidade })) }) });
     const j = await r.json(); if (!r.ok) throw new Error(j.erro); pedido = { id: j.id, numero: j.numero, total: j.total, chave: j.chave_qr, pix: j.pix, ate: Date.now() + j.validade_min * 60000 };
-    guardar(pedido); cart.clear(); acompanhar(); } catch (e) { $('#erro').textContent = e.message; } $('#bPagar').disabled = false; };
+    guardar(pedido); cart.clear(); acompanhar(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; };
+async function recarregar() { try { cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; prods.clear(); cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); [...cart.keys()].forEach((id) => { if (!prods.has(id) || prods.get(id).restam === 0) cart.delete(id); else if (prods.get(id).restam != null) cart.set(id, Math.min(cart.get(id), prods.get(id).restam)); }); desenhar(); } catch {} }
 
 function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(consultar, 3000); }
 function mostrarPix() { $('#pNum').textContent = pedido.numero; $('#pTotal').textContent = R$(pedido.total); $('#pCola').textContent = pedido.pix; $('#qrPix').src = qrImg(pedido.pix); tela('telaPix'); }

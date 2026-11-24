@@ -14,7 +14,7 @@ img,video{max-width:100%}dialog{max-width:94vw;max-height:92vh;overflow:auto}hea
 .chips button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:10px}
 .prod{min-height:104px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);padding:10px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;font-size:16px;cursor:pointer}
-.prod:active{transform:scale(.97)}.prod b{font-size:22px;color:var(--acc)}.prod span{line-height:1.2}
+.prod.fim{opacity:.4;cursor:not-allowed}.prod small{color:var(--warn);font-size:13px}.prod.fim small{color:var(--bad);font-weight:700}.prod:active{transform:scale(.97)}.prod b{font-size:22px;color:var(--acc)}.prod span{line-height:1.2}
 .painel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;align-self:start;position:sticky;top:70px}
 .cmd{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px}.cmd button{white-space:nowrap;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}.cmd button.on{border-color:var(--acc);color:var(--acc);font-weight:700}
 .lin{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.lin .n{flex:1}.lin button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt);font-size:24px}
@@ -65,11 +65,12 @@ async function api(url, metodo = 'GET', corpo) {
   const j = await r.json().catch(() => ({})); if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); throw new Error(j.erro); }
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
 }
-const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); } };
+const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); recarregarCardapio(); } };
+async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; if (cat >= cardapio.length) cat = 0; desenharCardapio(); } catch {} }
 
 function desenharCardapio() {
   $('#chips').innerHTML = cardapio.map((c, i) => `<button data-i="${i}" class="${i === cat ? 'on' : ''}">${c.nome}</button>`).join('');
-  $('#grade').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<button class="prod" data-id="${p.id}"><span>${p.nome}</span><b>${R$(p.preco)}</b></button>`).join('');
+  $('#grade').innerHTML = (cardapio[cat]?.produtos ?? []).map((p) => `<button class="prod${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}><span>${p.nome}${p.restam === 0 ? '<br><small>ESGOTADO</small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`).join('');
 }
 function desenharComanda() {
   $('#cmd').innerHTML = comandas.map((c) => `<button data-id="${c.id}" class="${atual?.id === c.id ? 'on' : ''}">#${c.numero}${c.mesa ? ' · ' + c.mesa : ''}</button>`).join('') + '<button id="nova">+ Nova</button>';
@@ -86,7 +87,7 @@ function desenharComanda() {
 const lerComandas = async () => { comandas = (await api('/api/venda/comandas')).comandas; if (atual && !comandas.find((c) => c.id === atual.id)) atual = null; if (!atual && comandas[0]) atual = (await api('/api/venda/comandas/' + comandas[0].id)).comanda; desenharComanda(); };
 const atualizarResumo = async () => { try { const r = await api('/api/venda/resumo'); $('#resumo').textContent = `Hoje: ${r.vendas} vendas · ${R$(r.total)}`; } catch {} };
 async function abrir(id) { atual = (await api('/api/venda/comandas/' + id)).comanda; desenharComanda(); }
-function depois(r) { if (r.comanda) { atual = r.comanda; if (['entregue', 'recebido', 'cancelado'].includes(atual.status)) { msg('Venda fechada ✓ ' + R$(atual.total)); atual = null; } } lerComandas(); atualizarResumo(); }
+function depois(r) { recarregarCardapio(); if (r.comanda) { atual = r.comanda; if (['entregue', 'recebido', 'cancelado'].includes(atual.status)) { msg('Venda fechada ✓ ' + R$(atual.total)); atual = null; } } lerComandas(); atualizarResumo(); }
 
 $('#chips').onclick = (e) => { const b = e.target.closest('button'); if (b) { cat = +b.dataset.i; desenharCardapio(); } };
 $('#grade').onclick = tentar(async (e) => { const b = e.target.closest('.prod'); if (!b) return; if (!atual) await novaComanda(); depois(await api(`/api/venda/comandas/${atual.id}/itens`, 'POST', { produto_id: +b.dataset.id, delta: 1 })); });
@@ -132,5 +133,5 @@ async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukif
   cardapio = (await (await fetch('/api/venda/cardapio')).json()).categorias; desenharCardapio();
   try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
 iniciar().catch((e) => msg(e.message, true));
-setInterval(() => { if (token && !$('#dCobrar').open) { lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
+setInterval(() => { if (token && !$('#dCobrar').open) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
 </script></body></html>

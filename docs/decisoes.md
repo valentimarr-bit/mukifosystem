@@ -23,3 +23,6 @@
 - Pedido do app nasce `aguardando_pagamento` e só vira `recebido` quando a cobrança Pix é paga; `entregue` só pelo QR no balcão.
 - Pix estático (BR Code) com valor e identificador do pedido: simples, sem provedor, mas a confirmação é manual até haver webhook. Aceitamos isso para ter um primeiro app funcionando sem credenciais.
 - Não guardamos dados de cartão. Celular do cliente só para contato; IP guardado apenas como hash para limitar abuso.
+
+## Trava de estoque
+- Ingrediente nunca contado não trava (senão o bar não venderia nada antes da primeira contagem). Chave `travar_estoque` em `configuracao`.
