@@ -25,8 +25,8 @@ const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace
 const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const G = '/api/campeonato/gestao';
 let token = Mukifo.token(), modId = null, modNome = '', modInfo = '', timer, trava = 0;
-async function api(url, corpo) {
-  const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
+async function api(url, corpo, metodo) {
+  const r = await fetch(url, { method: metodo || (corpo ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); desenhar(); }); throw new Error(j.erro || 'Entre de novo'); }
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
@@ -53,7 +53,7 @@ function cartaoJogo(p, R) {
     ${fim && p.a && p.b ? `<button class="btn sec mini" style="margin-top:6px" data-acao="corrigir" data-p="${p.id}">Corrigir resultado</button>` : ''}</div>`;
 }
 async function modalidade() {
-  const d = await api(`${G}/modalidades/${modId}`), R = d.rodadas;
+  const [d, w] = await Promise.all([api(`${G}/modalidades/${modId}`), api(`${G}/whats`).catch(() => ({ configurado: false }))]), R = d.rodadas;
   const insc = d.status === 'inscricoes';
   modNome = `${d.campeonato} (${d.nome})`; modInfo = (d.taxa > 0 ? `Inscrição ${R$(d.taxa)}. ` : 'Inscrição grátis. ');
   const ins = d.inscritos.map((i) => `<div class="ins"><span class="n">${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
@@ -62,7 +62,14 @@ async function modalidade() {
   const ordem = [...d.partidas].sort((a, b) => ({ em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[a.status] - { em_jogo: 0, pronta: 1, aguardando: 2, finalizada: 3 }[b.status]) || a.fase - b.fase || a.pos - b.pos).filter((p) => p.a || p.b);
   return `<button class="btn sec" data-acao="voltar" style="margin:0 0 12px">← Campeonatos</button>
     <div class="card"><h2>${esc(d.nome)} <span class="chip">${ROT[d.status]}</span></h2><div class="mut">${esc(d.campeonato)} · ${d.pagas} pago${d.pagas === 1 ? '' : 's'} · arrecadado ${R$(d.taxa * d.pagas)}${pr ? ' · prêmios: ' + pr : ''}</div>${d.campeao ? `<h3 style="margin-top:10px">🏆 Campeão: ${esc(d.campeao)}</h3>` : ''}</div>
-    ${insc ? `<div class="card"><h3>📲 Convidar por WhatsApp</h3><p class="mut">Abre o WhatsApp com o convite e o link para se inscrever. Sem número, você escolhe os contatos ou grupos.</p><label>WhatsApp do convidado (opcional)</label><input id="wNum" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn" data-acao="convidar">Enviar convite</button></div>` : ''}
+    ${insc ? `<div class="card"><h3>📲 Convite por WhatsApp</h3>${w.configurado
+      ? `<p class="mut">${w.ativo ? `Ligado. ${w.auto ? 'Cada modalidade nova convida sozinha os clientes cadastrados.' : 'Convite automático desligado: use o botão abaixo.'} Ritmo: ${w.por_minuto} por minuto, até ${w.max_dia} por dia. Hoje saíram ${w.enviados_hoje}.` : 'Desligado. O superadmin liga abaixo.'}</p>
+        <div class="mut">${w.audiencia} cliente${w.audiencia === 1 ? '' : 's'} com celular · ${w.fila} na fila · ${w.enviados} enviado${w.enviados === 1 ? '' : 's'}${w.erros ? ` · ${w.erros} com erro` : ''}</div>${w.ultimo_erro ? `<div class="erro">Último erro: ${esc(w.ultimo_erro)}</div>` : ''}
+        <button class="btn" data-acao="convidarTodos"${w.ativo ? '' : ' disabled'}>Convidar clientes agora</button>
+        <button class="btn sec" data-acao="${w.ativo ? 'whatsOff' : 'whatsOn'}">${w.ativo ? 'Desligar envio automático' : 'Ligar envio automático'}</button>
+        <label>Cliente pediu para não receber? Celular dele</label><div class="row"><input id="wRec" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn sec fixo" style="width:auto;margin:0" data-acao="recusa">Não enviar</button></div>`
+      : '<p class="mut">Falta ligar a izapia (WhatsApp automático): guarde <b>IZAPIA_API_KEY</b> e <b>IZAPIA_SID</b> no Cloudflare. Enquanto isso, use o envio manual abaixo.</p>'}
+      <details style="margin-top:8px"><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">Enviar manualmente</summary><label>WhatsApp do convidado (opcional)</label><input id="wNum" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn sec" data-acao="convidar">Abrir WhatsApp com o convite</button></details></div>` : ''}
     ${d.status !== 'encerrada' && !d.partidas.some((p) => p.status === 'em_jogo' || (p.status === 'finalizada' && p.a && p.b)) ? `<div class="card"><h3>${insc ? 'Fechar inscrições e sortear' : 'Sortear de novo'}</h3><p class="mut">Só entram jogadores com inscrição paga. Com número ímpar, os primeiros sorteados folgam na 1ª rodada.</p><button class="btn" data-acao="sortear">${insc ? '🎲 Sortear chave' : '🎲 Refazer sorteio'}</button></div>` : ''}
     ${d.partidas.length ? `<div class="card"><h3>Jogos</h3>${ordem.map((p) => cartaoJogo(p, R)).join('') || '<p class="mut">Sem jogos.</p>'}</div>` : ''}
     <div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${ins}${insc ? `<label>Inscrever no balcão (pagou em dinheiro ou maquininha)</label><div class="row"><input id="bNome" placeholder="Nome do jogador" maxlength="40"><button class="btn fixo" style="width:auto;margin:0" data-acao="balcao">Inscrever</button></div>` : ''}</div>`;
@@ -86,6 +93,9 @@ document.addEventListener('click', async (e) => {
     else if (a === 'encerrarCamp' || a === 'reabrirCamp') await api(`${G}/campeonatos/${t.dataset.camp}/${a === 'encerrarCamp' ? 'encerrar' : 'reabrir'}`, {});
     else if (a === 'conf') { await api(`${G}/inscricoes/${t.dataset.i}/confirmar`, {}); aviso('Inscrição paga ✅'); }
     else if (a === 'canc') { if (!confirm('Tirar esse jogador da modalidade?')) { t.disabled = false; return; } const r = await api(`${G}/inscricoes/${t.dataset.i}/cancelar`, {}); aviso(r.reembolso === 'saldo' ? 'Tirado. O valor voltou para a carteira dele.' : r.reembolso === 'manual' ? 'Tirado. Devolva o valor pago a ele (Pix ou dinheiro).' : 'Tirado.'); }
+    else if (a === 'convidarTodos') { const r = await api(`${G}/modalidades/${modId}/convidar`, {}); aviso(r.na_fila ? `${r.na_fila} convite(s) na fila. Saem aos poucos, todo minuto.` : 'Todo mundo já foi convidado.'); }
+    else if (a === 'whatsOn' || a === 'whatsOff') { await api(`${G}/whats`, { ativo: a === 'whatsOn' }, 'PUT'); aviso(a === 'whatsOn' ? 'WhatsApp automático ligado.' : 'WhatsApp automático desligado.'); }
+    else if (a === 'recusa') { await api(`${G}/whats/recusa`, { celular: $('#wRec').value }); aviso('Pronto: esse cliente não recebe mais convites.'); }
     else if (a === 'convidar') { const n = ($('#wNum')?.value || '').replace(/\D/g, ''); const tel = n.length >= 10 ? (n.startsWith('55') ? n : '55' + n) : ''; const msg = `🎱 Você está convidado para o ${modNome} no Mukifo! ${modInfo}Inscreva-se aqui: ${location.origin}/campeonato.html`; window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener'); }
     else if (a === 'balcao') { await api(`${G}/modalidades/${modId}/inscrever`, { nome: $('#bNome').value }); aviso('Inscrito ✅'); }
     else if (a === 'sortear') { if (!confirm('Sortear a chave agora? Isso fecha as inscrições.')) { t.disabled = false; return; } await api(`${G}/modalidades/${modId}/sortear`, {}); aviso('Chave sorteada 🎲'); }

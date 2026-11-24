@@ -116,7 +116,12 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 - Acompanha a **chave** e o **placar ao vivo** (atualiza sozinho) e o **ranking** com pontos por colocação.
 
 ### Para a equipe (`/torneio.html`)
-- **Convidar por WhatsApp:** com as inscrições abertas, o cartão "📲 Convidar por WhatsApp" abre o WhatsApp com o convite (nome, taxa e link `/campeonato.html`). Informe o número do convidado ou deixe vazio para escolher contatos e grupos.
+- **Convite por WhatsApp (automático):** com a izapia ligada, cada modalidade nova convida sozinha todos os clientes cadastrados que têm celular. O botão "Convidar clientes agora" faz o mesmo para uma modalidade que já existe e não repete quem já foi convidado.
+  - **Como sai:** em fila, poucas mensagens por minuto (4 por padrão), com teto por dia (80). A mensagem leva o primeiro nome, a taxa e o link do campeonato. Se as inscrições encerrarem antes, o que sobrou na fila é cancelado.
+  - **Cuidado com o número:** a izapia usa o protocolo do WhatsApp Web, não a API oficial da Meta. Mandar muito, rápido ou para quem não conhece o bar pode bloquear o número. Use um chip só do bar, não o pessoal.
+  - **Quem não quer receber:** digite o celular em "Não enviar" no cartão. Esse cliente fica de fora para sempre.
+  - **Ligar:** crie a conta em `app.izapia.com`, leia o QR Code com o WhatsApp do bar e guarde `IZAPIA_API_KEY` e `IZAPIA_SID` no Cloudflare. Só o superadmin liga o envio.
+  - **Sem a izapia:** "Enviar manualmente" abre o WhatsApp com o convite pronto e você toca em enviar.
 - Cria o campeonato (nome, data, local) e as modalidades (taxa, vagas, divisão do prêmio em %).
 - Confirma Pix de inscrição à mão e inscreve gente no balcão (dinheiro ou maquininha).
 - **Sorteia a chave**: fecha as inscrições. Com número ímpar, os primeiros sorteados folgam na 1ª rodada. Há disputa de 3º lugar quando há 4 ou mais jogadores.
@@ -188,4 +193,4 @@ Aba **Excel**: exporta e importa planilhas (fornecedores, insumos, produtos, fic
 ## 13. Para quem mantém o sistema
 - **Regra de ouro:** toda alteração no sistema entra em dois lugares: uma linha em `docs/alteracoes.md` (o que mudou e quando) e o texto correspondente neste manual (`docs/manual.md`).
 - Depois de editar, rode `npm run manual` para gerar a tela `/manual.html`. O teste automático falha se o manual gerado estiver desatualizado ou se uma tela nova não for citada aqui.
-- Segredos da Cloudflare (nunca no código): `CODIGO_PRIMEIRO_ACESSO`, `ADMIN_TOKEN`, `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `EMAIL_REMETENTE`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `FOCUSNFE_TOKEN`, `PIX_MONITOR_SECRET`, `IFOOD_CLIENT_ID`, `IFOOD_CLIENT_SECRET`, `IFOOD_MERCHANT_ID`, `OD_99FOOD_BASE_URL`, `OD_99FOOD_CLIENT_ID`, `OD_99FOOD_CLIENT_SECRET`, `OD_99FOOD_TOKEN_URL`.
+- Segredos da Cloudflare (nunca no código): `CODIGO_PRIMEIRO_ACESSO`, `ADMIN_TOKEN`, `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, `EMAIL_REMETENTE`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `FOCUSNFE_TOKEN`, `PIX_MONITOR_SECRET`, `IZAPIA_API_KEY`, `IZAPIA_SID`, `IFOOD_CLIENT_ID`, `IFOOD_CLIENT_SECRET`, `IFOOD_MERCHANT_ID`, `OD_99FOOD_BASE_URL`, `OD_99FOOD_CLIENT_ID`, `OD_99FOOD_CLIENT_SECRET`, `OD_99FOOD_TOKEN_URL`.

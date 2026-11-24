@@ -258,3 +258,9 @@ Atualize no fim de cada sessão. Mais recente em cima.
 ## iFood e 99Food (canais de venda)
 - Pronto: pedidos das plataformas entram na Produção (origem "celular", cliente "iFood · Nome"), dão baixa no estoque pela ficha técnica, são aceitos na plataforma, avisam preparo/pronto/saiu e cancelam com estorno. Busca por cron a cada minuto e a cada 30 s na Produção. Tela `/canais.html`.
 - Falta: validar nomes de campos com credenciais reais (iFood: loja de teste; 99Food: acesso Open Delivery de parceiro), comissão nos relatórios do financeiro, cardápio/preço/abrir-fechar loja pelo sistema.
+
+## Convite automático por WhatsApp (izapia)
+- Migração `0029_whatsapp` (fila `convite_whats`, `cliente.whats_recusou`, configuração `whats_*`); `src/whatsapp.js`; rotas em `/api/campeonato/gestao/whats*` e `.../modalidades/:id/convidar`; cartão em `/torneio.html`; testes em `test/whatsapp.test.js`.
+- Envia por `POST api.izapia.com/api/v1/sessions/{sid}/messages/text` (Bearer). Segredos: `IZAPIA_API_KEY`, `IZAPIA_SID`. Cron de 1 minuto manda 4 por vez (padrão), teto 80 por dia, uma mensagem por cliente e por modalidade; 401/403 para tudo sem insistir.
+- **Risco:** a izapia usa o protocolo do WhatsApp Web (não oficial): possível bloqueio do número. Alternativa oficial: WhatsApp Business Cloud API (modelos aprovados, custo por conversa).
+- **Não validado contra a izapia real** (só o formato de envio da página pública; sem documentação de erros nem de webhook). Recusa hoje é pelo balcão: responder "SAIR" no WhatsApp ainda não é lido.

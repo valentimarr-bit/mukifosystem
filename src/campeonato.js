@@ -7,6 +7,7 @@ import { lerPix } from './cliente.js';
 import { modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
+import { enfileirar, estadoWhats, salvarConfigWhats, numeroWhats } from './whatsapp.js';
 import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio } from './dominio/chaves.js';
 
 const VALIDADE_MIN = 30;
@@ -241,7 +242,10 @@ export async function rotearCampeonato(request, env, url) {
     const pct = Array.isArray(c.premio) ? c.premio.map(Number).filter((x) => Number.isFinite(x) && x >= 0).slice(0, 8) : [50, 25, 15];
     if (pct.reduce((a, b) => a + b, 0) > 100) return erro('Os prêmios somam mais de 100%.');
     const camp = await db.prepare('SELECT id FROM campeonato WHERE id = ?').bind(r[1]).first(); if (!camp) return erro('Campeonato não encontrado.', 404);
-    const id = `mod-${id8()}`; await db.prepare('INSERT INTO modalidade (id, campeonato_id, nome, taxa, vagas, premio_pct) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r[1], n, taxa, vagas, JSON.stringify(pct)).run(); return json({ id }, 201);
+    const id = `mod-${id8()}`; await db.prepare('INSERT INTO modalidade (id, campeonato_id, nome, taxa, vagas, premio_pct) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r[1], n, taxa, vagas, JSON.stringify(pct)).run();
+    let convite = null;   // convite automático por WhatsApp (só se estiver ligado e configurado)
+    try { const w = await estadoWhats(db, env); if (w.ativo && w.configurado && w.auto) convite = await enfileirar(db, id, `${env.URL_PUBLICA || url.origin}/campeonato.html`); } catch (e) { console.error('convite whats:', e.message); }
+    return json({ id, convite }, 201);
   }
   if (m === 'GET' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)$/))) { const d = await detalheModalidade(db, r[1], true); return d ? json(d) : erro('Modalidade não encontrada.', 404); }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/inscrever$/))) {   // inscrição no balcão (dinheiro/maquininha), com ou sem conta
@@ -263,6 +267,20 @@ export async function rotearCampeonato(request, env, url) {
       return json({ ok: true, reembolso: 'saldo' });
     }
     return json({ ok: true, reembolso: i.status === 'paga' && i.valor > 0 ? 'manual' : 'nenhum' });
+  }
+  if (m === 'GET' && p === '/api/campeonato/gestao/whats') return json(await estadoWhats(db, env));
+  if (m === 'PUT' && p === '/api/campeonato/gestao/whats') {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin liga ou desliga o WhatsApp.', 403);
+    const x = await salvarConfigWhats(db, env, await corpoDe(request)); return x.erro ? erro(x.erro, x.status) : json({ ok: true });
+  }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/convidar$/))) {   // convida agora todos os clientes que ainda não receberam
+    const w = await estadoWhats(db, env); if (!w.configurado) return erro('Falta ligar a izapia: IZAPIA_API_KEY e IZAPIA_SID no Cloudflare.', 409); if (!w.ativo) return erro('O WhatsApp automático está desligado (só o superadmin liga).', 409);
+    const x = await enfileirar(db, r[1], `${env.URL_PUBLICA || url.origin}/campeonato.html`); return x.erro ? erro(x.erro, x.status) : json(x);
+  }
+  if (m === 'POST' && p === '/api/campeonato/gestao/whats/recusa') {   // cliente pediu no balcão para não receber convites
+    const c = await corpoDe(request), num = numeroWhats(c.celular); if (!num) return erro('Informe o celular com DDD.');
+    const u = await db.prepare('UPDATE cliente SET whats_recusou = ? WHERE celular = ? OR celular = ?').bind(c.recusou === false ? 0 : 1, num, num.slice(2)).run();
+    return u?.meta?.changes ? json({ ok: true }) : erro('Nenhum cliente com esse celular.', 404);
   }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/sortear$/))) return sortear(db, r[1]);
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/partidas\/([\w:.-]+)\/placar$/))) return lancarPlacar(db, r[1], await corpoDe(request));

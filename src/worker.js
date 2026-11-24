@@ -1,6 +1,7 @@
 // Worker principal do Mukifo.
 // Arquivos estáticos (public/) são servidos antes de chegar aqui; este código responde às rotas /api/*.
 import { sincronizar } from './canais.js';
+import { processarFila } from './whatsapp.js';
 import { json, rotearApi } from './api.js';
 import { prepararBanco } from './banco/preparar.js';
 import { identificarAtor, deveRegistrar, registrar } from './auditoria.js';
@@ -56,9 +57,9 @@ export default {
 
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Não encontrado', { status: 404 });
   },
-  /** Todo minuto: busca pedidos novos do iFood/99Food mesmo que ninguém esteja com a Produção aberta. */
+  /** Todo minuto: busca pedidos novos do iFood/99Food e manda alguns convites de WhatsApp da fila. */
   async scheduled(event, env, ctx) {
     if (!env.DB) return;
-    ctx.waitUntil((async () => { try { await prepararBanco(env.DB); await sincronizar(env.DB, env); } catch (e) { console.error('sincronizar canais:', e.message); } })());
+    ctx.waitUntil((async () => { try { await prepararBanco(env.DB); await sincronizar(env.DB, env); } catch (e) { console.error('sincronizar canais:', e.message); } try { await processarFila(env.DB, env); } catch (e) { console.error('fila whatsapp:', e.message); } })());
   },
 };
