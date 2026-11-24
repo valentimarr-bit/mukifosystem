@@ -94,3 +94,8 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Cada item pode ter **estoque recomendado** (quanto o bar quer ter; aba Níveis). Em branco = cálculo automático pelo histórico de vendas.
 - A aba antes chamada "Lista de compras" na gestão agora é **Recomendado**: compra recomendada = recomendado − o que tem agora (as vendas feitas aqui já baixaram o estoque). A **lista de compras** propriamente dita é a que vai para o celular (/compras), gerada a partir do recomendado.
 - API: `PUT /api/recomendados`; `/api/estoque` e `/api/lista-compras` trazem `estoque_recomendado`, `auto_*`, `tem`, `recomendado`.
+
+## Desempenho (relatórios e indicadores)
+- Aba **Desempenho** na gestão (`GET /api/desempenho?de=&ate=`, exige login): faturamento, vendas, ticket médio, itens por venda, lucro bruto estimado e margem (pela ficha técnica), perdas/diferenças de contagem, compras, estoque esgotado/em alerta; comparação com o período anterior; faturamento por dia, horário de pico, média por dia da semana, mais vendidos, quem mais dá lucro, margem baixa, categorias, formas de pagamento, por maquininha, origem da venda, vendidos sem ficha e um bloco "O que olhar".
+- Relatório importado (1 linha por dia) soma no faturamento, mas não conta em nº de vendas, ticket nem horário.
+- Próximos indicadores sugeridos: CMV real (consumo contado ÷ faturamento), giro/cobertura de estoque em dias, ruptura (horas com item esgotado), tempo de atendimento, cortesias/descontos, ranking por operador, previsão de demanda por dia/clima, fechamento de caixa por turno.

@@ -172,3 +172,20 @@ test('estoque recomendado manda na compra recomendada (menos o que tem)', async 
   await chamar('/api/recomendados', 'PUT', { itens: [{ insumo_id: it.insumo_id, estoque_recomendado: null }] });
   assert.equal((await chamar('/api/estoque?dia=quinta')).corpo.itens.find((x) => x.insumo_id === it.insumo_id).estoque_recomendado, null);
 });
+
+test('desempenho: indicadores do período batem com as vendas feitas', async () => {
+  assert.equal((await chamar('/api/desempenho', 'GET', null, { token: null })).status, 401);
+  const p = await primeiroProduto();
+  await chamar('/api/venda/trava', 'PUT', { ativa: false });
+  const c = (await chamar('/api/venda/comandas', 'POST', {})).corpo.comanda;
+  await chamar(`/api/venda/comandas/${c.id}/itens`, 'POST', { produto_id: p.id, delta: 3 });
+  await chamar(`/api/venda/comandas/${c.id}/cobrar`, 'POST', { forma: 'dinheiro' });
+  await chamar('/api/venda/trava', 'PUT', { ativa: true });
+  const d = (await chamar('/api/desempenho')).corpo;
+  assert.ok(d.vendas >= 1 && d.fat >= p.preco * 3);
+  assert.ok(d.ticket > 0 && d.itens_por_venda > 0);
+  assert.ok(d.top_qtd.some((x) => x.qtd >= 3));
+  assert.ok(d.formas.some((f) => f.forma === 'dinheiro'));
+  assert.ok(Array.isArray(d.hora) && d.hora.length >= 1);
+  assert.equal((await chamar('/api/desempenho?de=2020-01-01&ate=2024-01-01')).status, 400);
+});
