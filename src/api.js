@@ -6,6 +6,8 @@ import { rotearVenda } from './venda.js';
 import { rotearCliente } from './cliente.js';
 import { rotearCombos } from './combos.js';
 import { getDesempenho } from './desempenho.js';
+import { rotearFinanceiro } from './financeiro.js';
+import { rotearPlanilhas } from './planilhas.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -220,7 +222,7 @@ async function postContagem(db, body) {
 }
 
 /** Registra uma compra: entrada no estoque e atualização do preço. Devolve {erro} ou {compra_id, total}. */
-async function registrarCompra(db, { fornecedor, data, usuario, itens }) {
+export async function registrarCompra(db, { fornecedor, data, usuario, itens }) {
   const insumos = new Map((await carregarInsumos(db)).map((i) => [i.nome, i]));
   for (const it of itens) if (!insumos.has(it.insumo) || !(Number(it.quantidade) > 0)) return { erro: `Item inválido: ${it.insumo}` };
   const forn = fornecedor ? await db.prepare('SELECT id FROM fornecedor WHERE nome = ?').bind(fornecedor).first() : null;
@@ -384,6 +386,8 @@ export async function rotearApi(request, env, url) {
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
   if (p.startsWith('/api/cliente/')) return rotearCliente(request, env, url);
+  if (p.startsWith('/api/financeiro/')) return rotearFinanceiro(request, env, url);
+  if (p === '/api/planilhas' || p.startsWith('/api/planilhas/')) return rotearPlanilhas(request, env, url);
   if (p === '/api/desempenho' && request.method === 'GET') return getDesempenho(request, env, url);
   if (p === '/api/combos' || p.startsWith('/api/combos/')) return rotearCombos(request, env, url);
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);

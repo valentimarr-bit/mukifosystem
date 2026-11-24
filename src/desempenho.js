@@ -10,7 +10,7 @@ const somarDias = (iso, n) => new Date(new Date(iso + 'T12:00:00Z').getTime() + 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const pct = (a, b) => (b ? Math.round(((a - b) / b) * 1000) / 10 : null);
 
-async function periodo(db, de, ate) {
+export async function periodo(db, de, ate) {
   const q = (sql, ...b) => db.prepare(sql).bind(...b).all().then((r) => r.results);
   const um = (sql, ...b) => db.prepare(sql).bind(...b).first();
   const [tot, dias, hora, formas, maqs, origens, itens, canc, perdas, compras, custos, produtos] = await Promise.all([

@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#000000">
 <script src="/tema.js"></script>
 <script src="/fotos.js"></script>
+<script src="/planilhas.js" defer></script>
+<script src="/financeiro.js" defer></script>
 <style>
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
@@ -100,6 +102,8 @@
     <button data-aba="alertas">Níveis</button>
     <button data-aba="fotos">Fotos</button>
     <button data-aba="registrar">Registrar</button>
+    <button data-aba="financeiro">Financeiro</button>
+    <button data-aba="planilhas">Excel</button>
     <a href="/venda.html" style="color:var(--acc);padding:0 12px;align-self:center;font-weight:700">Venda →</a>
     <button data-aba="conta">Conta</button>
   </nav>
@@ -126,8 +130,12 @@
     <div id="listaCorpo"></div>
   </section>
 
+  <section id="financeiro" hidden></section>
+  <section id="planilhas" hidden></section>
+
   <section id="produtos" hidden>
     <div class="bar"><button class="btn prim" id="novoProduto">＋ Novo produto</button><input id="pBusca" placeholder="Buscar produto" style="flex:1;min-width:140px"></div>
+    <div id="pExcel"></div>
     <p class="mut">Toque num produto para editar nome, preço e ficha. CMV = custo dos ingredientes pela ficha. Enquanto não houver compra registrada, o custo usa o preço estimado da planilha.</p>
     <table><thead><tr><th>Produto</th><th>Preço</th><th>CMV</th><th class="larga">Lucro</th><th>Lucro %</th><th></th></tr></thead><tbody id="tbProdutos"></tbody></table>
   </section>
@@ -254,8 +262,10 @@ $('#relDia').value = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-pressed', x === b));
   document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== b.dataset.aba));
+  if (b.dataset.aba === 'financeiro') Financeiro.iniciar(Mukifo.usuario()?.papel === 'superadmin');
+  if (b.dataset.aba === 'planilhas') Financeiro.planilhas(Mukifo.usuario()?.papel === 'superadmin');
   if (b.dataset.aba === 'lista') carregarLista();
-  if (b.dataset.aba === 'produtos') carregarProdutos();
+  if (b.dataset.aba === 'produtos') { carregarProdutos(); Planilhas.botoes($('#pExcel'), ['produtos', 'fichas'], carregarProdutos); }
   if (b.dataset.aba === 'conta') carregarConta();
   if (b.dataset.aba === 'fotos') carregarFotos();
   if (b.dataset.aba === 'alertas') desenharAlertas();

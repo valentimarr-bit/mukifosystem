@@ -107,3 +107,14 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Criação de pedido do app: 1 consulta para todos os produtos (antes 1 por item). `public/_headers` com cache para scripts estáveis.
 - Fotos já saem com cache de 1 ano (URL leva a versão).
 - Ideias futuras: PWA/offline para o app do cliente e para a venda; compactar fotos no envio em WebP; medir tempos com o plugin backend-performance-review.
+
+## Financeiro e Excel em tudo
+- Aba **Financeiro** (gestão): **Caixa do turno** (qualquer usuário logado: vendido por forma, sangria/suprimento, dinheiro esperado × contado, fechamento com diferença), e, só superadmin: **Resultado do mês** (faturamento − taxas − CMV − despesas fixas/variáveis, margens, ponto de equilíbrio por mês e por dia), **Contas a pagar** (cadastro, "Paguei", repetir todo mês), **Fluxo de caixa** (5 semanas: entra pelos prazos/taxas × sai pelas contas; vencidas) e **Taxas** (% , fixa e dias por forma).
+- API: `/api/financeiro/*` (migração 0012: `despesa`, `taxa_pagamento`, `caixa_mov`, `caixa_fechamento`).
+- Aba **Excel**: para cada cadastro há **Baixar modelo** (com aba "Como preencher"), **Exportar Excel** e **Importar Excel**. Planilhas: fornecedores, insumos, produtos, fichas técnicas, combos, contagem de estoque, compras, despesas, taxas e vendas (só exportar). Botões também aparecem nas abas Produtos, Contas a pagar e Taxas.
+- Importação: o arquivo é conferido por inteiro; se houver erro, **nada é gravado** e a tela lista as linhas com problema. Há prévia (novos × atualizados) antes de "Aplicar". Célula em branco = não muda o que já existe. Só o superadmin importa. Máx. 5.000 linhas por vez.
+- API: `GET /api/planilhas`, `GET /api/planilhas/:id`, `POST /api/planilhas/:id[?simular=1]`. A leitura do .xlsx é feita no navegador (SheetJS em `public/vendor/`, carregado só ao clicar).
+
+### Como alimentar com os donos (ordem)
+1. Fornecedores → 2. Insumos (embalagem, conteúdo, preço, estoque recomendado) → 3. Produtos (preço e categoria) → 4. Fichas técnicas → 5. Combos → 6. Contagem de estoque (primeira contagem completa; liga a trava de verdade) → 7. Taxas (maquininhas/Pix) → 8. Despesas fixas (aluguel, luz, folha, internet…) marcando "repete todo mês".
+- Taxas e prazos reais vêm do contrato de cada maquininha; sem eles o resultado do mês mostra taxa zero.

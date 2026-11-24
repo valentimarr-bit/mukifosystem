@@ -26,3 +26,9 @@
 
 ## Trava de estoque
 - Ingrediente nunca contado não trava (senão o bar não venderia nada antes da primeira contagem). Chave `travar_estoque` em `configuracao`.
+
+## Financeiro e planilhas
+- Importação tudo-ou-nada com prévia: erro em qualquer linha bloqueia a gravação inteira (evita dados pela metade numa reunião com os donos).
+- Excel lido no navegador (SheetJS); o servidor só recebe linhas em JSON. Reduz peso no Worker e permite o mesmo validador para tudo.
+- Fichas importadas substituem a ficha inteira do produto listado; compras passam pelo mesmo caminho de "registrar compra" (estoque e preço atualizam).
+- Despesas e resultado são só do superadmin; caixa do turno é de qualquer usuário logado.
