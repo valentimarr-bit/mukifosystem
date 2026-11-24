@@ -13,9 +13,10 @@ Atualizado em 24/11/2026.
 | 6 | Hortifruti | ⏳ | Perguntas em `hortifruti-perguntas.md` | Suas respostas; depois fator de limpeza por item |
 | 7 | Pedidos pelo celular | 🟡 | App do cliente com fotos, Pix com valor exato, pedido só vale pago, QR de uso único no balcão, limites anti-abuso | **Conta/banco do Pix** (`perguntas-pagamentos.md`) para confirmação automática; fotos dos produtos; piloto numa ter/qua e numa sex/sáb |
 | 8 | Fechamento de caixa por turno | ⬜ | — | Esperado × contado por forma de pagamento e operador; diferença do dia |
-| 9 | Modo offline (PWA) | ⬜ | Lista de compras já é PWA | Venda e app do cliente funcionando com internet ruim; fila de envio |
-| 10 | Integrações de pagamento | ⏳ | Estrutura pronta (maquininha, webhook com assinatura) | Navi (API) e provedor Pix com aviso automático |
-| 11 | Desligar a planilha | ⬜ | — | Planilha vira só exportação para conferência |
+| 9 | Financeiro (só superadmin) | ⬜ | Já temos: cobranças por forma e maquininha, compras com valor, margem no Desempenho | Despesas fixas e variáveis, contas a pagar com vencimento, taxas da maquininha e do Pix (bruto × líquido), recebíveis do cartão, sangria/suprimento, fluxo de caixa, resultado do mês (DRE simples) e ponto de equilíbrio |
+| 10 | Modo offline (PWA) | ⬜ | Lista de compras já é PWA | Venda e app do cliente funcionando com internet ruim; fila de envio |
+| 11 | Integrações de pagamento | ⏳ | Estrutura pronta (maquininha, webhook com assinatura) | Navi (API) e provedor Pix com aviso automático |
+| 12 | Desligar a planilha | ⬜ | — | Planilha vira só exportação para conferência |
 
 ## Próximos passos (ordem sugerida)
 1. **Você:** fazer a 1ª contagem completa do estoque (liga a trava de estoque em tudo e tira os zeros).
