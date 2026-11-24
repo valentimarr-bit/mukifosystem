@@ -25,18 +25,18 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
 
 <div id="telaConta" class="tela" hidden>
   <div id="cVisitante">
-    <div class="card"><b>Crie sua conta e ganhe pontos</b><p class="mut">A cada R$ 1 pago você ganha 1 ponto e sobe de nível: do Caramelo 🐕 até a Nota de 200 💸.</p></div>
+    <div class="card"><b>Crie sua conta e suba de nível</b><p class="mut">A cada pedido você sobe de nível: do Caramelo 🐕 até a Nota de 200 💸.</p></div>
     <div id="cAbas" style="display:flex;gap:8px;margin-bottom:12px"><button class="grande sec" id="aEntrar">Entrar</button><button class="grande" id="aCriar">Criar conta</button></div>
     <div id="cNomeBox"><label>Seu nome</label><input id="cNome" autocomplete="name" maxlength="40"></div>
     <label id="cLoginLbl">Celular com DDD</label><input id="cLogin" inputmode="tel" autocomplete="username">
     <div id="cEmailBox"><label>E-mail (opcional)</label><input id="cEmail" type="email" autocomplete="email"></div>
     <label>Senha (mínimo 6)</label><input id="cSenha" type="password" autocomplete="current-password">
-    <label id="cAceiteBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cAceite" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>Li e aceito os termos e a política de privacidade. Usamos seus dados só para o pedido, os pontos e avisos do Mukifo.</span></label>
-    <div class="erro" id="cErro"></div><button class="grande" id="cOk">Continuar</button><div id="cGoogle" style="margin-top:12px;display:flex;justify-content:center"></div>
+    <label id="cAceiteBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cAceite" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>Li e aceito os termos e a política de privacidade. Usamos seus dados só para o pedido, o nível e avisos do Mukifo.</span></label>
+    <div id="cRecBox" hidden><label>Código de 6 dígitos</label><input id="cCodigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><p class="mut" id="cRecDica"></p></div>
+    <div class="erro" id="cErro"></div><button class="grande" id="cOk">Continuar</button><p style="text-align:center"><a href="#" id="cEsqueci">Esqueci minha senha</a></p><div id="cGoogle" style="margin-top:12px;display:flex;justify-content:center"></div>
   </div>
   <div id="cLogado" hidden>
     <div class="card centro"><div id="lEmoji" style="font-size:64px"></div><h2 id="lNivel" style="margin:4px 0"></h2><p class="mut" id="lFrase"></p>
-      <div style="height:14px;background:var(--input);border-radius:8px;overflow:hidden"><div id="lBarra" style="height:100%;background:var(--acc);width:0"></div></div>
       <p id="lPontos"></p></div>
     <div class="card"><b>Todos os níveis</b><div id="lNiveis"></div></div>
     <div class="card"><b>Seus últimos pedidos</b><div id="lPedidos" class="mut"></div></div>
@@ -49,7 +49,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
   <div class="card"><b>Seu pedido</b><div id="resumo"></div></div>
   <div id="dadosVisitante"><label>Seu nome</label><input id="nome" autocomplete="name" maxlength="40">
   <label>Seu celular (com DDD)</label><input id="cel" inputmode="tel" autocomplete="tel" placeholder="(51) 99999-9999">
-  <p class="mut">Com uma conta você não digita isso de novo e ganha pontos. <a href="#" id="criarAqui" style="color:var(--acc)">Criar conta</a></p></div>
+  <p class="mut">Com uma conta você não digita isso de novo e sobe de nível. <a href="#" id="criarAqui" style="color:var(--acc)">Criar conta</a></p></div>
   <p id="dadosConta" class="mut" hidden></p>
   <p class="mut">Usamos só para avisar sobre o pedido. O pedido só entra na fila depois que o Pix for pago, e vale por alguns minutos.</p>
   <div class="erro" id="erro"></div><button class="grande" id="bPagar">Pagar com Pix</button><button class="grande sec" id="bVoltar">Voltar</button></div>
@@ -144,32 +144,36 @@ $('#bNovo').onclick = () => tela('cardapio');
   try { pedido = JSON.parse(localStorage.getItem(CH) || 'null'); } catch {} if (pedido) acompanhar();
 })();
 
-// ---------- conta, pontos e níveis ----------
+// ---------- conta e níveis (o cliente nunca vê pontos nem valores acumulados) ----------
 const SC = 'mukifo_conta'; let conta = null, modo = 'entrar', niveis = null, etapaAtual = null;
 try { conta = JSON.parse(localStorage.getItem(SC) || 'null'); } catch {}
 const cabConta = () => (conta?.token ? { 'X-Sessao-Cliente': conta.token } : {});
 const salvarConta = (c) => { conta = c; try { c ? localStorage.setItem(SC, JSON.stringify(c)) : localStorage.removeItem(SC); } catch {} botaoConta(); };
-function botaoConta() { const c = conta?.cliente; $('#bConta').textContent = c ? `${c.nivel.emoji} ${c.nome.split(' ')[0]} · ${c.pontos} pts` : 'Entrar';
-  $('#dadosVisitante').hidden = !c; $('#dadosVisitante').hidden = !!c; $('#dadosConta').hidden = !c; if (c) $('#dadosConta').textContent = `Pedido no nome de ${c.nome}. Você ganha pontos quando o Pix cair.`; }
+function botaoConta() { const c = conta?.cliente; $('#bConta').textContent = c ? `${c.nivel.emoji} ${c.nome.split(' ')[0]}` : 'Entrar';
+  $('#dadosVisitante').hidden = !c; $('#dadosVisitante').hidden = !!c; $('#dadosConta').hidden = !c; if (c) $('#dadosConta').textContent = `Pedido no nome de ${c.nome}. Seu nível sobe quando o Pix cair.`; }
 async function api(url, corpo) { const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...cabConta() }, body: corpo ? JSON.stringify(corpo) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j; }
-function formaConta() { const novo = modo === 'criar'; $('#cNomeBox').hidden = !novo; $('#cEmailBox').hidden = !novo; $('#cAceiteBox').hidden = !novo; $('#cLoginLbl').textContent = novo ? 'Celular com DDD' : 'Celular ou e-mail';
-  $('#aEntrar').className = 'grande' + (novo ? ' sec' : ''); $('#aCriar').className = 'grande' + (novo ? '' : ' sec'); $('#cErro').textContent = ''; }
+function formaConta() { const novo = modo === 'criar', rec = modo === 'recuperar'; $('#cRecBox').hidden = !rec; $('#cEsqueci').hidden = novo || rec; $('#cOk').textContent = rec ? 'Criar nova senha' : 'Continuar'; $('#cSenha').previousElementSibling.textContent = rec ? 'Nova senha (mínimo 6)' : 'Senha (mínimo 6)'; $('#cNomeBox').hidden = !novo; $('#cEmailBox').hidden = !novo; $('#cAceiteBox').hidden = !novo; $('#cLoginLbl').textContent = novo ? 'Celular com DDD' : 'Celular ou e-mail';
+  $('#aEntrar').className = 'grande' + (novo || rec ? ' sec' : ''); $('#aCriar').className = 'grande' + (novo ? '' : ' sec'); $('#cErro').textContent = ''; }
 async function abrirConta() {
   tela('telaConta'); niveis ??= await api('/api/conta/niveis').catch(() => null);
   if (conta) { try { const j = await api('/api/conta/eu'); salvarConta({ ...conta, cliente: j.cliente }); desenharPerfil(j); } catch (e) { if (e.status === 401) { salvarConta(null); abrirConta(); } } return; }
   $('#cVisitante').hidden = false; $('#cLogado').hidden = true; formaConta(); botaoGoogle();
 }
 function desenharPerfil(j) { const c = j.cliente, n = c.nivel; $('#cVisitante').hidden = true; $('#cLogado').hidden = false;
-  $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase; $('#lBarra').style.width = n.progresso_pct + '%';
-  $('#lPontos').innerHTML = `<b>${c.pontos}</b> pontos` + (n.proximo ? ` · faltam <b>${n.proximo.faltam}</b> para ${n.proximo.emoji} ${esc(n.proximo.nome)}` : ' · você chegou ao topo! 💸');
-  $('#lNiveis').innerHTML = (niveis?.niveis ?? []).map((x) => `<div class="cl"><span style="font-size:28px">${x.emoji}</span><span class="cn"><b${x.nivel === n.nivel ? ' class="bom"' : ''}>${esc(x.nome)}</b><br><span class="mut">${x.min} pontos${x.nivel === n.nivel ? ' · você está aqui' : ''}</span></span></div>`).join('') + `<p class="mut">${esc(niveis?.regra ?? '')}</p>`;
-  $('#lPedidos').innerHTML = j.pedidos.length ? j.pedidos.map((p) => `${esc(p.numero)} · ${R$(p.total)}${p.pontos ? ` · +${p.pontos} pts` : ''}`).join('<br>') : 'Nenhum ainda.'; }
+  $('#lEmoji').textContent = n.emoji; $('#lNivel').textContent = n.nome; $('#lFrase').textContent = n.frase;
+  $('#lPontos').innerHTML = n.proximo ? `Próximo nível: ${n.proximo.emoji} <b>${esc(n.proximo.nome)}</b>` : 'Você chegou ao topo! 💸';
+  $('#lNiveis').innerHTML = (niveis?.niveis ?? []).map((x) => `<div class="cl"><span style="font-size:28px">${x.emoji}</span><span class="cn"><b${x.nivel === n.nivel ? ' class="bom"' : ''}>${esc(x.nome)}</b>${x.nivel === n.nivel ? '<br><span class="mut">você está aqui</span>' : ''}</span></div>`).join('');
+  $('#lPedidos').innerHTML = j.pedidos.length ? j.pedidos.map((p) => `${esc(p.numero)} · ${esc(p.dia.split('-').reverse().slice(0, 2).join('/'))}`).join('<br>') : 'Nenhum ainda.'; }
 $('#bConta').onclick = abrirConta; $('#cVoltar').onclick = () => { tela('cardapio'); desenhar(); };
 $('#aEntrar').onclick = () => { modo = 'entrar'; formaConta(); }; $('#aCriar').onclick = () => { modo = 'criar'; formaConta(); };
+$('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; formaConta();
+  $('#cRecDica').textContent = 'Digite seu celular ou e-mail acima. Pedindo o código por e-mail ou no balcão do bar, você cria uma nova senha.';
+  if (!$('#cLogin').value.trim()) return;
+  try { const j = await api('/api/conta/esqueci', { login: $('#cLogin').value }); $('#cRecDica').textContent = j.mensagem; } catch (er) { $('#cErro').textContent = er.message; } };
 $('#criarAqui').onclick = (e) => { e.preventDefault(); modo = 'criar'; abrirConta(); };
 $('#cOk').onclick = async () => { $('#cErro').textContent = ''; $('#cOk').disabled = true;
-  try { const j = modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked })
-      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; abrirConta(); }
+  try { const j = modo === 'recuperar' ? await api('/api/conta/redefinir', { login: $('#cLogin').value, codigo: $('#cCodigo').value, senha: $('#cSenha').value }) : modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked })
+      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; abrirConta(); }
   catch (e) { $('#cErro').textContent = e.message; } $('#cOk').disabled = false; };
 $('#lSair').onclick = async () => { try { await api('/api/conta/sair', {}); } catch {} salvarConta(null); tela('cardapio'); desenhar(); };
 function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGoogle').dataset.ok) return; $('#cGoogle').dataset.ok = 1;

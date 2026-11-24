@@ -9,6 +9,9 @@ const erro = (m, s = 400) => json({ erro: m }, s);
 const DIAS = 90, MAX_FALHAS = 5, BLOQUEIO_MIN = 10;
 const emailOk = (e) => (/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(e) ? e : null);
 
+/** O CLIENTE só vê o nível: nunca pontos, quanto falta, progresso ou valores (decisão do dono: ele não deve saber quanto está gastando). */
+const nivelPublico = (n) => ({ nivel: n.nivel, nome: n.nome, emoji: n.emoji, frase: n.frase, proximo: n.proximo ? { nome: n.proximo.nome, emoji: n.proximo.emoji } : null });
+const paraCliente = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, nivel: nivelPublico(nivelDe(c.pontos_total)), tem_senha: !!c.senha_hash });
 const publico = (c) => ({ id: c.id, nome: c.nome, celular: c.celular, email: c.email, pontos: c.pontos, pontos_total: c.pontos_total, nivel: nivelDe(c.pontos_total), tem_senha: !!c.senha_hash });
 
 async function abrirSessao(db, clienteId) {
@@ -55,7 +58,7 @@ async function cadastro(db, c) {
   const id = 'cli-' + aleatorio(8), sal = aleatorio(16);
   await db.prepare("INSERT INTO cliente (id, nome, celular, email, senha_hash, sal, aceite_em) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))").bind(id, nome, celular, email, await hashSenha(senha, sal), sal).run();
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(id).first();
-  return json({ ok: true, token: await abrirSessao(db, id), cliente: publico(cli) }, 201);
+  return json({ ok: true, token: await abrirSessao(db, id), cliente: paraCliente(cli) }, 201);
 }
 
 async function entrar(db, c) {
@@ -69,7 +72,54 @@ async function entrar(db, c) {
     return falha;
   }
   await db.prepare('UPDATE cliente SET falhas = 0, bloqueado_ate = NULL WHERE id = ?').bind(cli.id).run();
-  return json({ ok: true, token: await abrirSessao(db, cli.id), cliente: publico(cli) });
+  return json({ ok: true, token: await abrirSessao(db, cli.id), cliente: paraCliente(cli) });
+}
+
+// ---- esqueci minha senha ----
+const RESET_MIN = 15, RESET_TENTATIVAS = 5;
+const codigoSeis = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+const hashCodigo = (codigo, id) => hashToken(`reset|${id}|${codigo}`);
+async function gravarCodigo(db, id) {
+  const codigo = codigoSeis();
+  await db.prepare(`UPDATE cliente SET reset_hash = ?, reset_ate = datetime('now', '+${RESET_MIN} minutes'), reset_falhas = 0 WHERE id = ?`).bind(await hashCodigo(codigo, id), id).run();
+  return codigo;
+}
+/** Envio por e-mail (Resend) só se RESEND_API_KEY e EMAIL_REMETENTE estiverem configurados; senão o código sai pelo balcão. */
+async function enviarEmail(env, para, assunto, texto) {
+  if (!env.RESEND_API_KEY || !env.EMAIL_REMETENTE) return false;
+  try {
+    const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' }, body: JSON.stringify({ from: env.EMAIL_REMETENTE, to: [para], subject: assunto, text: texto }) });
+    return r.ok;
+  } catch { return false; }
+}
+async function acharConta(db, login) {
+  const l = String(login ?? '').trim().toLowerCase(), cel = celularValido(l);
+  return db.prepare('SELECT * FROM cliente WHERE ativo = 1 AND ((? IS NOT NULL AND celular = ?) OR email = ?)').bind(cel, cel, l).first();
+}
+async function esqueci(db, env, c) {
+  const cli = await acharConta(db, c?.login);
+  const resposta = { ok: true, email: !!(env.RESEND_API_KEY && env.EMAIL_REMETENTE), mensagem: 'Se existir uma conta com esses dados, o código foi enviado por e-mail. Se não chegar, peça um código no balcão do bar.' };
+  if (!cli || !cli.email || !resposta.email) return json(resposta);   // mesma resposta para quem não existe: ninguém descobre quem tem conta
+  const recente = await db.prepare("SELECT 1 AS x FROM cliente WHERE id = ? AND reset_ate > datetime('now', '+14 minutes')").bind(cli.id).first();
+  if (recente) return json(resposta);   // no máximo 1 envio por minuto
+  const codigo = await gravarCodigo(db, cli.id);
+  await enviarEmail(env, cli.email, 'Seu código do Mukifo', `Seu código para criar uma nova senha: ${codigo}\n\nValem ${RESET_MIN} minutos. Se não foi você, ignore este e-mail.`);
+  return json(resposta);
+}
+async function redefinir(db, c) {
+  const cli = await acharConta(db, c?.login); const falha = erro('Código inválido ou vencido. Peça um novo no balcão.', 400);
+  const senha = String(c?.senha ?? ''); if (senha.length < 6 || senha.length > 100) return erro('A nova senha precisa ter de 6 a 100 caracteres.');
+  if (!cli || !cli.reset_hash || !(cli.reset_ate > new Date().toISOString().replace('T', ' ').slice(0, 19)) || cli.reset_falhas >= RESET_TENTATIVAS) return falha;
+  if (!igual(await hashCodigo(String(c?.codigo ?? '').replace(/\D/g, ''), cli.id), cli.reset_hash)) {
+    await db.prepare('UPDATE cliente SET reset_falhas = reset_falhas + 1 WHERE id = ?').bind(cli.id).run();
+    return falha;
+  }
+  const sal = aleatorio(16);
+  await db.batch([
+    db.prepare('UPDATE cliente SET senha_hash = ?, sal = ?, reset_hash = NULL, reset_ate = NULL, reset_falhas = 0, falhas = 0, bloqueado_ate = NULL WHERE id = ?').bind(await hashSenha(senha, sal), sal, cli.id),
+    db.prepare('DELETE FROM cliente_sessao WHERE cliente_id = ?').bind(cli.id)]);   // quem estava logado com a senha antiga cai
+  const novo = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(cli.id).first();
+  return json({ ok: true, token: await abrirSessao(db, cli.id), cliente: paraCliente(novo) });
 }
 
 async function google(db, env, c) {
@@ -84,20 +134,22 @@ async function google(db, env, c) {
     await db.prepare("INSERT INTO cliente (id, nome, email, google_sub, aceite_em) VALUES (?, ?, ?, ?, datetime('now'))").bind(id, g.nome || 'Cliente', g.email, g.sub).run();
     cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(id).first();
   }
-  return json({ ok: true, token: await abrirSessao(db, cli.id), cliente: publico(cli) });
+  return json({ ok: true, token: await abrirSessao(db, cli.id), cliente: paraCliente(cli) });
 }
 
 export async function rotearConta(request, env, url) {
   const db = env.DB, m = request.method, p = url.pathname;
-  if (m === 'GET' && p === '/api/conta/niveis') return json({ niveis: NIVEIS, regra: '1 ponto para cada R$ 1 pago.', google_client_id: env.GOOGLE_CLIENT_ID || null });
+  if (m === 'GET' && p === '/api/conta/niveis') return json({ niveis: NIVEIS.map((n) => ({ nivel: n.nivel, nome: n.nome, emoji: n.emoji, frase: n.frase })), google_client_id: env.GOOGLE_CLIENT_ID || null });
   let c = {}; if (m === 'POST' || m === 'PUT') { try { c = await request.json(); } catch { /* vazio */ } }
   if (m === 'POST' && p === '/api/conta/cadastro') return cadastro(db, c);
   if (m === 'POST' && p === '/api/conta/entrar') return entrar(db, c);
   if (m === 'POST' && p === '/api/conta/google') return google(db, env, c);
+  if (m === 'POST' && p === '/api/conta/esqueci') return esqueci(db, env, c);
+  if (m === 'POST' && p === '/api/conta/redefinir') return redefinir(db, c);
   const cli = await clienteLogado(request, env); if (!cli) return erro('Entre na sua conta.', 401);
   if (m === 'GET' && p === '/api/conta/eu') {
-    const { results } = await db.prepare("SELECT p.numero, p.dia, p.total, p.status, (SELECT pontos FROM ponto_mov WHERE pedido_id = p.id AND motivo = 'compra') AS pontos FROM pedido p WHERE p.cliente_id = ? AND p.status <> 'cancelado' ORDER BY p.criado_em DESC LIMIT 20").bind(cli.id).all();
-    return json({ cliente: publico(cli), pedidos: results });
+    const { results } = await db.prepare("SELECT p.numero, p.dia, p.status FROM pedido p WHERE p.cliente_id = ? AND p.status <> 'cancelado' ORDER BY p.criado_em DESC LIMIT 20").bind(cli.id).all();
+    return json({ cliente: paraCliente(cli), pedidos: results });
   }
   if (m === 'POST' && p === '/api/conta/sair') { await db.prepare('DELETE FROM cliente_sessao WHERE token_hash = ?').bind(await hashToken(request.headers.get('X-Sessao-Cliente'))).run(); return json({ ok: true }); }
   if (m === 'PUT' && p === '/api/conta/eu') {
@@ -119,7 +171,7 @@ export async function rotearClientes(request, env, url) {
     const porNivel = {}; for (const x of results) { const n = nivelDe(x.pontos_total).nome; porNivel[n] = (porNivel[n] ?? 0) + 1; }
     return json({ total: results.length, por_nivel: porNivel, clientes: results.map((x) => ({ id: x.id, nome: x.nome, celular: x.celular, email: x.email, pontos: x.pontos, pontos_total: x.pontos_total, nivel: nivelDe(x.pontos_total).nome, emoji: nivelDe(x.pontos_total).emoji, pedidos: x.pedidos, ultima_visita: x.ultima_visita, ativo: !!x.ativo, criado_em: x.criado_em })) });
   }
-  const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos)?$/); if (!k) return null;
+  const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos|\/codigo-senha)?$/); if (!k) return null;
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(k[1]).first(); if (!cli) return erro('Cliente não encontrado.', 404);
   if (m === 'GET' && !k[2]) {
     const [{ results: pedidos }, { results: pontos }] = await Promise.all([
@@ -127,12 +179,16 @@ export async function rotearClientes(request, env, url) {
       db.prepare('SELECT pontos, motivo, criado_em FROM ponto_mov WHERE cliente_id = ? ORDER BY id DESC LIMIT 30').bind(cli.id).all()]);
     return json({ cliente: publico(cli), ativo: !!cli.ativo, aceite_em: cli.aceite_em, pedidos, pontos });
   }
+  if (m === 'POST' && k[2] === '/codigo-senha') {   // cliente esqueceu a senha e está no balcão: a equipe gera um código de uso único
+    if (!cli.senha_hash && !cli.google_sub) return erro('Essa conta não tem senha para trocar.', 409);
+    return json({ ok: true, codigo: await gravarCodigo(db, cli.id), valido_min: RESET_MIN, celular: cli.celular });
+  }
   let c = {}; try { c = await request.json(); } catch { /* vazio */ }
   if (m === 'PUT' && !k[2]) {
     const nome = String(c.nome ?? cli.nome).replace(/\s+/g, ' ').trim().slice(0, 40); if (nome.length < 2) return erro('Nome inválido.');
     await db.prepare('UPDATE cliente SET nome = ?, ativo = ? WHERE id = ?').bind(nome, c.ativo === false ? 0 : 1, cli.id).run(); return json({ ok: true });
   }
-  if (m === 'POST' && k[2]) {
+  if (m === 'POST' && k[2] === '/pontos') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin ajusta pontos.', 403);
     const pts = Number(c.pontos), motivo = String(c.motivo ?? '').trim().slice(0, 60);
     if (!Number.isInteger(pts) || pts === 0 || Math.abs(pts) > 100000) return erro('Digite os pontos (número inteiro, pode ser negativo).');

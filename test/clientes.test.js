@@ -11,7 +11,7 @@ import { verificarGoogle } from '../src/clientes.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
@@ -114,7 +114,13 @@ test('pedido do app: paga → aparece na produção com receita → começa a pr
   assert.equal(val.corpo.entregue, true);
   assert.equal((await chamar('/api/producao')).corpo.pedidos.length, 0);                              // QR lido: saiu da produção
   const eu = (await chamar('/api/conta/eu', 'GET', null, cab, null)).corpo.cliente;
-  assert.equal(eu.pontos_total, Math.floor(prod.preco * 2)); assert.equal(eu.pontos, eu.pontos_total);
+  // o cliente só vê o nível: nenhum número de pontos, progresso ou valor sai nas respostas dele
+  assert.equal(eu.pontos, undefined); assert.equal(eu.pontos_total, undefined); assert.equal(eu.nivel.min, undefined); assert.equal(eu.nivel.progresso_pct, undefined);
+  assert.equal(eu.nivel.proximo?.faltam, undefined); assert.ok(eu.nivel.nome);
+  const bruto = JSON.stringify([(await chamar('/api/conta/eu', 'GET', null, cab, null)).corpo, (await chamar('/api/conta/niveis', 'GET', null, {}, null)).corpo]);
+  assert.ok(!/"min"|pontos|faltam|progresso|"total"|"regra"/.test(bruto), 'resposta do cliente não pode trazer pontos nem valores');
+  const pontosReais = (await env.DB.prepare('SELECT pontos_total, pontos FROM cliente WHERE id = ?').bind(eu.id).first());   // a equipe/banco guarda
+  assert.equal(pontosReais.pontos_total, Math.floor(prod.preco * 2)); assert.equal(pontosReais.pontos, pontosReais.pontos_total);
   const { creditarPontos } = await import('../src/clientes.js'); assert.equal(await creditarPontos(env.DB, ped.corpo.id), 0);   // não conta duas vezes
 });
 
@@ -194,4 +200,27 @@ test('modo teste: pagamento do app e do balcão entra sozinho, sem trava, marcad
   assert.equal(c.status, 'paga'); assert.equal(c.operador, 'teste');
   assert.equal((await env.DB.prepare('SELECT status FROM pedido WHERE id = ?').bind(r.corpo.id).first()).status, 'recebido');
   await chamar('/api/teste', 'PUT', { ativo: false });
+});
+
+test('esqueci a senha: código do balcão cria senha nova, vale uma vez e derruba a sessão antiga', async () => {
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Maria Teste', celular: '51988887777', senha: 'senha-antiga', aceite: true }, {}, null);
+  assert.equal(cad.status, 201); const tokenAntigo = cad.corpo.token, id = cad.corpo.cliente.id;
+  // sem código: nada feito; pedido por e-mail não revela se a conta existe
+  assert.equal((await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: '123456', senha: 'nova-senha-1' }, {}, null)).status, 400);
+  const e1 = await chamar('/api/conta/esqueci', 'POST', { login: '51988887777' }, {}, null), e2 = await chamar('/api/conta/esqueci', 'POST', { login: '51900000000' }, {}, null);
+  assert.deepEqual(e1.corpo, e2.corpo);
+  // só a equipe logada gera o código
+  assert.equal((await chamar(`/api/clientes/${id}/codigo-senha`, 'POST', {}, {}, null)).status, 401);
+  const g = (await chamar(`/api/clientes/${id}/codigo-senha`, 'POST', {})).corpo; assert.match(g.codigo, /^\d{6}$/);
+  // código errado conta tentativa; depois de 5 erros o código é invalidado, mesmo o certo
+  for (let i = 0; i < 5; i++) assert.equal((await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: g.codigo === '000000' ? '111111' : '000000', senha: 'nova-senha-1' }, {}, null)).status, 400);
+  assert.equal((await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: g.codigo, senha: 'nova-senha-1' }, {}, null)).status, 400);
+  const g2 = (await chamar(`/api/clientes/${id}/codigo-senha`, 'POST', {})).corpo;
+  assert.equal((await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: g2.codigo, senha: 'curta' }, {}, null)).status, 400);   // senha curta
+  const ok = await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: g2.codigo, senha: 'nova-senha-1' }, {}, null);
+  assert.equal(ok.status, 200); assert.ok(ok.corpo.token);
+  assert.equal((await chamar('/api/conta/redefinir', 'POST', { login: '51988887777', codigo: g2.codigo, senha: 'outra-senha-9' }, {}, null)).status, 400);   // uso único
+  assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51988887777', senha: 'senha-antiga' }, {}, null)).status, 401);
+  assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51988887777', senha: 'nova-senha-1' }, {}, null)).status, 200);
+  assert.equal((await chamar('/api/conta/eu', 'GET', null, { 'X-Sessao-Cliente': tokenAntigo }, null)).status, 401);   // sessão antiga caiu
 });
