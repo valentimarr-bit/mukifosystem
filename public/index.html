@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111111">
   <title>Mukifo</title>
+  <script src="/tema.js"></script>
   <style>
-    :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100dvh; display: grid; place-items: center;
-      background: #111; color: #f2f2f2;
+      background: var(--bg); color: var(--txt);
       font: 18px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       padding: 24px;
     }
     main { max-width: 420px; width: 100%; text-align: center; }
     h1 { font-size: 44px; letter-spacing: .06em; margin: 0 0 4px; }
-    p { color: #b5b5b5; margin: 0 0 24px; }
-    .status { font-size: 14px; padding: 10px 14px; border: 1px solid #333; border-radius: 8px; }
-    .ok { color: #7ddc8a; border-color: #2e5a35; }
-    .erro { color: #ff8a80; border-color: #5a2e2e; }
+    p { color: var(--mut); margin: 0 0 24px; }
+    .status { font-size: 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; }
+    .ok { color: var(--ok); border-color: var(--ok-bd); }
+    .erro { color: var(--bad); border-color: var(--bad-bd); }
   </style>
 </head>
 <body>
@@ -27,8 +27,8 @@
     <h1>MUKIFO</h1>
     <p>Sistema do bar — em construção</p>
     <div id="status" class="status">Verificando o servidor…</div>
-    <p style="margin-top:24px"><a href="/compras/" style="color:#ffb347;font-size:20px">Lista de compras (celular) →</a></p>
-    <p><a href="/gestao.html" style="color:#ffb347;font-size:20px">Gestão →</a></p>
+    <p style="margin-top:24px"><a href="/compras/" style="color:var(--acc);font-size:20px">Lista de compras (celular) →</a></p>
+    <p><a href="/gestao.html" style="color:var(--acc);font-size:20px">Gestão →</a></p>
   </main>
   <script>
     fetch("/api/saude")

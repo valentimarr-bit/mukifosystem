@@ -8,6 +8,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Login (`migrations/0003_usuarios.sql`, `src/auth.js`, `public/entrar.js`): o primeiro acesso, com `CODIGO_PRIMEIRO_ACESSO`, cria o **superadmin**; ele troca a senha, adiciona gerentes e passa o cargo (só um superadmin por vez). Gestão (aba Conta) e app de compras usam o mesmo login. `ADMIN_TOKEN` virou chave de emergência.
 - Banco se monta sozinho: `wrangler.jsonc` sem `database_id` (o deploy cria o D1) e o Worker aplica migrações + seed no primeiro acesso. Seed agrupado em 20 comandos (limites do D1). Testado no D1 local do wrangler com banco vazio.
 - 25 testes passando.
+- Seletor de **visual** (Escuro, Claro, Vinho, Alto contraste) na gestão e no app de compras (`public/tema.js`, salvo no aparelho). Cores via variáveis CSS; para criar um tema novo basta acrescentar uma linha em `TEMAS`. Falta alinhar ao Armant 360 (sem acesso ao repo) e às cores reais do Mukifo (logo).
 
 **Próximo**
 - Publicar pelo painel da Cloudflare (README → "Publicar") e criar o segredo `CODIGO_PRIMEIRO_ACESSO`.

@@ -7,29 +7,30 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Compras">
+<script src="/tema.js"></script>
 <link rel="manifest" href="/compras/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/compras/icone-192.png">
 <link rel="icon" href="/compras/icone-192.png">
 <title>Mukifo — Compras</title>
 <style>
-  :root { --bg:#111; --card:#1c1c1c; --line:#2e2e2e; --txt:#f4f4f4; --mut:#9a9a9a; --acc:#ffb347; --ok:#7ddc8a; --bad:#ff8a80; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   [hidden] { display:none !important; }
   html, body { margin:0; background:var(--bg); color:var(--txt); font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
   body { padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
-  header { position:sticky; top:0; z-index:5; background:#000; padding:calc(10px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line); }
+  header { position:sticky; top:0; z-index:5; background:var(--hdr); padding:calc(10px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line); }
   .topo { display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .topo b { font-size:19px; letter-spacing:.04em; }
+  .topo select { background:var(--card); color:var(--txt); border:1px solid var(--line); border-radius:20px; padding:6px 8px; font-size:14px; max-width:130px; }
   .barra { height:8px; background:var(--line); border-radius:8px; margin-top:10px; overflow:hidden; }
   .barra i { display:block; height:100%; background:var(--ok); width:0; transition:width .25s; }
   .resumo { display:flex; flex-wrap:wrap; gap:2px 12px; justify-content:space-between; color:var(--mut); font-size:14px; margin-top:6px; }
-  .aviso { background:#3a2a00; color:#ffd166; padding:8px 16px; font-size:14px; }
+  .aviso { background:var(--aviso-bg); color:var(--aviso-txt); padding:8px 16px; font-size:14px; }
   main { padding:12px 12px 0; }
   .grupo { margin-bottom:14px; }
   .grupo h2 { font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--acc); margin:14px 4px 6px; display:flex; justify-content:space-between; }
   .grupo h2 span { color:var(--mut); text-transform:none; letter-spacing:0; font-weight:400; }
   .item { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:8px; min-height:64px; user-select:none; }
-  .caixa { flex:0 0 34px; height:34px; border-radius:9px; border:2px solid var(--mut); display:grid; place-items:center; font-size:22px; font-weight:700; color:#111; }
+  .caixa { flex:0 0 34px; height:34px; border-radius:9px; border:2px solid var(--mut); display:grid; place-items:center; font-size:22px; font-weight:700; color:var(--on-ok); }
   .item.ok { opacity:.55; }
   .item.ok .caixa { background:var(--ok); border-color:var(--ok); }
   .item.ok .nome { text-decoration:line-through; }
@@ -38,29 +39,29 @@
   .qtd { font-weight:700; font-size:20px; margin-right:4px; }
   .det { color:var(--mut); font-size:13px; }
   .editar { flex:0 0 44px; height:44px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--mut); font-size:20px; }
-  .rodape { position:fixed; left:0; right:0; bottom:0; z-index:5; background:#000; border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
+  .rodape { position:fixed; left:0; right:0; bottom:0; z-index:5; background:var(--hdr); border-top:1px solid var(--line); padding:10px 12px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
   button { font:inherit; }
   .btn { flex:1; min-height:52px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--txt); font-size:17px; font-weight:600; }
-  .btn.prim { background:var(--acc); color:#111; border-color:var(--acc); }
+  .btn.prim { background:var(--acc); color:var(--on-acc); border-color:var(--acc); }
   .btn.peq { flex:0 0 auto; padding:0 16px; }
   .vazio { text-align:center; padding:40px 16px; }
   .vazio p { color:var(--mut); }
   .vazio .btn { display:block; width:100%; margin:12px 0; }
   .chip { border:1px solid var(--line); background:transparent; color:var(--mut); border-radius:20px; padding:6px 12px; font-size:14px; }
-  .chip[aria-pressed=true] { color:#111; background:var(--txt); }
+  .chip[aria-pressed=true] { color:var(--bg); background:var(--txt); }
   dialog { border:none; border-radius:16px; background:var(--card); color:var(--txt); width:min(92vw,420px); padding:20px; }
   dialog::backdrop { background:rgba(0,0,0,.7); }
   dialog h3 { margin:0 0 4px; }
   label { display:block; margin:14px 0 4px; color:var(--mut); font-size:14px; }
-  input { width:100%; min-height:50px; font-size:20px; padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:#111; color:var(--txt); }
+  input { width:100%; min-height:50px; font-size:20px; padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:var(--input); color:var(--txt); }
   .acoes { display:flex; gap:8px; margin-top:18px; }
   .msg { margin:12px; padding:12px 14px; border-radius:12px; background:var(--card); border:1px solid var(--line); }
-  .msg.ok { border-color:#2e5a35; } .msg.erro { border-color:#5a2e2e; color:var(--bad); }
+  .msg.ok { border-color:var(--ok-bd); } .msg.erro { border-color:var(--bad-bd); color:var(--bad); }
 </style>
 </head>
 <body>
 <header>
-  <div class="topo"><b id="titulo">MUKIFO · Compras</b><button class="chip" id="ocultar" aria-pressed="false">Ocultar comprados</button></div>
+  <div class="topo"><b id="titulo">MUKIFO · Compras</b><span style="display:flex;gap:6px;align-items:center"><select id="tema" aria-label="Mudar o visual"></select><button class="chip" id="ocultar" aria-pressed="false">Ocultar comprados</button></span></div>
   <div id="progresso" hidden>
     <div class="barra"><i id="barra"></i></div>
     <div class="resumo"><span id="contagem"></span><span id="valores"></span></div>

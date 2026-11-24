@@ -12,12 +12,13 @@ window.Mukifo = (() => {
     return j;
   };
 
-  const css = `#mkLogin{border:none;border-radius:16px;background:#1b1b1b;color:#f2f2f2;width:min(92vw,420px);padding:20px}
-  #mkLogin::backdrop{background:#000c} #mkLogin h3{margin:0 0 6px} #mkLogin p{color:#a8a8a8;font-size:14px;margin:0 0 8px}
-  #mkLogin label{display:block;margin:12px 0 4px;color:#a8a8a8;font-size:14px}
-  #mkLogin input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid #2c2c2c;background:#111;color:#f2f2f2;box-sizing:border-box}
-  #mkLogin button{width:100%;min-height:52px;margin-top:16px;border-radius:12px;border:0;background:#ffb347;color:#111;font-size:17px;font-weight:600;cursor:pointer}
-  #mkLogin .erro{color:#ff8a80;min-height:20px;margin-top:8px;font-size:14px}`;
+  const css = `#mkLogin{border:none;border-radius:16px;background:var(--card,#1b1b1b);color:var(--txt,#f2f2f2);width:min(92vw,420px);padding:20px}
+  #mkLogin::backdrop{background:#000c} #mkLogin h3{margin:0 0 6px} #mkLogin p{color:var(--mut,#a8a8a8);font-size:14px;margin:0 0 8px}
+  #mkLogin label{display:block;margin:12px 0 4px;color:var(--mut,#a8a8a8);font-size:14px}
+  #mkLogin input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line,#2c2c2c);background:var(--input,#111);color:var(--txt,#f2f2f2);box-sizing:border-box}
+  #mkLogin button:disabled{opacity:.5}
+  #mkLogin button{width:100%;min-height:52px;margin-top:16px;border-radius:12px;border:0;background:var(--acc,#ffb347);color:var(--on-acc,#111);font-size:17px;font-weight:600;cursor:pointer}
+  #mkLogin .erro{color:var(--bad,#ff8a80);min-height:20px;margin-top:8px;font-size:14px}`;
 
   function montar() {
     if (document.getElementById('mkLogin')) return;
