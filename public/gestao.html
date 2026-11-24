@@ -246,6 +246,7 @@
   <dialog id="dlgProduto">
     <h3 id="prodTitulo"></h3>
     <label for="prodNome">Nome (igual ao do sistema de vendas)</label><input id="prodNome" autocomplete="off">
+    <label class="chk"><input type="checkbox" id="prodPronta"> Pronta entrega (não passa pela produção — o cliente só busca no balcão)</label>
     <label for="prodTempo">Tempo de preparo (min) — vazio usa o padrão</label><input id="prodTempo" inputmode="decimal" placeholder="ex.: 4">
     <label for="prodPreco">Preço de venda (R$)</label><input id="prodPreco" inputmode="decimal" placeholder="ex.: 18,00">
     <label class="chk"><input type="checkbox" id="prodBaixa"> Dá baixa no estoque quando vende</label>
@@ -439,6 +440,7 @@ async function abrirProduto(id) {
   } catch (e) { return alertar(e.message, 'neg'); }
   $('#prodTitulo').textContent = id ? 'Editar produto' : 'Novo produto';
   $('#prodNome').value = pEdit.nome;
+  $('#prodPronta').checked = !!pEdit.pronta_entrega;
   $('#prodTempo').value = pEdit.tempo_preparo_min == null ? '' : String(pEdit.tempo_preparo_min).replace('.', ',');
   $('#prodPreco').value = pEdit.preco_venda == null ? '' : String(pEdit.preco_venda).replace('.', ',');
   $('#prodCategoria').value = pEdit.categoria ?? '';
@@ -465,7 +467,7 @@ $('#prodSalvar').addEventListener('click', async () => {
   const ruim = campos.find((l) => l.querySelector('.fi-insumo').value.trim() && !insumoPorNome(l.querySelector('.fi-insumo').value));
   if (ruim) { $('#prodMsg').textContent = `Não achei o ingrediente “${ruim.querySelector('.fi-insumo').value}”. Escolha um da lista que aparece ao digitar.`; return; }
   const ficha = campos.map((l) => ({ insumo_id: insumoPorNome(l.querySelector('.fi-insumo').value)?.id ?? null, quantidade: lerNumero(l.querySelector('.fi-qtd').value) }));
-  const corpo = { nome: $('#prodNome').value, categoria: $('#prodCategoria').value.trim() || null, preco_venda: lerNumero($('#prodPreco').value), tempo_preparo_min: lerNumero($('#prodTempo').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
+  const corpo = { nome: $('#prodNome').value, categoria: $('#prodCategoria').value.trim() || null, preco_venda: lerNumero($('#prodPreco').value), tempo_preparo_min: lerNumero($('#prodTempo').value), pronta_entrega: $('#prodPronta').checked, baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
   $('#prodSalvar').disabled = true;
   try {
     await chamar(pEdit.id ? '/api/produtos/' + pEdit.id : '/api/produtos', pEdit.id ? 'PUT' : 'POST', corpo);

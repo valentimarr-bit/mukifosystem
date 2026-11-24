@@ -156,3 +156,7 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Migração `0017_tempo_preparo` (precisa ser aplicada no D1 de produção): `produto.tempo_preparo_min`.
 - A média do dia é estatística formada sozinha: pago_em → pronto_em dos últimos 10 pedidos de hoje, tempos gravados pelo avanço das etapas no kanban da produção. Mínimo de 3 pedidos; senão vale o tempo do produto (o mais demorado + 1 min por unidade extra); sem tempo no produto, o padrão geral (Conta → Tempo de espera, 5 min).
 - Aparece no app do cliente (barra do carrinho) e na venda; campo "Tempo de preparo" no cadastro do produto.
+
+## Avisos conforme o pedido
+- Migração `0018_pronta_entrega` (aplicar no D1): `produto.pronta_entrega` (checkbox no cadastro do produto).
+- `src/textos.js`: um único produto em produção → "Seu Gin Tônica começou a ser preparado"; vários → "Seu pedido…"; itens de pronta entrega → "Já pode buscar no balcão: Heineken". Usado no push e na tela piscante do app (vem em `textos` no status do pedido).

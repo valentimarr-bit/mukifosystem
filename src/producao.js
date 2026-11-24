@@ -5,6 +5,8 @@ import { usuarioLogado } from './auth.js';
 import { expirarPendentes } from './cliente.js';
 import { diaDoTurno } from './venda.js';
 import { avisarPedido, pushLigado } from './push.js';
+import { textosPedido } from './textos.js';
+import { itensComPronta } from './cliente.js';
 
 const erro = (m, s = 400) => json({ erro: m }, s);
 const r3 = (x) => Math.round(x * 1000) / 1000;
@@ -75,8 +77,8 @@ export async function rotearProducao(request, env, url) {
     const r = await db.prepare(`UPDATE pedido SET status = ?, ${col} = datetime('now') WHERE id = ? AND origem = 'celular' AND status IN ${de}`).bind(acao, k[1]).run();
     if (!r?.meta?.changes) return erro('Esse pedido não está mais nessa etapa (talvez já tenha sido retirado).', 409);
     const ped = await db.prepare('SELECT numero FROM pedido WHERE id = ?').bind(k[1]).first();
-    const a = AVISOS[acao];
-    const push = await avisarPedido(env, k[1], { titulo: a.titulo, corpo: a.corpo(ped.numero), vibrar: a.vibrar, numero: ped.numero, etapa: acao });
+    const a = AVISOS[acao], tx = textosPedido(await itensComPronta(db, k[1]), ped.numero)[acao];
+    const push = await avisarPedido(env, k[1], { titulo: tx.titulo, corpo: tx.corpo, vibrar: a.vibrar, numero: ped.numero, etapa: acao });
     return json({ ok: true, avisos_enviados: push.enviados ?? 0 });
   }
   return null;

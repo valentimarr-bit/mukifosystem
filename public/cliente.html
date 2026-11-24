@@ -130,7 +130,7 @@ async function consultar() {
   if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
   const s = await r.json();
   if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
-  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
+  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}`);
     $('#qItens').innerHTML = s.itens.map((i) => `${i.quantidade}× ${i.nome}`).join('<br>'); return tela('telaQr'); }
   if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
   const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;
@@ -184,11 +184,11 @@ function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGo
 const PADRAO = { preparando: [300, 120, 300, 120, 600], pronto: [600, 150, 600, 150, 600, 150, 900] };
 const TEXTO = { recebido: '✔ Pago! Aguardando o preparo', preparando: '🍹 Estamos preparando o seu pedido!', pronto: '🎉 Pronto! Retire no balcão com este QR' };
 // ---- chamar a atenção: tela piscando + vibração repetida + bipe, até o cliente tocar (ou 25 s) ----
-let alertaT = null, trava = null, alertaPend = null;   // alertaPend: a etapa mudou com a tela apagada; pisca assim que o cliente voltar
+let textos = null, alertaT = null, trava = null, alertaPend = null;   // alertaPend: a etapa mudou com a tela apagada; pisca assim que o cliente voltar
 function pararAlerta() { clearInterval(alertaT); alertaT = null; $('#alertaTela')?.remove(); navigator.vibrate?.(0); try { trava?.release(); } catch {} trava = null; }
 function chamarAtencao(st) {
   pararAlerta();
-  const cor = st === 'pronto' ? ['#16a34a', '#ffffff'] : ['#f59e0b', '#ffffff'], txt = st === 'pronto' ? ['🎉', 'SEU PEDIDO ESTÁ PRONTO!', 'Retire no balcão mostrando o QR.'] : ['🍹', 'SEU DRINK COMEÇOU A SER PREPARADO!', 'Já já fica pronto.'];
+  const T = textos?.[st], cor = st === 'pronto' ? ['#16a34a', '#ffffff'] : ['#f59e0b', '#ffffff'], txt = st === 'pronto' ? ['🎉', T?.manchete ?? 'SEU PEDIDO ESTÁ PRONTO!', T?.curto ?? 'Retire no balcão mostrando o QR.'] : ['🍹', T?.manchete ?? 'SEU PEDIDO COMEÇOU A SER PREPARADO!', T?.curto ?? 'Já já fica pronto.'];
   const d = document.createElement('div'); d.id = 'alertaTela';
   d.style.cssText = `position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;color:#111;font:800 28px system-ui;animation:piscaTela .5s steps(1) infinite;--c1:${cor[0]};--c2:${cor[1]}`;
   d.innerHTML = `<style>@keyframes piscaTela{0%{background:var(--c1)}50%{background:var(--c2)}}</style><div style="font-size:90px">${txt[0]}</div><div>${txt[1]}</div><div style="font:600 18px system-ui">Pedido ${esc(pedido?.numero ?? '')} · ${txt[2]}</div><button style="margin-top:20px;min-height:64px;padding:0 40px;border-radius:16px;border:3px solid #111;background:#111;color:#fff;font:800 22px system-ui">Entendi</button>`;

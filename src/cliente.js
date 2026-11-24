@@ -4,6 +4,7 @@ import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda
 import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { clienteLogado } from './clientes.js';
+import { textosPedido } from './textos.js';
 
 const VALIDADE_MIN = 15;          // pedido não pago some depois disso
 const MAX_PENDENTES_CELULAR = 2;  // quantos pedidos não pagos o mesmo celular pode ter ao mesmo tempo
@@ -121,6 +122,7 @@ async function verStatus(db, request, id) {
   return json({
     id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
     itens: c.itens.map((i) => ({ nome: i.nome, quantidade: i.quantidade, preco: i.preco })),
+    textos: textosPedido(await itensComPronta(db, id), c.numero),
     pix: pix ? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` }) : null,
   });
 }
@@ -194,4 +196,10 @@ export async function validarRetirada(db, corpo, eu) {
   const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id).run();
   if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
   return json({ ok: true, entregue: true, pedido: { numero: c.numero, nome: c.nome_cliente, total: c.total, itens: c.itens } });
+}
+
+/** Itens do pedido com a marca de pronta entrega (para os textos de aviso). */
+export async function itensComPronta(db, pedidoId) {
+  const { results } = await db.prepare('SELECT i.nome, i.quantidade, COALESCE(p.pronta_entrega, 0) AS pronta FROM item_pedido i LEFT JOIN produto p ON p.id = i.produto_id WHERE i.pedido_id = ?').bind(pedidoId).all();
+  return results.map((r) => ({ nome: r.nome, quantidade: r.quantidade, pronta: !!r.pronta }));
 }
