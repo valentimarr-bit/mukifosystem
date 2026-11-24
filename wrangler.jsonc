@@ -12,11 +12,11 @@
   "assets": {
     "directory": "./public",
     "not_found_handling": "single-page-application"
-  }
+  },
 
   // FASE 2 (banco de dados): depois de rodar `npx wrangler d1 create mukifo`,
   // descomente e cole o database_id que o comando mostrar.
-  // ,"d1_databases": [
-  //   { "binding": "DB", "database_name": "mukifo", "database_id": "COLE_AQUI" }
-  // ]
+  "d1_databases": [
+    { "binding": "DB", "database_name": "mukifo", "database_id": "00000000-0000-0000-0000-000000000000" }
+  ]
 }

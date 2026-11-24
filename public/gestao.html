@@ -39,6 +39,7 @@
 </style>
 </head>
 <body>
+<script src="/entrar.js"></script>
 <header>
   <b>MUKIFO</b>
   <nav>
@@ -46,6 +47,7 @@
     <button data-aba="lista">Lista de compras</button>
     <button data-aba="produtos">Produtos e lucro</button>
     <button data-aba="registrar">Registrar</button>
+    <button data-aba="conta">Conta</button>
   </nav>
 </header>
 <main>
@@ -72,8 +74,7 @@
   </section>
 
   <section id="registrar" hidden>
-    <div class="bar"><label>Senha de gerente <input id="token" type="password" autocomplete="current-password"></label></div>
-
+    
     <h3>Relatório de vendas do dia</h3>
     <p class="mut">Cole o relatório do sistema de vendas (com a linha de cabeçalho). Dá baixa no estoque pela ficha.</p>
     <div class="bar"><input id="relDia" type="date"></div>
@@ -87,6 +88,23 @@
     <div id="retorno"></div>
   </section>
 
+  <section id="conta" hidden>
+    <h3 id="contaOla"></h3>
+    <p class="mut" id="contaPapel"></p>
+
+    <h3>Trocar minha senha</h3>
+    <div class="bar"><input id="cSenhaAtual" type="password" placeholder="Senha atual" autocomplete="current-password"><input id="cSenhaNova" type="password" placeholder="Senha nova (mín. 6)" autocomplete="new-password"><button class="btn prim" id="cTrocar">Trocar senha</button></div>
+
+    <div id="areaSuper" hidden>
+      <h3>Pessoas com acesso</h3>
+      <table><thead><tr><th>Nome</th><th>Cargo</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+      <h3>Adicionar gerente</h3>
+      <div class="bar"><input id="uNome" placeholder="Nome"><input id="uSenha" type="password" placeholder="Senha (mín. 6)" autocomplete="new-password"><button class="btn prim" id="uCriar">Adicionar</button></div>
+    </div>
+    <div id="retornoConta"></div>
+    <div class="bar"><button class="btn" id="sair">Sair deste aparelho</button></div>
+  </section>
+
   <pre id="cupom"></pre>
 </main>
 <script>
@@ -96,9 +114,6 @@ const brl = (n) => (n == null ? '—' : Number(n).toLocaleString('pt-BR', { styl
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let estoque = [], lista = null;
 
-// Senha: guardada só neste navegador (se o navegador permitir).
-try { $('#token').value = localStorage.getItem('mukifo_token') || ''; } catch {}
-$('#token').addEventListener('change', () => { try { localStorage.setItem('mukifo_token', $('#token').value); } catch {} });
 
 // Dia da compra: segunda se hoje for sex..seg, senão quinta.
 const hoje = new Date().getDay();
@@ -110,12 +125,14 @@ document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click
   document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== b.dataset.aba));
   if (b.dataset.aba === 'lista') carregarLista();
   if (b.dataset.aba === 'produtos') carregarProdutos();
+  if (b.dataset.aba === 'conta') carregarConta();
 }));
 
 async function api(caminho, corpo) {
-  const op = corpo ? { method: 'POST', body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + $('#token').value } } : {};
+  const op = corpo ? { method: 'POST', body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } } : {};
   const r = await fetch(caminho, op);
   const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && corpo) { Mukifo.pedir(carregarEstoque); }
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
   return j;
 }
@@ -201,7 +218,45 @@ $('#enviarCont').addEventListener('click', async () => {
   } catch (e) { alertar(e.message, 'neg'); }
 });
 
-carregarEstoque();
+// ---- conta ----
+const msgConta = (t, c = 'pos') => { $('#retornoConta').innerHTML = `<p class="${c}">${esc(t)}</p>`; };
+async function chamarConta(url, corpo, metodo = 'POST') {
+  const r = await fetch(url, { method: metodo, body: metodo === 'POST' ? JSON.stringify(corpo || {}) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+  return j;
+}
+async function carregarConta() {
+  try {
+    const { usuario } = await chamarConta('/api/auth/eu', null, 'GET');
+    Mukifo.atualizarUsuario(usuario);
+    $('#contaOla').textContent = 'Olá, ' + usuario.nome;
+    $('#contaPapel').textContent = usuario.papel === 'superadmin' ? 'Você é o superadmin: pode adicionar pessoas e passar o cargo.' : 'Você é gerente.';
+    $('#areaSuper').hidden = usuario.papel !== 'superadmin';
+    if (usuario.papel === 'superadmin') {
+      const us = await chamarConta('/api/usuarios', null, 'GET');
+      $('#tbUsuarios').innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${u.papel === 'superadmin' ? 'Superadmin' : 'Gerente'}</td><td>${u.papel === 'gerente' ? `<button class="btn" data-passar="${u.id}" data-nome="${esc(u.nome)}">Passar o cargo de superadmin</button>` : ''}</td></tr>`).join('');
+    }
+  } catch (e) { msgConta(e.message, 'neg'); }
+}
+$('#cTrocar').addEventListener('click', async () => {
+  try { await chamarConta('/api/auth/trocar-senha', { senhaAtual: $('#cSenhaAtual').value, senhaNova: $('#cSenhaNova').value }); $('#cSenhaAtual').value = $('#cSenhaNova').value = ''; msgConta('Senha trocada. Os outros aparelhos precisam entrar de novo.'); }
+  catch (e) { msgConta(e.message, 'neg'); }
+});
+$('#uCriar').addEventListener('click', async () => {
+  try { await chamarConta('/api/usuarios', { nome: $('#uNome').value, senha: $('#uSenha').value }); $('#uNome').value = $('#uSenha').value = ''; msgConta('Gerente adicionado.'); carregarConta(); }
+  catch (e) { msgConta(e.message, 'neg'); }
+});
+$('#tbUsuarios').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('[data-passar]'); if (!b) return;
+  const senha = prompt(`Para passar o cargo de superadmin para ${b.dataset.nome}, digite a SUA senha:`);
+  if (!senha) return;
+  try { await chamarConta('/api/auth/passar-cargo', { usuarioId: Number(b.dataset.passar), senha }); msgConta(`${b.dataset.nome} agora é o superadmin. Você virou gerente.`); carregarConta(); }
+  catch (e) { msgConta(e.message, 'neg'); }
+});
+$('#sair').addEventListener('click', () => Mukifo.sair());
+
+if (Mukifo.token()) carregarEstoque(); else Mukifo.pedir(carregarEstoque);
 </script>
 </body>
 </html>

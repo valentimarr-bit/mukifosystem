@@ -74,12 +74,7 @@
   <button class="btn prim" id="btnFinalizar">Finalizar compra</button>
 </div>
 
-<dialog id="dlgSenha">
-  <h3>Senha de gerente</h3>
-  <p class="det">A mesma senha da gestão. Fica salva neste celular.</p>
-  <input id="senha" type="password" autocomplete="current-password">
-  <div class="acoes"><button class="btn prim" id="salvarSenha">Entrar</button></div>
-</dialog>
+<script src="/entrar.js"></script>
 
 <dialog id="dlgEditar">
   <h3 id="edNome"></h3>
@@ -120,7 +115,7 @@ const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } 
 const recuperar = (k, padrao) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : padrao; } catch { return padrao; } };
 const vibrar = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 
-let token = recuperar('mukifo_token_compras', '');
+let token = Mukifo.token();
 let lista = recuperar('mukifo_lista', null);           // cópia local: abre sem internet
 let fila = recuperar('mukifo_fila', []);               // marcações ainda não enviadas
 let ocultar = recuperar('mukifo_ocultar', false);
@@ -305,8 +300,7 @@ $('#fimOk').addEventListener('click', async () => {
 
 document.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
 
-function pedirSenha() { if (!$('#dlgSenha').open) { $('#senha').value = ''; $('#dlgSenha').showModal(); } }
-$('#salvarSenha').addEventListener('click', () => { token = $('#senha').value.trim(); guardar('mukifo_token_compras', token); $('#dlgSenha').close(); atualizar(); });
+function pedirSenha() { Mukifo.pedir(() => { token = Mukifo.token(); atualizar(); }); }
 
 // ---------- início ----------
 window.addEventListener('online', atualizar);

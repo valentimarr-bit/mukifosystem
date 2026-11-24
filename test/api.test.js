@@ -8,7 +8,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../seed/seed.sql')]),
+  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../seed/seed.sql')]),
   ADMIN_TOKEN: 'segredo-teste',
   ASSETS: { fetch: () => new Response('estatico') },
 };

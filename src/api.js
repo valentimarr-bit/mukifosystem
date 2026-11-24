@@ -1,4 +1,5 @@
 // Rotas da API do Mukifo (Cloudflare D1 em env.DB).
+import { usuarioLogado, rotearAuth } from './auth.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha,
 } from './dominio/estoque.js';
@@ -129,10 +130,7 @@ async function getProdutos(db) {
 
 // ---------------- rotas de escrita (exigem token) ----------------
 
-function autorizado(request, env) {
-  if (!env.ADMIN_TOKEN) return false;
-  return request.headers.get('authorization') === `Bearer ${env.ADMIN_TOKEN}`;
-}
+const autorizado = async (request, env) => !!(await usuarioLogado(request, env));
 
 /** Lê um relatório de vendas no formato do sistema: Produto,UN,Estoque,Qtd. vendida,Total vendas */
 export function lerRelatorioCSV(texto) {
@@ -337,6 +335,7 @@ export async function rotearApi(request, env, url) {
   if (!db) return erro('Banco de dados ainda não configurado (fase 2: ver README)', 503);
   const m = request.method;
   const p = url.pathname;
+  if (p.startsWith('/api/auth/') || p === '/api/usuarios') return rotearAuth(request, env, url);
   if (m === 'GET' && p === '/api/estoque') return getEstoque(db, url);
   if (m === 'GET' && p === '/api/lista-compras') return getListaCompras(db, url);
   if (m === 'GET' && p === '/api/produtos') return getProdutos(db);
@@ -346,7 +345,7 @@ export async function rotearApi(request, env, url) {
   }
 
   if (p.startsWith('/api/listas')) {
-    if (!autorizado(request, env)) return erro('Senha de gerente inválida', 401);
+    if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
     let body = {};
     if (m === 'POST' || m === 'PATCH') { try { body = await request.json(); } catch { body = {}; } }
     let k;
@@ -358,7 +357,7 @@ export async function rotearApi(request, env, url) {
     return null;
   }
   if (m === 'POST' && ['/api/vendas/relatorio', '/api/contagem', '/api/compras'].includes(p)) {
-    if (!autorizado(request, env)) return erro('Senha de gerente inválida', 401);
+    if (!(await autorizado(request, env))) return erro('Entre com seu nome e senha', 401);
     let body;
     try { body = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); }
     if (p === '/api/vendas/relatorio') return postRelatorio(db, body);
