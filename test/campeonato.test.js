@@ -82,7 +82,7 @@ test('fluxo completo: inscrição por Pix, balcão, sorteio com folga, placar ao
       const det = (await chamar(`${G}/modalidades/${modalidade}`)).corpo;
       const prox = det.partidas.find((p) => p.status === 'pronta');
       if (!prox) return det;
-      assert.equal((await chamar(`${G}/partidas/${prox.id}/placar`, 'POST', { placar_a: 3, placar_b: 2, mesa: '2' })).status, 200);
+      assert.equal((await chamar(`${G}/partidas/${encodeURIComponent(prox.id)}/placar`, 'POST', { placar_a: 3, placar_b: 2, mesa: '2' })).status, 200);   // como o navegador manda: ':' vira %3A
       const ao = (await chamar(`/api/campeonato/modalidades/${modalidade}`, 'GET', null, {}, null)).corpo.partidas.find((p) => p.id === prox.id);
       assert.equal(ao.status, 'em_jogo'); assert.equal(ao.placar_a, 3); assert.equal(ao.mesa, '2');
       assert.equal((await chamar(`${G}/partidas/${prox.id}/placar`, 'POST', { placar_a: 7, placar_b: 7, finalizar: true })).status, 400);   // empate não fecha

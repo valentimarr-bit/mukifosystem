@@ -115,7 +115,8 @@ export async function rotearCanais(request, env, url) {
     if (c.auto_aceitar !== undefined) ops.push(set('canal_auto_aceitar', c.auto_aceitar ? 'sim' : 'nao'));
     if (ops.length) await db.batch(ops); return json({ ok: true });
   }
-  if (m === 'POST' && (r = p.match(/^\/api\/canais\/pedidos\/([\w.-]+)\/saiu$/))) {   // entregador levou / cliente retirou
+  if (m === 'POST' && (r = p.match(/^\/api\/canais\/pedidos\/([\w.%-]+)\/saiu$/))) {   // entregador levou / cliente retirou (id pode vir codificado)
+    r[1] = decodeURIComponent(r[1]);
     const x = await db.prepare('SELECT 1 AS ok FROM pedido_externo WHERE id = ?').bind(r[1]).first(); if (!x) return erro('Pedido de canal não encontrado.', 404);
     const u = await db.prepare("UPDATE pedido SET status = 'entregue', retirado_em = datetime('now') WHERE id = ? AND status IN ('pronto', 'preparando', 'recebido')").bind(r[1]).run();
     if (!u?.meta?.changes) return erro('Esse pedido já foi finalizado ou cancelado.', 409);

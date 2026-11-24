@@ -284,6 +284,6 @@ export async function rotearCampeonato(request, env, url) {
     return json({ ok: true });
   }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/sortear$/))) return sortear(db, r[1]);
-  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/partidas\/([\w:.-]+)\/placar$/))) return lancarPlacar(db, r[1], await corpoDe(request));
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/partidas\/([\w:.%-]+)\/placar$/))) return lancarPlacar(db, decodeURIComponent(r[1]), await corpoDe(request));   // o navegador manda ':' como %3A
   return null;
 }
