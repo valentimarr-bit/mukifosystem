@@ -9,6 +9,7 @@ const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
   DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../seed/seed.sql')]),
   ASSETS: { fetch: () => new Response('estatico') },
+  CODIGO_PRIMEIRO_ACESSO: 'codigo-teste',
 };
 const chamar = async (caminho, corpo, token, method) => {
   const r = await worker.fetch(new Request('https://mukifo.test' + caminho, {
@@ -25,12 +26,12 @@ test('sem ninguém cadastrado, o sistema pede o primeiro acesso e nada de escrit
 
 let tokenA, tokenB, idB;
 test('o primeiro a entrar vira superadmin e o segundo não consegue', async () => {
-  assert.equal((await chamar('/api/auth/primeiro-acesso', { nome: 'Ana', senha: '123' })).status, 400); // senha curta
-  const r = await chamar('/api/auth/primeiro-acesso', { nome: 'Ana', senha: 'senha-da-ana' });
+  assert.equal((await chamar('/api/auth/primeiro-acesso', { nome: 'Ana', senha: '123', codigo: 'codigo-teste' })).status, 400); // senha curta
+  const r = await chamar('/api/auth/primeiro-acesso', { nome: 'Ana', senha: 'senha-da-ana', codigo: 'codigo-teste' });
   assert.equal(r.status, 200);
   assert.equal(r.corpo.usuario.papel, 'superadmin');
   tokenA = r.corpo.token;
-  assert.equal((await chamar('/api/auth/primeiro-acesso', { nome: 'Intruso', senha: 'outra-senha' })).status, 409);
+  assert.equal((await chamar('/api/auth/primeiro-acesso', { nome: 'Intruso', senha: 'outra-senha', codigo: 'codigo-teste' })).status, 409);
   assert.equal((await chamar('/api/auth/estado')).corpo.primeiroAcesso, false);
 });
 
@@ -67,9 +68,12 @@ test('passar o cargo: exige a senha; quem passa vira gerente e o novo vira super
   assert.equal((await chamar('/api/usuarios', null, tokenA)).status, 403);
 });
 
-test('código de primeiro acesso, quando configurado, é exigido', async () => {
+test('código de primeiro acesso é obrigatório', async () => {
   const env2 = { ...env, DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql')]), CODIGO_PRIMEIRO_ACESSO: 'abc123' };
   const t = (corpo) => worker.fetch(new Request('https://x.test/api/auth/primeiro-acesso', { method: 'POST', body: JSON.stringify(corpo) }), env2);
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa' })).status, 403);
+  const semCodigo = { ...env2, CODIGO_PRIMEIRO_ACESSO: undefined };
+  const r = await worker.fetch(new Request('https://x.test/api/auth/primeiro-acesso', { method: 'POST', body: JSON.stringify({ nome: 'Ana', senha: 'senha-longa' }) }), semCodigo);
+  assert.equal(r.status, 503);
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa', codigo: 'abc123' })).status, 200);
 });

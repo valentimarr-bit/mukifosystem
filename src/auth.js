@@ -52,14 +52,16 @@ export async function rotearAuth(request, env, url) {
 
   if (m === 'GET' && p === '/api/auth/estado') {
     const r = await db.prepare('SELECT COUNT(*) AS n FROM usuario').first();
-    return json({ primeiroAcesso: r.n === 0, pedeCodigo: r.n === 0 && !!env.CODIGO_PRIMEIRO_ACESSO });
+    return json({ primeiroAcesso: r.n === 0, pedeCodigo: r.n === 0, faltaCodigo: r.n === 0 && !env.CODIGO_PRIMEIRO_ACESSO });
   }
 
   if (m === 'POST' && p === '/api/auth/primeiro-acesso') {
     const nome = String(corpo.nome ?? '').trim();
     if (nome.length < 2) return erro('Digite seu nome.');
     const e = validarNovaSenha(corpo.senha); if (e) return erro(e);
-    if (env.CODIGO_PRIMEIRO_ACESSO && !igual(String(corpo.codigo ?? ''), env.CODIGO_PRIMEIRO_ACESSO)) return erro('Código de primeiro acesso inválido.', 403);
+    // Sem o código, qualquer um que achasse o site primeiro viraria superadmin.
+    if (!env.CODIGO_PRIMEIRO_ACESSO) return erro('Falta criar o código de primeiro acesso na Cloudflare (Settings → Variables and Secrets → CODIGO_PRIMEIRO_ACESSO).', 503);
+    if (!igual(String(corpo.codigo ?? ''), env.CODIGO_PRIMEIRO_ACESSO)) return erro('Código de primeiro acesso inválido.', 403);
     const sal = aleatorio(16);
     // Atômico: só insere se ainda não existe ninguém. Quem chegar primeiro vira superadmin.
     const r = await db.prepare(

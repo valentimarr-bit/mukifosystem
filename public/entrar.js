@@ -39,12 +39,14 @@ window.Mukifo = (() => {
     const primeiro = !!est.primeiroAcesso;
     $('#mkTitulo').textContent = primeiro ? 'Primeiro acesso' : 'Entrar';
     $('#mkAjuda').textContent = primeiro
-      ? 'Quem entrar agora vira o superadmin (o chefe do sistema). Depois dá para trocar a senha e passar o cargo para outra pessoa.'
+      ? 'Quem entrar agora vira o superadmin (o chefe do sistema). Use o código que você criou na Cloudflare. Depois dá para trocar a senha e passar o cargo para outra pessoa.'
       : 'Digite seu nome e sua senha.';
     $('#mkOk').textContent = primeiro ? 'Criar e entrar' : 'Entrar';
     $('#mkCodigoBox').hidden = !est.pedeCodigo;
     $('#mkSenha').autocomplete = primeiro ? 'new-password' : 'current-password';
-    $('#mkErro').textContent = '';
+    $('#mkErro').textContent = est.faltaCodigo
+      ? 'Antes do primeiro acesso, crie o segredo CODIGO_PRIMEIRO_ACESSO na Cloudflare (Settings → Variables and Secrets) e recarregue a página.' : '';
+    $('#mkOk').disabled = !!est.faltaCodigo;
     const d = $('#mkLogin'); if (!d.open) d.showModal();
     $('#mkOk').onclick = async () => {
       $('#mkOk').disabled = true; $('#mkErro').textContent = '';
@@ -54,7 +56,7 @@ window.Mukifo = (() => {
         salvar({ token: r.token, usuario: r.usuario });
         $('#mkSenha').value = ''; d.close(); aoEntrar && aoEntrar(r.usuario);
       } catch (e) { $('#mkErro').textContent = e.message; }
-      $('#mkOk').disabled = false;
+      $('#mkOk').disabled = !!est.faltaCodigo;
     };
   }
 

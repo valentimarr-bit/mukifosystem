@@ -11,7 +11,8 @@
     "db:migrar:local": "wrangler d1 migrations apply mukifo --local",
     "db:migrar": "wrangler d1 migrations apply mukifo --remote",
     "test": "node --test 'test/*.test.js'",
-    "seed:gerar": "python3 -I scripts/extrair_planilha.py && node scripts/gerar_seed.mjs",
+    "seed:gerar": "python3 -I scripts/extrair_planilha.py && node scripts/gerar_seed.mjs && node scripts/embutir_sql.mjs",
+    "sql:embutir": "node scripts/embutir_sql.mjs",
     "gabarito": "python3 -I scripts/gerar_gabarito.py",
     "seed:local": "wrangler d1 execute mukifo --local --file seed/seed.sql",
     "seed": "wrangler d1 execute mukifo --remote --file seed/seed.sql"

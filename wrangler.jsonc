@@ -14,9 +14,9 @@
     "not_found_handling": "single-page-application"
   },
 
-  // FASE 2 (banco de dados): depois de rodar `npx wrangler d1 create mukifo`,
-  // descomente e cole o database_id que o comando mostrar.
+  // Banco D1. Sem database_id, o deploy (inclusive o automático pelo GitHub) cria o banco "mukifo"
+  // sozinho; as tabelas e os dados da planilha entram no primeiro acesso (src/banco/preparar.js).
   "d1_databases": [
-    { "binding": "DB", "database_name": "mukifo", "database_id": "00000000-0000-0000-0000-000000000000" }
+    { "binding": "DB", "database_name": "mukifo" }
   ]
 }
