@@ -59,6 +59,10 @@
   #dlgProduto .acoes { display:flex; gap:8px; margin-top:14px; } #dlgProduto .acoes .btn { flex:1; }
   .faixa-alerta { background:var(--aviso-bg); color:var(--aviso-txt); border-radius:10px; padding:10px 14px; margin-bottom:12px; }
   tr.em-alerta td:first-child { box-shadow:inset 4px 0 0 var(--bad); }
+  th[data-ordem] { cursor:pointer; user-select:none; white-space:nowrap; }
+  th[data-ordem]:hover { color:var(--txt); }
+  th[aria-sort=ascending]::after { content:' ▲'; font-size:11px; } th[aria-sort=descending]::after { content:' ▼'; font-size:11px; }
+  th[aria-sort] { color:var(--acc); }
   .selo-alerta { color:var(--bad); font-weight:600; font-size:13px; }
   #tbAlertas input { width:90px; text-align:center; }
   #cupom { display:none; }
@@ -91,7 +95,7 @@
       <label><input type="checkbox" id="soAlerta"> só em alerta</label>
     </div>
     <div id="faixaAlerta" class="faixa-alerta" hidden></div>
-    <table><thead><tr><th>Item</th><th>Tem</th><th>Mínimo</th><th>Comprar</th><th>Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
+    <table id="tabEstoque"><thead><tr><th data-ordem="insumo">Item</th><th data-ordem="atual">Tem</th><th data-ordem="minimo">Mínimo</th><th data-ordem="sugestao">Comprar</th><th data-ordem="situacao">Situação</th></tr></thead><tbody id="tbEstoque"></tbody></table>
   </section>
 
   <section id="lista" hidden>
@@ -226,12 +230,42 @@ async function carregarEstoque() {
     desenharContagem();
   } catch (e) { $('#tbEstoque').innerHTML = `<tr><td colspan="5" class="neg">${esc(e.message)}</td></tr>`; }
 }
+// Ordenar por coluna: 1º toque ordena, 2º inverte, 3º volta à ordem original. Texto começa A→Z; números, do maior para o menor.
+let ordem = { col: null, dir: 1 };
+const GRAVIDADE = { SEM: 0, COMPRAR: 1, OK: 2 };
+function valorOrdem(i, col, dia) {
+  if (col === 'insumo') return i.insumo.toLocaleLowerCase('pt-BR');
+  if (col === 'minimo') return dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta;
+  if (col === 'situacao') return (GRAVIDADE[i.situacao.split(' ')[0]] ?? 3) * 2 + (i.alerta ? 0 : 1);
+  return i[col] ?? 0;
+}
+function ordenarEstoque(lista, dia) {
+  if (!ordem.col) return lista;
+  return [...lista].sort((a, b) => {
+    const x = valorOrdem(a, ordem.col, dia), y = valorOrdem(b, ordem.col, dia);
+    const c = typeof x === 'string' ? x.localeCompare(y, 'pt-BR') : x - y;
+    return (c || a.insumo.localeCompare(b.insumo, 'pt-BR')) * ordem.dir;
+  });
+}
+document.querySelector('#tabEstoque thead').addEventListener('click', (ev) => {
+  const th = ev.target.closest('th[data-ordem]'); if (!th) return;
+  const col = th.dataset.ordem, texto = col === 'insumo';
+  const primeira = texto ? 1 : -1;
+  if (ordem.col !== col) ordem = { col, dir: primeira };
+  else if (ordem.dir === primeira) ordem.dir = -primeira;
+  else ordem = { col: null, dir: 1 };
+  document.querySelectorAll('#tabEstoque th[data-ordem]').forEach((t) => {
+    if (t.dataset.ordem === ordem.col) t.setAttribute('aria-sort', ordem.dir === 1 ? 'ascending' : 'descending'); else t.removeAttribute('aria-sort');
+  });
+  desenharEstoque();
+});
+
 function desenharEstoque() {
   const b = $('#busca').value.toLowerCase(), dia = $('#dia').value, so = $('#soAlerta').checked;
   const emAlerta = estoque.filter((i) => i.alerta);
   $('#faixaAlerta').hidden = !emAlerta.length;
   $('#faixaAlerta').innerHTML = emAlerta.length ? `⚠ <b>${emAlerta.length} ${emAlerta.length === 1 ? 'item em alerta' : 'itens em alerta'}</b>: ${emAlerta.slice(0, 6).map((i) => esc(i.insumo)).join(', ')}${emAlerta.length > 6 ? '…' : ''}` : '';
-  $('#tbEstoque').innerHTML = estoque.filter((i) => i.insumo.toLowerCase().includes(b) && (!so || i.alerta)).map((i) => `
+  $('#tbEstoque').innerHTML = ordenarEstoque(estoque.filter((i) => i.insumo.toLowerCase().includes(b) && (!so || i.alerta)), dia).map((i) => `
     <tr class="${i.alerta ? 'em-alerta' : ''}"><td><div class="linha-foto">${Fotos.miniatura('insumos', i.insumo_id, 40)}<div>${esc(i.insumo)}<div class="mut">${esc(i.embalagem)}${i.minimo_alerta != null ? ` · avisa em ${fmt(i.minimo_alerta, 2)}` : ''}</div></div></div></td>
     <td>${fmt(i.atual, 2)}</td><td>${fmt(dia === 'segunda' ? i.minimo_segunda : i.minimo_quinta)}</td>
     <td><b>${i.sugestao > 0 ? fmt(i.sugestao) : ''}</b></td>
