@@ -4,6 +4,7 @@ import { json } from './api.js';
 import { usuarioLogado } from './auth.js';
 import { diaDoTurno } from './venda.js';
 import { periodo } from './desempenho.js';
+import { cnpjValido, chaveValida, lerChave, soDigitos } from './dominio/fiscal.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const r2 = (x) => Math.round((x ?? 0) * 100) / 100;
@@ -43,7 +44,7 @@ async function listarDespesas(db, url) {
   if (ISO.test(q.get('de') ?? '')) { onde.push('vencimento >= ?'); b.push(q.get('de')); }
   if (ISO.test(q.get('ate') ?? '')) { onde.push('vencimento <= ?'); b.push(q.get('ate')); }
   if (['aberta', 'paga'].includes(q.get('status'))) { onde.push('status = ?'); b.push(q.get('status')); }
-  const { results } = await db.prepare(`SELECT * FROM despesa ${onde.length ? 'WHERE ' + onde.join(' AND ') : ''} ORDER BY vencimento, id LIMIT 2000`).bind(...b).all();
+  const { results } = await db.prepare(`SELECT d.*, (SELECT 1 FROM despesa_anexo a WHERE a.despesa_id = d.id) AS tem_anexo FROM despesa d ${onde.length ? 'WHERE ' + onde.join(' AND ') : ''} ORDER BY vencimento, id LIMIT 2000`).bind(...b).all();
   return json({ despesas: results, hoje: diaDoTurno() });
 }
 
@@ -61,10 +62,61 @@ async function gerarMes(db, corpo, eu) {
   return json({ ok: true, criadas: novas.length, ja_existiam: results.length - novas.length });
 }
 
+const MIMES_ANEXO = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], MAX_ANEXO = 900_000;
+const base64 = (bytes) => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); };
+
+/** Dados da nota. Se vier a chave de acesso, número, série, emissão (mês) e CNPJ saem dela. */
+export async function salvarNota(db, id, c) {
+  let numero = String(c.numero ?? '').trim().slice(0, 20) || null, serie = String(c.serie ?? '').trim().slice(0, 5) || null;
+  let chave = soDigitos(c.chave) || null, cnpj = soDigitos(c.cnpj) || null, emissao = String(c.emissao ?? '').trim() || null;
+  if (chave) {
+    if (!chaveValida(chave)) return erro('A chave de acesso não confere: são 44 números, confira se digitou tudo.');
+    const l = lerChave(chave); numero = numero ?? l.numero; serie = serie ?? l.serie; cnpj = cnpj ?? l.cnpj;
+    if (cnpj !== l.cnpj) return erro('O CNPJ não é o mesmo que consta na chave da nota.');
+  }
+  if (cnpj && !cnpjValido(cnpj)) return erro('CNPJ inválido.');
+  if (emissao && !(ISO.test(emissao) && !Number.isNaN(Date.parse(emissao)))) return erro('Data de emissão inválida.');
+  if (chave) { const outra = await db.prepare('SELECT id, descricao FROM despesa WHERE nf_chave = ? AND id <> ?').bind(chave, id).first(); if (outra) return erro(`Essa nota já está lançada na conta “${outra.descricao}”.`, 409); }
+  await db.prepare('UPDATE despesa SET nf_numero = ?, nf_serie = ?, nf_chave = ?, nf_emissao = ?, fornecedor_cnpj = ? WHERE id = ?').bind(numero, serie, chave, emissao, cnpj, id).run();
+  return json({ ok: true, numero, serie, chave, cnpj, emissao });
+}
+
+async function anexo(db, request, id, eu) {
+  const m = request.method;
+  if (m === 'GET') {
+    const f = await db.prepare('SELECT mime, dados_b64, nome FROM despesa_anexo WHERE despesa_id = ?').bind(id).first();
+    if (!f) return erro('Sem arquivo.', 404);
+    return new Response(Uint8Array.from(atob(f.dados_b64), (ch) => ch.charCodeAt(0)), { headers: { 'content-type': f.mime, 'cache-control': 'private, no-store', 'content-disposition': `inline; filename="nota-${id}.${f.mime === 'application/pdf' ? 'pdf' : 'jpg'}"` } });
+  }
+  if (m === 'DELETE') { await db.prepare('DELETE FROM despesa_anexo WHERE despesa_id = ?').bind(id).run(); return json({ ok: true }); }
+  if (m !== 'PUT') return null;
+  const mime = (request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+  if (!MIMES_ANEXO.includes(mime)) return erro('Envie uma foto (JPG, PNG, WebP) ou um PDF.');
+  const bytes = new Uint8Array(await request.arrayBuffer());
+  if (!bytes.length) return erro('Arquivo vazio.');
+  if (bytes.length > MAX_ANEXO) return erro('Arquivo grande demais (máximo 900 KB). Tire a foto de novo ou reduza o PDF.', 413);
+  await db.prepare(`INSERT INTO despesa_anexo (despesa_id, mime, dados_b64, bytes, usuario) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT (despesa_id) DO UPDATE SET mime = excluded.mime, dados_b64 = excluded.dados_b64, bytes = excluded.bytes, usuario = excluded.usuario, atualizada_em = datetime('now')`).bind(id, mime, base64(bytes), bytes.length, eu.nome).run();
+  return json({ ok: true, bytes: bytes.length });
+}
+
+/** Dados cadastrais do CNPJ na base pública da Receita Federal (via BrasilAPI), para preencher o fornecedor. */
+export async function consultarCnpj(bruto, buscar = fetch) {
+  const cnpj = soDigitos(bruto);
+  if (!cnpjValido(cnpj)) return erro('CNPJ inválido.');
+  try {
+    const r = await buscar(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, { headers: { accept: 'application/json' } });
+    if (r.status === 404) return erro('CNPJ não encontrado na Receita Federal.', 404);
+    if (!r.ok) return erro('A consulta à Receita está fora do ar agora. Digite o nome do fornecedor.', 502);
+    const j = await r.json();
+    return json({ cnpj, razao_social: j.razao_social ?? null, nome_fantasia: j.nome_fantasia || null, situacao: j.descricao_situacao_cadastral ?? null, municipio: j.municipio ?? null, uf: j.uf ?? null });
+  } catch { return erro('Não consegui consultar a Receita agora.', 502); }
+}
+
 async function despesas(db, request, url, eu) {
   const m = request.method, p = url.pathname;
   if (m === 'GET' && p === '/api/financeiro/despesas') return listarDespesas(db, url);
-  let corpo = {}; if (m === 'POST' || m === 'PUT') { try { corpo = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); } }
+  let corpo = {}; if ((m === 'POST' || m === 'PUT') && !p.endsWith('/anexo')) { try { corpo = await request.json(); } catch { return erro('Corpo da requisição não é JSON'); } }
   if (m === 'POST' && p === '/api/financeiro/despesas/gerar-mes') return gerarMes(db, corpo, eu);
   if (m === 'POST' && p === '/api/financeiro/despesas') {
     const v = validarDespesa(corpo); if (v.erro) return erro(v.erro); const d = v.dados;
@@ -72,10 +124,13 @@ async function despesas(db, request, url, eu) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`).bind(d.descricao, d.categoria, d.tipo, d.valor, d.vencimento, d.status, d.pago_em, d.forma, d.fornecedor, d.recorrente, d.observacao, eu.nome).first();
     return json({ ok: true, id: r.id }, 201);
   }
-  const k = p.match(/^\/api\/financeiro\/despesas\/(\d+)(\/pagar)?$/);
+  if (m === 'GET' && p === '/api/financeiro/cnpj') return consultarCnpj(url.searchParams.get('cnpj'));
+  const k = p.match(/^\/api\/financeiro\/despesas\/(\d+)(\/pagar|\/nota|\/anexo)?$/);
   if (!k) return null;
   const id = Number(k[1]);
   if (!(await db.prepare('SELECT 1 AS ok FROM despesa WHERE id = ?').bind(id).first())) return erro('Despesa não encontrada.', 404);
+  if (k[2] === '/nota' && m === 'PUT') return salvarNota(db, id, corpo);
+  if (k[2] === '/anexo') return anexo(db, request, id, eu);
   if (m === 'POST' && k[2]) {
     const dia = ISO.test(String(corpo?.pago_em ?? '')) ? corpo.pago_em : diaDoTurno();
     await db.prepare("UPDATE despesa SET status = 'paga', pago_em = ?, forma = COALESCE(?, forma) WHERE id = ?").bind(dia, String(corpo?.forma ?? '').trim().slice(0, 30) || null, id).run();

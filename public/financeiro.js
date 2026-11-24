@@ -54,19 +54,45 @@ window.Financeiro = (() => {
   async function despesas() {
     const j = await api('/api/financeiro/despesas?status=todas'), d = j.despesas;
     $('#fnCorpo').innerHTML = `<div class="bar"><button class="btn prim" id="dsNova">＋ Nova conta</button><button class="btn" id="dsGerar">Gerar contas do mês (as que repetem)</button></div><div id="dsExcel"></div>
-      <table><tr><th>Vence</th><th>Conta</th><th>Valor</th><th></th></tr>${d.map((x) => `<tr><td>${dBr(x.vencimento)}</td><td>${esc(x.descricao)} <span class="mut">${esc(x.categoria)}${x.recorrente ? ' · todo mês' : ''}</span></td><td>${brl(x.valor)}</td>
-      <td>${x.status === 'paga' ? '<span class="mut">paga ' + dBr(x.pago_em) + '</span>' : `<button class="btn" data-p="${x.id}">Paguei</button>`} <button class="btn" data-x="${x.id}" aria-label="Apagar">🗑</button></td></tr>`).join('') || '<tr><td colspan="4" class="mut">Nenhuma conta ainda. Cadastre ou importe a planilha.</td></tr>'}</table>
+      <table><tr><th>Vence</th><th>Conta</th><th>Valor</th><th>Nota fiscal</th><th></th></tr>${d.map((x) => `<tr><td>${dBr(x.vencimento)}</td><td>${esc(x.descricao)} <span class="mut">${esc(x.categoria)}${x.recorrente ? ' · todo mês' : ''}</span></td><td>${brl(x.valor)}</td><td><button class="btn" data-nf="${x.id}">${x.nf_chave || x.nf_numero || x.tem_anexo ? '🧾 NF ' + esc(x.nf_numero || '') + (x.tem_anexo ? ' 📎' : '') : '🧾 Lançar NF'}</button></td>
+      <td>${x.status === 'paga' ? '<span class="mut">paga ' + dBr(x.pago_em) + '</span>' : `<button class="btn" data-p="${x.id}">Paguei</button>`} <button class="btn" data-x="${x.id}" aria-label="Apagar">🗑</button></td></tr>`).join('') || '<tr><td colspan="5" class="mut">Nenhuma conta ainda. Cadastre ou importe a planilha.</td></tr>'}</table>
       <dialog id="dlgDesp" style="max-width:94vw;width:460px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:18px"><h3>Nova conta</h3>
         <label>Descrição<input id="dsDesc"></label><label>Categoria<input id="dsCat" placeholder="Aluguel, Luz, Folha, Fornecedor…"></label>
         <label>Tipo<select id="dsTipo"><option value="fixa">Fixa (todo mês igual)</option><option value="variavel">Variável</option></select></label>
         <label>Valor (R$)<input id="dsValor" inputmode="decimal"></label><label>Vencimento<input type="date" id="dsVenc"></label>
         <label class="chk"><input type="checkbox" id="dsRec"> Repete todo mês</label><div class="bar" style="margin-top:12px"><button class="btn" id="dsCancela" style="flex:1">Cancelar</button><button class="btn prim" id="dsSalva" style="flex:1">Salvar</button></div></dialog>`;
+    $('#fnCorpo').insertAdjacentHTML('beforeend', `<dialog id="dlgNF" style="max-width:94vw;width:480px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:18px"><h3>Nota fiscal da conta</h3><p class="mut" id="nfTitulo"></p>
+        <label>Chave de acesso (44 números)<input id="nfChave" inputmode="numeric" maxlength="60" placeholder="Cole ou digite a chave que está na nota"></label>
+        <label>Número<input id="nfNum" inputmode="numeric"></label><label>Série<input id="nfSerie" inputmode="numeric"></label><label>Data de emissão<input type="date" id="nfEmissao"></label>
+        <label>CNPJ do fornecedor<input id="nfCnpj" inputmode="numeric" placeholder="só números"></label><div class="bar"><button class="btn" id="nfBusca">Consultar na Receita Federal</button></div><p class="mut" id="nfRecv"></p>
+        <label>Arquivo da nota (foto ou PDF, até 900 KB)<input type="file" id="nfArq" accept="image/*,application/pdf"></label><p id="nfAnexo" class="mut"></p>
+        <div class="bar" style="margin-top:12px"><button class="btn" id="nfFecha" style="flex:1">Fechar</button><button class="btn prim" id="nfSalva" style="flex:1">Salvar</button></div></dialog>`);
+    const nf = $('#dlgNF'); let nfId = null;
+    const pintaAnexo = (tem) => { $('#nfAnexo').innerHTML = tem ? '📎 Arquivo guardado. <button class="btn" id="nfVer">Abrir</button> <button class="btn" id="nfDel">Remover</button>' : 'Nenhum arquivo anexado.'; };
+    const soNum = (v) => String(v || '').replace(/\D/g, '');
+    $('#nfChave').oninput = () => { const c = soNum($('#nfChave').value); if (c.length === 44) { $('#nfNum').value = $('#nfNum').value || String(Number(c.slice(25, 34))); $('#nfSerie').value = $('#nfSerie').value || String(Number(c.slice(22, 25))); $('#nfCnpj').value = $('#nfCnpj').value || c.slice(6, 20); } };
+    $('#nfFecha').onclick = () => nf.close();
+    $('#nfBusca').onclick = async () => { try { const r = await api('/api/financeiro/cnpj?cnpj=' + soNum($('#nfCnpj').value)); $('#nfRecv').textContent = `${r.razao_social || ''}${r.nome_fantasia ? ' (' + r.nome_fantasia + ')' : ''} · ${r.situacao || ''} · ${r.municipio || ''}/${r.uf || ''}`; } catch (e) { $('#nfRecv').textContent = e.message; } };
+    $('#nfSalva').onclick = async () => {
+      try {
+        await api(`/api/financeiro/despesas/${nfId}/nota`, { chave: $('#nfChave').value, numero: $('#nfNum').value, serie: $('#nfSerie').value, emissao: $('#nfEmissao').value, cnpj: $('#nfCnpj').value }, 'PUT');
+        const f = $('#nfArq').files[0];
+        if (f) { const blob = f.type === 'application/pdf' ? f : await Fotos.reduzir(f, 1600, 0.8);
+          const r = await fetch(`/api/financeiro/despesas/${nfId}/anexo`, { method: 'PUT', body: blob, headers: { 'content-type': blob.type || f.type, authorization: 'Bearer ' + Mukifo.token() } }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); }
+        nf.close(); despesas();
+      } catch (e) { $('#nfRecv').textContent = e.message; }
+    };
+    nf.addEventListener('click', async (e) => {
+      if (e.target.id === 'nfVer') { const r = await fetch(`/api/financeiro/despesas/${nfId}/anexo`, { headers: { authorization: 'Bearer ' + Mukifo.token() } }); window.open(URL.createObjectURL(await r.blob()), '_blank'); }
+      if (e.target.id === 'nfDel' && confirm('Remover o arquivo da nota?')) { await api(`/api/financeiro/despesas/${nfId}/anexo`, null, 'DELETE'); pintaAnexo(false); }
+    });
     Planilhas.botoes($('#dsExcel'), ['despesas'], despesas);
     const dlg = $('#dlgDesp'); $('#dsNova').onclick = () => { $('#dsVenc').value = j.hoje; dlg.showModal(); }; $('#dsCancela').onclick = () => dlg.close();
     $('#dsSalva').onclick = async () => { try { await api('/api/financeiro/despesas', { descricao: $('#dsDesc').value, categoria: $('#dsCat').value, tipo: $('#dsTipo').value, valor: num($('#dsValor').value), vencimento: $('#dsVenc').value, recorrente: $('#dsRec').checked ? 'mensal' : null }); dlg.close(); despesas(); } catch (e) { msg(e.message, true); dlg.close(); } };
     $('#dsGerar').onclick = async () => { try { const g = await api('/api/financeiro/despesas/gerar-mes', { mes }); msg(`${g.criadas} conta(s) criada(s); ${g.ja_existiam} já existiam.`); despesas(); } catch (e) { msg(e.message, true); } };
     $('#fnCorpo').onclick = async (e) => {
-      const p = e.target.closest('[data-p]'), x = e.target.closest('[data-x]');
+      const p = e.target.closest('[data-p]'), x = e.target.closest('[data-x]'), n = e.target.closest('[data-nf]');
+      if (n) { const c = d.find((y) => String(y.id) === n.dataset.nf); nfId = c.id; $('#nfTitulo').textContent = `${c.descricao} · ${brl(c.valor)}`; $('#nfChave').value = c.nf_chave || ''; $('#nfNum').value = c.nf_numero || ''; $('#nfSerie').value = c.nf_serie || ''; $('#nfEmissao').value = c.nf_emissao || ''; $('#nfCnpj').value = c.fornecedor_cnpj || ''; $('#nfRecv').textContent = ''; $('#nfArq').value = ''; pintaAnexo(!!c.tem_anexo); nf.showModal(); return; }
       try { if (p) { await api(`/api/financeiro/despesas/${p.dataset.p}/pagar`, {}); despesas(); } if (x && confirm('Apagar essa conta?')) { await api('/api/financeiro/despesas/' + x.dataset.x, null, 'DELETE'); despesas(); } } catch (er) { msg(er.message, true); }
     };
   }

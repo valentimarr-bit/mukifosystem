@@ -226,3 +226,10 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Limites:** uma vaga por pessoa (índice único), fila de até 30, 5 entradas por hora por cliente.
 - **Técnico:** migração `0024_sinuca`; `src/sinuca.js`; avanço por tempo é "preguiçoso" (roda a cada consulta, sem cron). Testes em `test/sinuca.test.js`.
 - **Pendente:** definir a localização do bar em produção; push do "é a sua vez" depende dos segredos VAPID; vincular cliente de balcão à fila.
+
+## Notas fiscais nas contas a pagar (entrada)
+- Em **Financeiro → Contas a pagar**, cada conta tem o botão "🧾 Lançar NF": chave de acesso (44 números, validada pelo dígito verificador), número, série, emissão, CNPJ do fornecedor e arquivo (foto reduzida no celular ou PDF, até 900 KB).
+- Colando a chave, número, série e CNPJ saem dela; o CNPJ informado tem que bater com o da chave. A mesma nota não entra em duas contas (índice único na chave).
+- "Consultar na Receita Federal": dados cadastrais do CNPJ (razão social, situação) pela BrasilAPI. Se estiver fora do ar, o sistema segue normal.
+- Migração `0025_nota_fiscal`; `src/dominio/fiscal.js`; testes em `test/notafiscal.test.js`.
+- **Não faz ainda:** emitir nota (NFC-e/NF-e) nem baixar a nota do fornecedor direto da SEFAZ. Ver conversa sobre emissão: exige certificado digital A1, CSC da SEFAZ-RS e dados fiscais (NCM, CFOP, CSOSN) em cada produto.
