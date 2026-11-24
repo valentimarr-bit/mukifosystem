@@ -182,3 +182,5 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - Leitura do QR abre um popup que ocupa quase a tela toda (letras grandes, itens em lista, botões altos, botão Fechar); vale para entrega total, parcial e erro.
 
 - Gestão no celular (≤760px): cabeçalho e títulos de tabela deixam de ser fixos (antes cobriam os produtos); estoque vira cartões (item, Tem / Recomendado / Comprar, situação) com os títulos de ordenação como botões redondos no topo.
+
+- Celular, passada geral (testado com Chrome em 390 px contra o app local): menu da gestão em uma linha que rola (antes ocupava 5 linhas); botão flutuante 🎨 removido de venda/produção/cliente/compras (cobria botões — o editor de design fica em Gestão → Conta); painel do pedido na venda mais baixo, sem texto de ajuda quando vazio; cabeçalho da produção enxuto.

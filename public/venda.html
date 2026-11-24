@@ -8,7 +8,7 @@ header h1{font-size:20px;margin:0;flex:1}header a,header select{color:var(--txt)
 .abas{display:flex;gap:8px;padding:10px 14px}.abas button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px;font-weight:600}
 .abas button.on{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
 main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:12px;padding:0 14px 24px}main>*{min-width:0}
-@media(max-width:900px){main{grid-template-columns:minmax(0,1fr);padding-bottom:12px}.painel{position:sticky!important;bottom:0;top:auto!important;max-height:46vh;overflow:auto;box-shadow:0 -6px 16px #0008;z-index:4}}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr);padding-bottom:12px}.painel{position:sticky!important;bottom:0;top:auto!important;max-height:38vh;overflow:auto;box-shadow:0 -6px 16px #0008;z-index:4;padding:8px 10px}.painel #itens .mut:only-child{display:none}.painel .total{font-size:26px;margin:2px 0}#bCancelar{min-height:40px;font-size:15px}}
 img,video{max-width:100%}dialog{max-width:94vw;max-height:92vh;overflow:auto}header h1{min-width:0;white-space:nowrap;flex:1 1 auto}#resumo{order:5;flex:1 1 100%;font-size:13px}@media(min-width:700px){#resumo{order:0;flex:0 1 auto;font-size:14px}}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}.chips button{white-space:nowrap;min-height:48px;padding:0 16px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:16px}
 .chips button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
@@ -34,7 +34,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
 #confRes>.ret b.bom{font-size:26px}#confRes>.ret ul{padding-left:0;list-style:none}#confRes>.ret li{padding:8px 0;border-bottom:1px solid var(--line);font-size:24px}
 #confRes>.ret input[type=checkbox]{width:30px;height:30px;vertical-align:middle;margin-right:10px}#confRes>.ret select{font-size:22px;min-height:44px}
 #confRes>.ret .grande{min-height:64px;font-size:22px;margin-top:10px}
-</style></head><body>
+</style></head><body data-sem-botao-visual>
 <header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
 <div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button><button id="aH">Histórico</button></div>
 

@@ -3,6 +3,7 @@
 <title>Mukifo · Produção</title><script src="/tema.js"></script>
 <style>
 [hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui,sans-serif}
+@media(max-width:520px){header{gap:6px!important}header h1{font-size:19px!important;flex:1 1 100%}header button,header select,header a{min-height:40px!important;font-size:14px!important;padding:0 10px!important}}
 header{background:var(--hdr);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}header h1{font-size:22px;margin:0;flex:1}
 header a,header select{color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 14px;min-height:48px;display:inline-flex;align-items:center;text-decoration:none;font:inherit}
 main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;padding:12px;align-items:start}
@@ -19,7 +20,7 @@ main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1
 .mut{color:var(--mut);font-size:14px}.btn{min-height:64px;border-radius:14px;border:0;font-size:20px;font-weight:800;cursor:pointer;background:var(--acc);color:var(--on-acc);width:100%}.btn.ok{background:var(--ok,#4caf50);color:#000}
 .vazio{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 10px;font-size:22px}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-</style></head><body>
+</style></head><body data-sem-botao-visual>
 <header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select><a href="/venda.html">Venda</a><a href="/gestao.html">Gestão</a></header>
 <main id="fila"><div class="vazio">Carregando…</div></main><div id="msg" hidden></div>
 <script src="/entrar.js"></script>

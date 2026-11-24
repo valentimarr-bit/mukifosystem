@@ -55,7 +55,11 @@
   }
   /* celular: o cabeçalho rola junto (antes ele cobria os produtos) e o estoque vira cartões */
   @media (max-width: 760px) {
-    header { position:static; } th { position:static; }
+    header { position:static; gap:8px; padding:10px 12px; }
+    nav { display:flex; gap:6px; overflow-x:auto; flex-wrap:nowrap; width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+    nav::-webkit-scrollbar { display:none; }
+    nav button, nav a { flex:0 0 auto; white-space:nowrap; padding:9px 13px; font-size:15px; }
+    th { position:static; }
     #tabEstoque { display:block; overflow:visible; }
     #tabEstoque thead, #tabEstoque tbody { display:block; }
     #tabEstoque thead tr { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
