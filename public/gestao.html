@@ -229,6 +229,9 @@
       <h3>Trava de estoque</h3>
       <label class="chk"><input type="checkbox" id="travaEstoque"> Não deixar vender o que não tem no estoque</label>
       <p class="mut">Só vale para ingredientes que já foram contados ou comprados. Faça a primeira contagem para a trava funcionar em tudo.</p>
+      <h3>⏱ Tempo de espera</h3>
+      <div class="bar"><input id="tempoPadrao" inputmode="decimal" placeholder="Tempo padrão (min)"><button class="btn prim" id="tempoSalvar">Salvar</button></div>
+      <p class="mut">Na hora de pedir, o cliente vê a espera média de hoje — calculada sozinha, pedido a pedido, pelo avanço das etapas no kanban da produção (pago → pronto). Enquanto não há pedidos suficientes hoje (mínimo 3), vale o tempo de preparo de cada produto; o que não tiver tempo próprio usa este padrão.</p>
       <h3>🧪 Modo teste</h3>
       <label class="chk"><input type="checkbox" id="modoTeste"> Fingir que os pagamentos entraram (sem restrições)</label>
       <p class="mut">Ligado: todo pagamento (balcão e app) é dado como recebido na hora, a trava de estoque e os limites de pedidos/tentativas ficam desligados, e uma faixa laranja aparece nas telas. As cobranças ficam marcadas como "teste". Desligue antes de abrir para clientes de verdade.</p>
@@ -243,6 +246,7 @@
   <dialog id="dlgProduto">
     <h3 id="prodTitulo"></h3>
     <label for="prodNome">Nome (igual ao do sistema de vendas)</label><input id="prodNome" autocomplete="off">
+    <label for="prodTempo">Tempo de preparo (min) — vazio usa o padrão</label><input id="prodTempo" inputmode="decimal" placeholder="ex.: 4">
     <label for="prodPreco">Preço de venda (R$)</label><input id="prodPreco" inputmode="decimal" placeholder="ex.: 18,00">
     <label class="chk"><input type="checkbox" id="prodBaixa"> Dá baixa no estoque quando vende</label>
     <label class="chk" id="prodAtivoBox"><input type="checkbox" id="prodAtivo"> Produto ativo (desmarque para tirar do cardápio)</label>
@@ -435,6 +439,7 @@ async function abrirProduto(id) {
   } catch (e) { return alertar(e.message, 'neg'); }
   $('#prodTitulo').textContent = id ? 'Editar produto' : 'Novo produto';
   $('#prodNome').value = pEdit.nome;
+  $('#prodTempo').value = pEdit.tempo_preparo_min == null ? '' : String(pEdit.tempo_preparo_min).replace('.', ',');
   $('#prodPreco').value = pEdit.preco_venda == null ? '' : String(pEdit.preco_venda).replace('.', ',');
   $('#prodCategoria').value = pEdit.categoria ?? '';
   $('#dlCategorias').innerHTML = [...new Set(produtosLista.map((x) => x.categoria).filter(Boolean))].sort().map((c) => `<option value="${esc(c)}">`).join('');
@@ -460,7 +465,7 @@ $('#prodSalvar').addEventListener('click', async () => {
   const ruim = campos.find((l) => l.querySelector('.fi-insumo').value.trim() && !insumoPorNome(l.querySelector('.fi-insumo').value));
   if (ruim) { $('#prodMsg').textContent = `Não achei o ingrediente “${ruim.querySelector('.fi-insumo').value}”. Escolha um da lista que aparece ao digitar.`; return; }
   const ficha = campos.map((l) => ({ insumo_id: insumoPorNome(l.querySelector('.fi-insumo').value)?.id ?? null, quantidade: lerNumero(l.querySelector('.fi-qtd').value) }));
-  const corpo = { nome: $('#prodNome').value, categoria: $('#prodCategoria').value.trim() || null, preco_venda: lerNumero($('#prodPreco').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
+  const corpo = { nome: $('#prodNome').value, categoria: $('#prodCategoria').value.trim() || null, preco_venda: lerNumero($('#prodPreco').value), tempo_preparo_min: lerNumero($('#prodTempo').value), baixa_estoque: $('#prodBaixa').checked, ativo: pEdit.id ? $('#prodAtivo').checked : true, ficha };
   $('#prodSalvar').disabled = true;
   try {
     await chamar(pEdit.id ? '/api/produtos/' + pEdit.id : '/api/produtos', pEdit.id ? 'PUT' : 'POST', corpo);
@@ -614,6 +619,7 @@ let maqLista = [];
 async function carregarVenda() {
   const pix = await chamarConta('/api/venda/pix', null, 'GET');
   $('#pixChave').value = pix.chave; $('#pixNome').value = pix.nome; $('#pixCidade').value = pix.cidade;
+  try { $('#tempoPadrao').value = String((await (await fetch('/api/venda/tempo-padrao', { headers: { authorization: 'Bearer ' + window.Mukifo.token() } })).json()).minutos).replace('.', ','); } catch {}
   try { $('#modoTeste').checked = (await (await fetch('/api/teste')).json()).ativo; } catch {}
   $('#travaEstoque').checked = (await chamarConta('/api/venda/trava', null, 'GET')).ativa;
   const r = await chamarConta('/api/venda/maquininhas', null, 'GET'); maqLista = r.maquininhas; $('#modoRot').value = r.modo;
@@ -622,6 +628,7 @@ async function carregarVenda() {
     <button class="btn" data-salvarmaq="${m.id}">Salvar</button></div>`).join('');
 }
 $('#abrirVisual').onclick = () => window.Tema.painel();
+$('#tempoSalvar').onclick = async () => { try { const r = await fetch('/api/venda/tempo-padrao', { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + window.Mukifo.token() }, body: JSON.stringify({ minutos: lerNumero($('#tempoPadrao').value) }) }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'Erro ' + r.status); msgConta('Tempo padrão salvo.'); } catch (er) { msgConta(er.message, 'neg'); } };
 $('#modoTeste').onchange = async (e) => { try { const r = await fetch('/api/teste', { method: 'PUT', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + window.Mukifo.token() }, body: JSON.stringify({ ativo: e.target.checked }) }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'Erro ' + r.status); msgConta(e.target.checked ? 'Modo teste LIGADO: pagamentos simulados.' : 'Modo teste desligado.'); location.reload(); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#travaEstoque').onchange = async (e) => { try { await chamarConta('/api/venda/trava', { ativa: e.target.checked }, 'PUT'); msgConta(e.target.checked ? 'Trava de estoque ligada.' : 'Trava de estoque desligada: vai vender mesmo sem estoque.'); } catch (er) { msgConta(er.message, 'neg'); e.target.checked = !e.target.checked; } };
 $('#pixSalvar').onclick = async () => { try { await chamarConta('/api/venda/pix', { chave: $('#pixChave').value, nome: $('#pixNome').value, cidade: $('#pixCidade').value }, 'PUT'); msgConta('Pix salvo.'); } catch (e) { msgConta(e.message, 'neg'); } };

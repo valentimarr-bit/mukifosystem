@@ -6,7 +6,7 @@ import { normalizarNome } from './dominio/estoque.js';
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 
 async function lerProduto(db, id) {
-  const p = await db.prepare('SELECT id, nome, categoria, preco_venda, baixa_estoque, ativo FROM produto WHERE id = ?').bind(id).first();
+  const p = await db.prepare('SELECT id, nome, categoria, preco_venda, baixa_estoque, ativo, tempo_preparo_min FROM produto WHERE id = ?').bind(id).first();
   if (!p) return null;
   const { results } = await db.prepare(
     `SELECT ft.insumo_id, i.nome AS insumo, i.unidade_ficha, ft.quantidade, ft.observacao
@@ -23,6 +23,11 @@ async function validar(db, corpo, idAtual) {
     preco = Number(corpo.preco_venda);
     if (!Number.isFinite(preco) || preco < 0) return { erro: 'Preço inválido.' };
   }
+  let tempo = null;
+  if (corpo.tempo_preparo_min !== null && corpo.tempo_preparo_min !== undefined && corpo.tempo_preparo_min !== '') {
+    tempo = Number(corpo.tempo_preparo_min);
+    if (!Number.isFinite(tempo) || tempo <= 0 || tempo > 180) return { erro: 'Tempo de preparo inválido (use de 1 a 180 minutos, ou deixe vazio para o padrão).' };
+  }
   const ficha = Array.isArray(corpo.ficha) ? corpo.ficha : [];
   const vistos = new Set();
   for (const l of ficha) {
@@ -36,7 +41,7 @@ async function validar(db, corpo, idAtual) {
   const norm = normalizarNome(nome);
   const dup = await db.prepare('SELECT id FROM produto WHERE nome_normalizado = ? AND id <> ?').bind(norm, idAtual ?? -1).first();
   if (dup) return { erro: 'Já existe um produto com esse nome.' };
-  return { dados: { nome, norm, preco, categoria: corpo.categoria ? String(corpo.categoria).trim() || null : null,
+  return { dados: { nome, norm, preco, tempo, categoria: corpo.categoria ? String(corpo.categoria).trim() || null : null,
     baixa: corpo.baixa_estoque === false || corpo.baixa_estoque === 0 ? 0 : 1, ativo: corpo.ativo === false || corpo.ativo === 0 ? 0 : 1,
     ficha: ficha.map((l) => ({ insumo: Number(l.insumo_id), q: Number(l.quantidade), obs: l.observacao ? String(l.observacao).trim() || null : null })) } };
 }
@@ -64,8 +69,8 @@ export async function rotearProdutos(request, env, url) {
     const v = await validar(db, corpo, null);
     if (v.erro) return erro(v.erro);
     const d = v.dados;
-    const novo = await db.prepare('INSERT INTO produto (nome, nome_normalizado, categoria, preco_venda, baixa_estoque, ativo) VALUES (?, ?, ?, ?, ?, 1) RETURNING id')
-      .bind(d.nome, d.norm, d.categoria, d.preco, d.baixa).first();
+    const novo = await db.prepare('INSERT INTO produto (nome, nome_normalizado, categoria, preco_venda, baixa_estoque, ativo, tempo_preparo_min) VALUES (?, ?, ?, ?, ?, 1, ?) RETURNING id')
+      .bind(d.nome, d.norm, d.categoria, d.preco, d.baixa, d.tempo).first();
     if (d.ficha.length) await db.batch(d.ficha.map((l) => db.prepare('INSERT INTO ficha_tecnica (produto_id, insumo_id, quantidade, observacao) VALUES (?, ?, ?, ?)').bind(novo.id, l.insumo, l.q, l.obs)));
     return json({ ok: true, produto: await lerProduto(db, novo.id) }, 201);
   }
@@ -77,8 +82,8 @@ export async function rotearProdutos(request, env, url) {
     if (v.erro) return erro(v.erro);
     const d = v.dados;
     await db.batch([
-      db.prepare('UPDATE produto SET nome = ?, nome_normalizado = ?, categoria = ?, preco_venda = ?, baixa_estoque = ?, ativo = ? WHERE id = ?')
-        .bind(d.nome, d.norm, d.categoria, d.preco, d.baixa, d.ativo, id),
+      db.prepare('UPDATE produto SET nome = ?, nome_normalizado = ?, categoria = ?, preco_venda = ?, baixa_estoque = ?, ativo = ?, tempo_preparo_min = ? WHERE id = ?')
+        .bind(d.nome, d.norm, d.categoria, d.preco, d.baixa, d.ativo, d.tempo, id),
       db.prepare('UPDATE item_pedido SET nome = ? WHERE produto_id = ?').bind(d.nome, id), // o histórico continua casando com o produto
       db.prepare('DELETE FROM ficha_tecnica WHERE produto_id = ?').bind(id),
       ...d.ficha.map((l) => db.prepare('INSERT INTO ficha_tecnica (produto_id, insumo_id, quantidade, observacao) VALUES (?, ?, ?, ?)').bind(id, l.insumo, l.q, l.obs)),

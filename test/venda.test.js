@@ -9,7 +9,7 @@ import { gerarPix, crc16 } from '../src/pagamentos/pix.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', PAGAMENTO_WEBHOOK_SECRET: 'whsec', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, { token = 'segredo-teste', cab = {}, bruto } = {}) => {
@@ -253,4 +253,13 @@ test('desempenho: tempos entre etapas são calculados dos carimbos de cada pedid
   const t = (await chamar('/api/desempenho?de=2026-01-01&ate=2026-01-01')).corpo.tempos;   // dia isolado dos outros testes
   assert.equal(t.balcao.fila.media, 3); assert.equal(t.balcao.preparo.media, 5); assert.equal(t.balcao.pagamento.media, 2); assert.equal(t.balcao.pago_ate_fim.media, 8);
   assert.ok(t.por_hora.some((h) => h.hora === 10 && h.media === 8));   // 13:00 UTC = 10h em Brasília
+});
+
+import '../public/espera.js';
+const Espera = globalThis.Espera;
+
+test('espera: média do dia com amostra; senão tempo por produto + 1 min por unidade extra', () => {
+  assert.deepEqual(Espera.estimar({ media_min: 7.4, amostra: 5, padrao_min: 5 }, [{ q: 1 }]), { minutos: 7, origem: 'media_do_dia' });
+  assert.deepEqual(Espera.estimar({ media_min: null, amostra: 0, padrao_min: 5 }, [{ tempo: 8, q: 1 }, { tempo: null, q: 2 }]), { minutos: 10, origem: 'padrao_produto' });
+  assert.equal(Espera.estimar({ media_min: 3, amostra: 2, padrao_min: 6 }, [{ q: 1 }]).origem, 'padrao_produto');
 });

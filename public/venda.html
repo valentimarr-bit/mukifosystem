@@ -36,7 +36,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
 <main id="telaV">
   <section><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off"><div class="cabset" id="cabset" hidden></div><div class="grade" id="grade"></div></section>
   <aside class="painel"><div class="cmd" id="cmd"></div><div id="itens"></div>
-    <div class="total" id="total">R$ 0,00</div><div id="cobsPend"></div>
+    <div class="total" id="total">R$ 0,00</div><div id="esperaVenda" class="mut" style="font-size:14px;margin:2px 0 6px"></div><div id="cobsPend"></div>
     <button class="grande" id="bCobrar">Cobrar</button>
     <button class="grande sec" id="bCancelar">Descartar pedido</button></aside>
 </main>
@@ -66,11 +66,11 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
   </div>
   <div class="mut ruim" id="dErro"></div><button class="grande" id="dOk">Cobrar</button><button class="grande sec" id="dFecha">Voltar</button></dialog>
 <div id="msg"></div>
-<script src="/entrar.js"></script>
+<script src="/entrar.js"></script><script src="/espera.js"></script>
 <script>
 Tema.ligarSeletor(document.getElementById('tema'));
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
-let token = Mukifo.token(), cardapio = [], cat = -1, busca = '', comandas = [], atual = null, maqs = [], forma = null;
+let espera = null, token = Mukifo.token(), cardapio = [], cat = -1, busca = '', comandas = [], atual = null, maqs = [], forma = null;
 const msg = (t, ruim) => { const m = $('#msg'); m.textContent = t; m.style.color = ruim ? 'var(--bad)' : 'var(--txt)'; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 5000); };
 async function api(url, metodo = 'GET', corpo) {
   const r = await fetch(url, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token } });
@@ -78,7 +78,8 @@ async function api(url, metodo = 'GET', corpo) {
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
 }
 const tentar = (f) => async (...a) => { try { await f(...a); } catch (e) { msg(e.message, true); recarregarCardapio(); } };
-async function recarregarCardapio() { try { cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; if (cat >= cardapio.length) cat = -1; desenharCardapio(); } catch {} }
+const mostrarEspera = () => { const e = $('#esperaVenda'); if (e) e.textContent = Espera.texto(Espera.estimar(espera, [{ tempo: null, q: 1 }])); };
+async function recarregarCardapio() { try { const d = await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json(); cardapio = d.categorias; espera = d.espera; mostrarEspera(); if (cat >= cardapio.length) cat = -1; desenharCardapio(); } catch {} }
 
 const EMOJI = { 'Promoções e kits': '🎉', Drinks: '🍹', Doses: '🥃', 'Cervejas e long necks': '🍺', Energéticos: '⚡', 'Refrigerantes e águas': '🥤', Porções: '🍟', 'Pratos e lanches': '🍔' };
 const sem = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

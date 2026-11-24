@@ -72,18 +72,28 @@ async function conferirQuitacao(db, pedidoId, operador) {
   return lerComanda(db, pedidoId);
 }
 
+/** Espera média de HOJE: dos últimos 10 pedidos prontos do dia, quanto levou do pagamento até ficar pronto. Sem amostra, quem decide é o tempo padrão por produto. */
+async function esperaDoDia(db) {
+  const [{ results }, cfg] = await Promise.all([
+    db.prepare("SELECT pago_em, pronto_em FROM pedido WHERE dia = ? AND origem IN ('balcao', 'celular') AND pago_em IS NOT NULL AND pronto_em IS NOT NULL ORDER BY pronto_em DESC LIMIT 10").bind(diaDoTurno()).all(),
+    db.prepare("SELECT valor FROM configuracao WHERE chave = 'tempo_padrao_min'").first()]);
+  const mins = results.map((r) => (Date.parse(String(r.pronto_em).replace(' ', 'T') + 'Z') - Date.parse(String(r.pago_em).replace(' ', 'T') + 'Z')) / 60000).filter((x) => Number.isFinite(x) && x >= 0 && x <= 90);
+  const padrao = Number(cfg?.valor) > 0 ? Number(cfg.valor) : 5;
+  return { media_min: mins.length ? Math.round((mins.reduce((a, b) => a + b, 0) / mins.length) * 10) / 10 : null, amostra: mins.length, padrao_min: padrao };
+}
+
 async function getCardapio(db) {
   const { results } = await db.prepare(
-    `SELECT id, nome, categoria, preco_venda AS preco FROM produto WHERE ativo = 1 AND preco_venda IS NOT NULL ORDER BY nome`).all();
-  const disp = await disponibilidade(db, results.map((p) => p.id));
+    `SELECT id, nome, categoria, preco_venda AS preco, tempo_preparo_min AS tempo FROM produto WHERE ativo = 1 AND preco_venda IS NOT NULL ORDER BY nome`).all();
+  const [disp, espera] = await Promise.all([disponibilidade(db, results.map((p) => p.id)), esperaDoDia(db)]);
   const porCat = new Map();
   for (const p of results) {
     const c = p.categoria ?? 'Outros';
     if (!porCat.has(c)) porCat.set(c, []);
     const r = disp.get(p.id);   // quantas dá para vender; só informado quando é pouco (não expõe o estoque todo)
-    porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco, restam: r != null && r <= 20 ? r : null });
+    porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco, tempo: p.tempo, restam: r != null && r <= 20 ? r : null });
   }
-  const r = json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })) });
+  const r = json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })), espera });
   r.headers.set('cache-control', 'public, max-age=5, s-maxage=10');   // o cardápio é lido por todo cliente; 5 s alivia o banco (a trava no servidor continua valendo)
   return r;
 }
@@ -257,6 +267,13 @@ export async function rotearVenda(request, env, url) {
     return configurarMaquininha(db, Number(k[1]), corpo);
   }
 
+  if (m === 'GET' && p === '/api/venda/tempo-padrao') return json({ minutos: (await esperaDoDia(db)).padrao_min });
+  if (m === 'PUT' && p === '/api/venda/tempo-padrao') {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin muda o tempo padrão.', 403);
+    const t = Number(corpo?.minutos); if (!Number.isFinite(t) || t <= 0 || t > 120) return erro('Digite um tempo de 1 a 120 minutos.');
+    await db.prepare("INSERT INTO configuracao (chave, valor) VALUES ('tempo_padrao_min', ?) ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor").bind(String(t)).run();
+    return json({ ok: true, minutos: t });
+  }
   if (m === 'GET' && p === '/api/venda/trava') return json({ ativa: await travaLigada(db) });
   if (m === 'PUT' && p === '/api/venda/trava') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin liga ou desliga a trava de estoque.', 403);
