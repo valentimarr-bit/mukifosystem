@@ -209,7 +209,10 @@
       <label>Fotos de <select id="fTipo"><option value="produtos">Produtos (o que vende)</option><option value="insumos">Insumos (o que compra)</option></select></label>
       <input id="fBusca" type="search" autocomplete="off" placeholder="Buscar" style="flex:1;min-width:140px">
       <label><input type="checkbox" id="fSo"> só os que faltam</label>
+      <button type="button" id="fVarias">Enviar várias fotos</button>
+      <input type="file" id="fVariasArq" accept="image/jpeg,image/png,image/webp" multiple hidden>
     </div>
+    <p class="mut" id="fVariasMsg"></p>
     <p class="mut" id="fResumo"></p>
     <div class="gradefoto" id="fGrade"></div>
   </section>
@@ -751,6 +754,24 @@ $('#fotoArquivo').addEventListener('change', async () => {
 $('#fotoRemover').addEventListener('click', async () => {
   try { await Fotos.remover(fAtual.tipo, fAtual.id, Mukifo.token()); atualizarPrevia(); carregarFotos(); $('#fotoMsg').textContent = 'Foto removida.'; }
   catch (e) { $('#fotoMsg').textContent = e.message; }
+});
+// Várias de uma vez: o nome do arquivo diz de quem é (ex.: "caipirinha.jpg"); a foto é cortada em quadrado do centro.
+$('#fVarias').addEventListener('click', () => { if (!Mukifo.token()) return Mukifo.pedir(); $('#fVariasArq').click(); });
+$('#fVariasArq').addEventListener('change', async () => {
+  const arqs = [...$('#fVariasArq').files]; $('#fVariasArq').value = '';
+  if (!arqs.length) return;
+  const tipo = $('#fTipo').value, msg = $('#fVariasMsg');
+  const cat = await catalogoFotos(tipo);
+  let ok = 0; const sem = [], falhou = [];
+  for (const [i, f] of arqs.entries()) {
+    msg.textContent = `Enviando ${i + 1} de ${arqs.length}…`;
+    const item = Fotos.combinar(f.name, cat);
+    if (!item) { sem.push(f.name); continue; }
+    try { await Fotos.enviar(tipo, item.id, f, Mukifo.token()); ok++; }
+    catch (e) { if (/Entre/.test(e.message)) { Mukifo.pedir(); break; } falhou.push(f.name + ' (' + e.message + ')'); }
+  }
+  msg.textContent = `${ok} foto(s) enviada(s).` + (sem.length ? ` Sem item correspondente: ${sem.join(', ')} — renomeie o arquivo com o nome do produto ou use o toque no item.` : '') + (falhou.length ? ` Falharam: ${falhou.join('; ')}.` : '');
+  carregarFotos();
 });
 $('#fotoFechar').addEventListener('click', () => $('#dlgFoto').close());
 

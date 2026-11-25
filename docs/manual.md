@@ -53,7 +53,7 @@ Pacotes de produtos com preço próprio. A baixa de estoque desce nos itens de d
 Define, por item, com quantas embalagens o sistema avisa que está acabando.
 
 ### Fotos
-Grade de fotos de produtos e insumos, com filtro "só os que faltam", tirar ou escolher a foto e remover. A foto é reduzida no próprio aparelho antes de subir.
+Grade de fotos de produtos e insumos, com filtro "só os que faltam", tirar ou escolher a foto e remover. A foto é cortada do centro em quadrado e reduzida (640 px) no próprio aparelho antes de subir. **Enviar várias fotos**: escolha vários arquivos de uma vez; cada um vai para o item que tem o nome parecido com o do arquivo (ex.: `caipirinha-de-limao.jpg`, `Heineken.png`). Arquivo que não acha item, ou que combina com mais de um, é listado para você renomear ou subir pelo toque no item.
 
 ### Registrar
 Registro de compras, contagem de estoque e importação do relatório de vendas.
