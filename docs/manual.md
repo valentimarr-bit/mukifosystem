@@ -25,6 +25,7 @@ Este manual é para quem opera o bar: balcão, cozinha, gerência e dono. Ele é
 | Campeonato (jogador) | `/campeonato.html` | clientes |
 | Mesa do campeonato | `/torneio.html` | equipe |
 | Fila da sinuca (cliente) | `/sinuca.html` | clientes |
+| Placar da sinuca (Hall da Fama, TV do bar) | `/placar.html` | todos, sem login |
 | Mesas e fila (equipe) | `/mesas.html` | equipe |
 | Pagamentos | `/pagamentos.html` | financeiro |
 | Monitor de Pix | `/pix.html` | financeiro |
@@ -130,6 +131,12 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 - **Como entra um jogo da mesa:** ao liberar a mesa, quem jogou vê "Quem ganhou?", escolhe o adversário pelo nome e toca em "Eu ganhei" ou "Eu perdi". O adversário recebe "Confere?" no celular dele; ao confirmar, o jogo conta. "Não foi assim" manda o caso para o balcão.
 - **No balcão** (`/mesas.html`, "Resultados da mesa para conferir"): ficam os jogos contra quem não tem cadastro, os contestados e os que o adversário não respondeu em 1 hora. Botões "Vale" e "Não vale". Também dá para **lançar um jogo agora** informando os dois nomes e quem ganhou.
 - **Contra fraude:** só vale depois de confirmação; máximo de 10 resultados por hora por pessoa; a mesma dupla conta no máximo 6 jogos por dia. Jogo pendente ou contestado não mexe no score.
+
+### Placar online (`/placar.html`)
+- Placar estilo fliperama, aberto para todos, sem login: posição, jogador, **jogos**, **vitórias**, **% de aproveitamento**, score e nível. Mostra 🔥 quem está numa sequência de vitórias e o recorde de cada um.
+- Abas de período: **Hoje**, **7 dias**, **Mês** e **Sempre**. Ordenar por **Score**, **Vitórias**, **Jogos** ou **Sequência**. Jogos e vitórias são do período; o score é a pontuação geral do jogador.
+- Conta campeonatos e jogos da mesa já confirmados (ver "Ranking de toda a sinuca").
+- **Para a TV do bar:** abra `/placar.html?tv=1`. Letras grandes, atualiza sozinho a cada 15 segundos e passa de período (hoje, 7 dias, mês, sempre) a cada 20 segundos.
 - Dá para fazer o jogo da mesa valer menos que o de campeonato: guarde em `configuracao` a chave `sinuca_peso_mesa` com um valor entre 0 e 1 (ex.: 0.5). Sem a chave, vale igual.
 
 - **Formato da chave** (escolhido ao criar a modalidade, ou em "Formato da chave" antes do sorteio):

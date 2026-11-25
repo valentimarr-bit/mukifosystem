@@ -118,3 +118,19 @@ test('ranking da sinuca: resultado da mesa confirmado entra no score; contestado
   assert.equal((await chamar(`${G}/resultados`, 'POST', { a_nome: 'Julio', b_nome: 'julio', vencedor: 'a' })).status, 400);
   assert.ok((await chamar('/api/sinuca/ranking', 'GET', undefined, {}, null)).corpo.ranking.some((j) => j.nome === 'Julio'));
 });
+
+test('placar estilo fliperama: jogos, vitórias, aproveitamento, sequência e períodos', async () => {
+  const G = '/api/sinuca/gestao', lancar = (a, b, v) => chamar(`${G}/resultados`, 'POST', { a_nome: a, b_nome: b, vencedor: v });
+  for (const v of ['a', 'a', 'a', 'b']) assert.equal((await lancar('Placar Pri', 'Placar Seg', v)).status, 201);
+  const p = (await chamar('/api/sinuca/placar?periodo=hoje&ordem=vitorias', 'GET', undefined, {}, null)).corpo;
+  assert.equal(p.periodo, 'hoje'); assert.ok(p.totais.jogos >= 4);
+  const pri = p.jogadores.find((j) => j.nome === 'Placar Pri' || j.nome.startsWith('Placar P')), seg = p.jogadores.find((j) => j.nome.startsWith('Placar S'));
+  assert.equal(pri.jogos, 4); assert.equal(pri.vitorias, 3); assert.equal(pri.derrotas, 1); assert.equal(pri.aproveitamento, 75);
+  assert.equal(pri.melhor_sequencia, 3); assert.equal(pri.sequencia, 0); assert.equal(seg.sequencia, 1);
+  assert.ok(pri.posicao < seg.posicao);
+  const antigo = (await chamar('/api/sinuca/placar?periodo=semana&ordem=jogos&x=1', 'GET', undefined, {}, null)).corpo; assert.equal(antigo.ordem, 'jogos');
+  assert.equal((await chamar('/api/sinuca/placar?periodo=lixo&ordem=lixo', 'GET', undefined, {}, null)).corpo.periodo, 'sempre');   // valor estranho cai no padrão
+  await sql("UPDATE sinuca_resultado SET resolvido_em = datetime('now', '-40 days') WHERE a_nome = 'Placar Pri'");
+  const mes = (await chamar('/api/sinuca/placar?periodo=mes', 'GET', undefined, {}, null)).corpo;
+  assert.equal(mes.jogadores.some((j) => j.nome.startsWith('Placar P')), false);                   // jogos de 40 dias atrás saem do mês
+});

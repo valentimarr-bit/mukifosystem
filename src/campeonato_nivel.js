@@ -8,12 +8,12 @@ const embaralhar = (l) => { const a = [...l]; for (let i = a.length - 1; i > 0; 
 
 const MAX_MESA_POR_DUPLA_DIA = 6;   // a mesma dupla só conta 6 jogos por dia: segura combinação de resultado para inflar score
 
-/** Refaz o score de todos a partir dos jogos terminados: campeonatos (com os dois jogadores) e jogos da mesa confirmados, na ordem em que aconteceram. */
-export async function recalcularScores(db) {
+/** Todos os jogos da sinuca (campeonatos com os dois jogadores + jogos da mesa confirmados), na ordem em que aconteceram. */
+export async function jogosDaSinuca(db) {
   const { results } = await db.prepare(`SELECT p.vencedor_id, p.a_id, p.b_id, p.atualizada_em AS t, ia.cliente_id AS ca, ia.nome AS na, ib.cliente_id AS cb, ib.nome AS nb
     FROM partida p JOIN inscricao ia ON ia.id = p.a_id JOIN inscricao ib ON ib.id = p.b_id
     WHERE p.status = 'finalizada' AND p.vencedor_id IS NOT NULL ORDER BY p.atualizada_em, p.id`).all();
-  const { results: mesa } = await db.prepare("SELECT * FROM sinuca_resultado WHERE status = 'confirmado' ORDER BY resolvido_em, id").all();
+  const { results: mesa } = await db.prepare("SELECT * FROM sinuca_resultado WHERE status = 'confirmado' ORDER BY resolvido_em, rowid").all();
   const pesoCfg = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'sinuca_peso_mesa'").first();
   const peso = Number.isFinite(Number(pesoCfg?.valor)) && Number(pesoCfg?.valor) > 0 ? Math.min(1, Number(pesoCfg.valor)) : 1;
   const jogos = results.map((j) => ({ t: j.t ?? '', a: chaveJogador(j.ca, j.na), b: chaveJogador(j.cb, j.nb), nomeA: j.na, nomeB: j.nb, clienteA: j.ca, clienteB: j.cb, aVenceu: j.vencedor_id === j.a_id }));
@@ -24,7 +24,12 @@ export async function recalcularScores(db) {
     jogos.push({ t: r.resolvido_em ?? r.criado_em, a: r.a_chave, b: r.b_chave, nomeA: r.a_nome, nomeB: r.b_nome, clienteA: r.a_cliente_id, clienteB: r.b_cliente_id, aVenceu: r.vencedor === 'a', peso });
   }
   jogos.sort((x, y) => (x.t < y.t ? -1 : x.t > y.t ? 1 : 0));   // estável: no empate, campeonato antes
-  const t = calcularScores(jogos);
+  return jogos;
+}
+
+/** Refaz o score de todos a partir de todos os jogos, na ordem em que aconteceram. */
+export async function recalcularScores(db) {
+  const t = calcularScores(await jogosDaSinuca(db));
   const ops = [db.prepare('DELETE FROM jogador_score')];
   for (const [k, x] of t) ops.push(db.prepare('INSERT INTO jogador_score (chave, cliente_id, nome, score, jogos, vitorias) VALUES (?, ?, ?, ?, ?, ?)').bind(k, x.cliente_id, x.nome, Math.round(x.score * 10) / 10, x.jogos, x.vitorias));
   for (let i = 0; i < ops.length; i += 50) await db.batch(ops.slice(i, i + 50));
@@ -195,4 +200,31 @@ export function lerConfig(c, atual) {
   }
   if (c.rep_premio !== undefined) out.rep_premio = c.rep_premio ? 1 : 0;
   return { ok: true, valores: { ...atual, ...out } };
+}
+
+
+/** Placar estilo fliperama: jogos, vitórias, aproveitamento e sequência de cada jogador, num período (`desde` = 'YYYY-MM-DD HH:MM:SS' em UTC, ou nada = sempre). */
+export async function placarDaSinuca(db, { desde = null, ordem = 'score', limite = 50, nomeCurto = (n) => n } = {}) {
+  const todos = await jogosDaSinuca(db), jogos = desde ? todos.filter((j) => String(j.t) >= desde) : todos;
+  const t = new Map();
+  const pega = (k, nome) => { let x = t.get(k); if (!x) { x = { chave: k, nome, jogos: 0, vitorias: 0, seq: 0, melhor: 0 }; t.set(k, x); } x.nome = nome || x.nome; return x; };
+  for (const j of jogos) {
+    if (!j.a || !j.b || j.a === j.b) continue;
+    for (const [k, nome, venceu] of [[j.a, j.nomeA, j.aVenceu], [j.b, j.nomeB, !j.aVenceu]]) {
+      const x = pega(k, nome); x.jogos++;
+      if (venceu) { x.vitorias++; x.seq++; x.melhor = Math.max(x.melhor, x.seq); } else x.seq = 0;
+    }
+  }
+  const { results: sc } = await db.prepare('SELECT chave, score, jogos FROM jogador_score').all();
+  const score = new Map(sc.map((r) => [r.chave, r]));
+  const tit = await titulosDe(db, [...t.keys()]);
+  const lista = [...t.values()].map((x) => {
+    const s = score.get(x.chave), n = nivelDoScore(s?.score ?? SCORE_INICIAL, s?.jogos ?? 0), ti = tit.get(x.chave);
+    return { chave: x.chave, nome: nomeCurto(x.nome), jogos: x.jogos, vitorias: x.vitorias, derrotas: x.jogos - x.vitorias, aproveitamento: x.jogos ? Math.round(100 * x.vitorias / x.jogos) : 0,
+      sequencia: x.seq, melhor_sequencia: x.melhor, score: Math.round(s?.score ?? SCORE_INICIAL), nivel: ti ? nomeDoTitulo(ti) : n.nome, cor: ti ? COR_TITULO : n.cor };
+  });
+  const cmp = { score: (a, b) => b.score - a.score || b.vitorias - a.vitorias, vitorias: (a, b) => b.vitorias - a.vitorias || b.aproveitamento - a.aproveitamento || a.jogos - b.jogos,
+    jogos: (a, b) => b.jogos - a.jogos || b.vitorias - a.vitorias, sequencia: (a, b) => b.melhor_sequencia - a.melhor_sequencia || b.vitorias - a.vitorias }[ordem] ?? ((a, b) => b.score - a.score);
+  lista.sort(cmp);
+  return { jogadores: lista.slice(0, limite).map(({ chave, ...x }, i) => ({ posicao: i + 1, ...x })), totais: { jogos: jogos.filter((j) => j.a && j.b && j.a !== j.b).length, jogadores: t.size } };
 }

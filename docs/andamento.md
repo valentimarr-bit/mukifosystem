@@ -2,6 +2,17 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-25 — ranking e placar da sinuca
+**Feito**
+- Score Elo, níveis, formatos de chave, séries e repescagem por recompra no campeonato; título especial por jogador (migração 0032).
+- Ranking de toda a sinuca: `sinuca_resultado` (migração 0033), resultado informado por quem jogou e confirmado pelo adversário ou pelo balcão; mesma dupla conta 6 jogos por dia; peso opcional `sinuca_peso_mesa`.
+- Placar online `/placar.html` (API pública `GET /api/sinuca/placar?periodo=&ordem=`), com modo TV (`?tv=1`).
+- Fotos: corte quadrado e envio em lote.
+**Próximo / em aberto**
+- Aviso por push ao adversário pedindo confirmação do resultado (hoje ele vê ao abrir o app).
+- Colocar o link do placar na TV do bar e testar o `?tv=1` na tela real.
+- Prêmio por nível; formatos extras de campeonato (dupla eliminação, grupos, duplas).
+
 ## 2026-11-24 — login e deploy só pelo site
 **Feito**
 - Código enviado ao GitHub (`main`).

@@ -3,6 +3,10 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-25 — **Placar online da sinuca** (Hall da Fama): jogos, vitórias, aproveitamento e sequência por período, com modo TV (`/placar.html`, `/placar.html?tv=1`).
+- 2026-11-25 — **Ranking de toda a sinuca**: jogos da mesa, confirmados pelo adversário ou pelo balcão, entram no mesmo score dos campeonatos (`/sinuca.html`, `/mesas.html`).
+- 2026-11-25 — **Título especial por jogador** (ex.: "Pinky e Cérebro" 🐭🧠) no lugar do nível, pelo botão 🏅 na lista de inscritos (`/torneio.html`).
+- 2026-11-25 — **Fotos**: corte quadrado do centro e envio de várias fotos de uma vez, pelo nome do arquivo (Gestão → Fotos).
 - 2026-11-24 — **LGPD no WhatsApp**: só recebe convite quem aceitou (caixa opcional no cadastro e opção em Minha conta), com registro de aceite e revogação.
 - 2026-11-24 — **Campeonato**: convite por WhatsApp automático pela izapia (fila, ritmo, teto por dia e recusa) na mesa do campeonato (`/torneio.html`).
 - 2026-11-24 — **iFood e 99Food**: pedidos das plataformas entram na Produção, baixam estoque e a plataforma é avisada do andamento (`/canais.html`).

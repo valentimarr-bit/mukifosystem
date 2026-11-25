@@ -6,7 +6,7 @@ import { usuarioLogado } from './auth.js';
 import { clienteLogado } from './clientes.js';
 import { avisarPedido } from './push.js';
 import { modoTeste } from './trava.js';
-import { recalcularScores, rankingJogadores } from './campeonato_nivel.js';
+import { recalcularScores, rankingJogadores, placarDaSinuca } from './campeonato_nivel.js';
 import { chaveJogador } from './dominio/chaves.js';
 
 const TEXTO = (v, n) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, n);
@@ -352,6 +352,14 @@ export async function rotearSinuca(request, env, url) {
   const cli = await clienteLogado(request, env);
   await avancar(db, env);
   if (m === 'GET' && p === '/api/sinuca') return json(await estado(db, cli));
+  if (m === 'GET' && p === '/api/sinuca/placar') {   // público: serve a página /placar.html (TV do bar e celular)
+    const q = url.searchParams, per = ['hoje', 'semana', 'mes', 'sempre'].includes(q.get('periodo')) ? q.get('periodo') : 'sempre';
+    const brt = new Date(Date.now() - 3 * 3600e3), d0 = Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate()) + 3 * 3600e3;   // meia-noite de Brasília, em UTC
+    const ini = per === 'hoje' ? d0 : per === 'semana' ? d0 - 6 * 86400e3 : per === 'mes' ? Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), 1) + 3 * 3600e3 : null;
+    const ordem = ['score', 'vitorias', 'jogos', 'sequencia'].includes(q.get('ordem')) ? q.get('ordem') : 'score';
+    const x = await placarDaSinuca(db, { desde: ini === null ? null : new Date(ini).toISOString().slice(0, 19).replace('T', ' '), ordem, nomeCurto: curto });
+    return json({ periodo: per, ordem, ...x });
+  }
   if (m === 'GET' && p === '/api/sinuca/ranking') return json({ ranking: await rankingJogadores(db, 50, curto) });
   if (!cli) return erro('Entre na sua conta para usar a fila da sinuca.', 401);
   let r;
