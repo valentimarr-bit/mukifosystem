@@ -9,7 +9,7 @@ import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
 import { enfileirar, estadoWhats, salvarConfigWhats, numeroWhats, registrarConsentimento } from './whatsapp.js';
 import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio, nivelDoScore } from './dominio/chaves.js';
-import { recalcularScores, scoresDasInscricoes, ordemParaChave, candidatosRepescagem, estadoRepescagem, registrarRecompra, fecharRepescagem, acertarChave, dividirSeries, lerConfig } from './campeonato_nivel.js';
+import { recalcularScores, scoresDasInscricoes, ordemParaChave, candidatosRepescagem, estadoRepescagem, registrarRecompra, fecharRepescagem, acertarChave, dividirSeries, lerConfig, titulosDe, nomeDoTitulo, COR_TITULO } from './campeonato_nivel.js';
 
 const VALIDADE_MIN = 30;
 const corpoDe = async (request) => { try { return (await request.json()) ?? {}; } catch { return {}; } };
@@ -84,8 +84,9 @@ export async function ranking(db, modalidadeNome) {
   }
   const lista = [...por.values()].sort((a, b) => b.pontos - a.pontos || b.titulos - a.titulos || a.nome.localeCompare(b.nome, 'pt-BR'));
   const { results: nm } = await db.prepare('SELECT DISTINCT nome FROM modalidade ORDER BY nome').all();
-  const { results: js } = await db.prepare('SELECT nome, score, jogos, vitorias FROM jogador_score ORDER BY (jogos >= 3) DESC, score DESC LIMIT 100').all();
-  const niveis = js.map((j, i) => { const n = nivelDoScore(j.score, j.jogos); return { posicao: i + 1, nome: j.nome, score: Math.round(j.score), jogos: j.jogos, vitorias: j.vitorias, nivel: n.nome, cor: n.cor }; });
+  const { results: js } = await db.prepare('SELECT chave, nome, score, jogos, vitorias FROM jogador_score ORDER BY (jogos >= 3) DESC, score DESC LIMIT 100').all();
+  const tit = await titulosDe(db, js.map((j) => j.chave));
+  const niveis = js.map((j, i) => { const n = nivelDoScore(j.score, j.jogos), t = tit.get(j.chave); return { posicao: i + 1, nome: j.nome, score: Math.round(j.score), jogos: j.jogos, vitorias: j.vitorias, nivel: t ? nomeDoTitulo(t) : n.nome, cor: t ? COR_TITULO : n.cor }; });
   return { modalidades: nm.map((x) => x.nome), ranking: lista.map((x, i) => ({ posicao: i + 1, ...x })), niveis };
 }
 
@@ -295,6 +296,13 @@ export async function rotearCampeonato(request, env, url) {
       return json({ ok: true, reembolso: 'saldo' });
     }
     return json({ ok: true, reembolso: i.status === 'paga' && i.valor > 0 ? 'manual' : 'nenhum' });
+  }
+  if (m === 'PUT' && p === '/api/campeonato/gestao/titulo') {   // dá (ou tira, com título vazio) um título especial a um jogador
+    const c = await corpoDe(request), chave = texto(c.chave, 80), titulo = texto(c.titulo, 30), icone = texto(c.icone, 12);
+    if (!/^(c|n):.+/.test(chave)) return erro('Jogador inválido.');
+    if (!titulo) { await db.prepare('DELETE FROM jogador_titulo WHERE chave = ?').bind(chave).run(); return json({ ok: true, removido: true }); }
+    await db.prepare('INSERT INTO jogador_titulo (chave, titulo, icone, criado_por) VALUES (?, ?, ?, ?) ON CONFLICT (chave) DO UPDATE SET titulo = excluded.titulo, icone = excluded.icone, criado_por = excluded.criado_por').bind(chave, titulo, icone, nome).run();
+    return json({ ok: true });
   }
   if (m === 'GET' && p === '/api/campeonato/gestao/whats') return json(await estadoWhats(db, env));
   if (m === 'PUT' && p === '/api/campeonato/gestao/whats') {

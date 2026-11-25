@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 import { gerarChave, novoScore, nivelDoScore, dividirEmSeries, gruposRepescagem, calcularScores } from '../src/dominio/chaves.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
-const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') } };
+const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') } };
 const chamar = async (caminho, metodo = 'GET', corpo) => {
   const r = await worker.fetch(new Request('https://mukifo.test' + caminho, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined, headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '7.7.7.7', authorization: 'Bearer segredo-teste' } }), env);
   return { status: r.status, corpo: await r.json() };
@@ -124,4 +124,19 @@ test('séries por nível e configuração antes do sorteio', async () => {
   assert.equal(B.formato, 'cabecas'); assert.equal(B.repescagem.vagas, 1); assert.equal(B.repescagem.premio, false);
   await chamar(`${G}/modalidades/${A.id}/sortear`, 'POST');
   assert.equal((await chamar(`${G}/modalidades/${A.id}/config`, 'PUT', { formato: 'nivel' })).status, 409);
+});
+
+test('título especial (Pinky e Cérebro) aparece no lugar do nível e pode ser tirado', async () => {
+  const { scoresDasInscricoes } = await import('../src/campeonato_nivel.js');
+  const ins = [{ id: 'i1', nome: 'Julio', cliente_id: null }, { id: 'i2', nome: 'Valentim', cliente_id: 'cli-x' }, { id: 'i3', nome: 'Outro', cliente_id: null }];
+  assert.equal((await scoresDasInscricoes(env.DB, ins)).get('i1').nivel, 'Novato');
+  const ch1 = (await scoresDasInscricoes(env.DB, ins)).get('i1').chave, ch2 = (await scoresDasInscricoes(env.DB, ins)).get('i2').chave;
+  for (const ch of [ch1, ch2]) assert.equal((await chamar(`${G}/titulo`, 'PUT', { chave: ch, titulo: 'Pinky e Cérebro', icone: '🐭🧠' })).status, 200);
+  const sc = await scoresDasInscricoes(env.DB, ins);
+  assert.equal(sc.get('i1').nivel, '🐭🧠 Pinky e Cérebro');
+  assert.equal(sc.get('i2').titulo, true);
+  assert.equal(sc.get('i3').nivel, 'Novato');
+  assert.equal((await chamar(`${G}/titulo`, 'PUT', { chave: 'xx' })).status, 400);
+  await chamar(`${G}/titulo`, 'PUT', { chave: ch1, titulo: '' });
+  assert.equal((await scoresDasInscricoes(env.DB, ins)).get('i1').nivel, 'Novato');
 });

@@ -123,6 +123,7 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
 ### Score, níveis e chave justa
 - **Score:** cada jogador tem um score que começa em 1000 e muda a cada jogo terminado, no estilo do xadrez (Elo): ganhar de quem é melhor sobe muito, ganhar de quem é pior sobe pouco, perder desce. Vale para quem tem conta e para quem joga só pelo balcão (pelo nome: escreva sempre igual).
 - **Níveis:** Novato (menos de 3 jogos), Bronze, Prata (1025+), Ouro (1075+), Platina (1150+), Diamante (1250+). Aparecem como bolinha colorida na chave e na lista de inscritos, e em Ranking → "Níveis dos jogadores".
+- **Título especial:** na lista de inscritos, o botão 🏅 dá a um jogador um título no lugar do nível, com ícone (padrão: 🐭🧠 "Pinky e Cérebro", roxo). Aparece na chave, na lista e no ranking; o score continua contando. Clique de novo no 🏅 para tirar ou trocar. Vale para o jogador em todos os campeonatos (ligado à conta, ou ao nome se for de balcão).
 - **Formato da chave** (escolhido ao criar a modalidade, ou em "Formato da chave" antes do sorteio):
   - 🎲 **Sorteio:** qualquer um contra qualquer um.
   - ⚖️ **Por nível:** na 1ª rodada se enfrentam os parecidos (1º×2º, 3º×4º…), e quem tem o maior score folga. Os dois melhores pares só se cruzam no fim.

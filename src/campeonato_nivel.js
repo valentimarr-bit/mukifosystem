@@ -17,6 +17,19 @@ export async function recalcularScores(db) {
   for (let i = 0; i < ops.length; i += 50) await db.batch(ops.slice(i, i + 50));
 }
 
+export const COR_TITULO = '#c026d3';
+/** Título especial no lugar do nível: o nome vira "🐭🧠 Pinky e Cérebro". */
+export async function titulosDe(db, chaves) {
+  const mapa = new Map();
+  for (let i = 0; i < chaves.length; i += 80) {
+    const parte = chaves.slice(i, i + 80); if (!parte.length) break;
+    const { results } = await db.prepare(`SELECT chave, titulo, icone FROM jogador_titulo WHERE chave IN (${parte.map(() => '?').join(',')})`).bind(...parte).all();
+    for (const r of results) mapa.set(r.chave, r);
+  }
+  return mapa;
+}
+export const nomeDoTitulo = (t) => `${t.icone ? t.icone + ' ' : ''}${t.titulo}`;
+
 /** Score e nível de cada inscrição (quem nunca jogou começa com 1000, Novato). */
 export async function scoresDasInscricoes(db, inscricoes) {
   const chaves = [...new Set(inscricoes.map((i) => chaveJogador(i.cliente_id, i.nome)))];
@@ -26,10 +39,11 @@ export async function scoresDasInscricoes(db, inscricoes) {
     const { results } = await db.prepare(`SELECT * FROM jogador_score WHERE chave IN (${parte.map(() => '?').join(',')})`).bind(...parte).all();
     for (const r of results) mapa.set(r.chave, r);
   }
+  const tit = await titulosDe(db, chaves);
   const out = new Map();
   for (const i of inscricoes) {
-    const s = mapa.get(chaveJogador(i.cliente_id, i.nome)), score = s?.score ?? SCORE_INICIAL, jogos = s?.jogos ?? 0, n = nivelDoScore(score, jogos);
-    out.set(i.id, { score: Math.round(score), jogos, vitorias: s?.vitorias ?? 0, nivel: n.nome, cor: n.cor });
+    const ch = chaveJogador(i.cliente_id, i.nome), s = mapa.get(ch), score = s?.score ?? SCORE_INICIAL, jogos = s?.jogos ?? 0, n = nivelDoScore(score, jogos), t = tit.get(ch);
+    out.set(i.id, { chave: ch, score: Math.round(score), jogos, vitorias: s?.vitorias ?? 0, nivel: t ? nomeDoTitulo(t) : n.nome, cor: t ? COR_TITULO : n.cor, titulo: !!t });
   }
   return out;
 }

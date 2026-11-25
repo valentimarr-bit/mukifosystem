@@ -100,7 +100,7 @@ async function modalidade() {
   const [d, w] = await Promise.all([api(`${G}/modalidades/${modId}`), api(`${G}/whats`).catch(() => ({ configurado: false }))]), R = d.rodadas; ultimoD = d;
   const insc = d.status === 'inscricoes';
   modNome = `${d.campeonato} (${d.nome})`; modInfo = (d.taxa > 0 ? `Inscrição ${R$(d.taxa)}. ` : 'Inscrição grátis. ');
-  const ins = [...d.inscritos].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map((i) => `<div class="ins"><span class="n">${nivelTag(i)} ${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.recomprou ? ' <span class="chip">recomprou</span>' : ''}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
+  const ins = [...d.inscritos].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map((i) => `<div class="ins"><span class="n">${nivelTag(i)} ${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.recomprou ? ' <span class="chip">recomprou</span>' : ''} <button class="btn mini sec" data-acao="titulo" data-chave="${esc(i.chave)}" data-nome="${esc(i.nome)}" data-tem="${i.titulo ? 1 : ''}" title="Título especial">🏅</button>${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
     ${i.status === 'pendente' ? `<button class="btn ok mini" data-acao="conf" data-i="${i.id}">Recebi o Pix</button>` : ''}${i.pode_recomprar ? `<button class="btn mini" data-acao="recomprar" data-i="${i.id}" data-nome="${esc(i.nome)}">Recompra ${R$(d.repescagem.valor)}</button>` : ''}${insc ? `<button class="btn sec mini" data-acao="canc" data-i="${i.id}">Tirar</button>` : ''}</div>`).join('') || '<p class="mut">Ninguém inscrito ainda.</p>';
   const pr = d.premiacao.premios.filter((x) => x.valor > 0).map((x) => `${x.colocacao}º ${R$(x.valor)}`).join(' · ');
   return `<button class="btn sec" data-acao="voltar" style="margin:0 0 12px">← Campeonatos</button>
@@ -150,6 +150,13 @@ document.addEventListener('click', async (e) => {
     else if (a === 'fecharRep') { if (!confirm('Fechar a repescagem? Depois disso ninguém mais recompra.')) return; const r = await api(`${G}/modalidades/${modId}/repescagem/fechar`, {}); aviso(r.recompras ? `Repescagem montada com ${r.recompras} jogador${r.recompras > 1 ? 'es' : ''}.` : 'Ninguém recomprou: a vaga virou W.O.'); }
     else if (a === 'convidarTodos') { const r = await api(`${G}/modalidades/${modId}/convidar`, {}); aviso(r.na_fila ? `${r.na_fila} convite(s) na fila. Saem aos poucos, todo minuto.` : 'Todo mundo já foi convidado.'); }
     else if (a === 'whatsOn' || a === 'whatsOff') { await api(`${G}/whats`, { ativo: a === 'whatsOn' }, 'PUT'); aviso(a === 'whatsOn' ? 'WhatsApp automático ligado.' : 'WhatsApp automático desligado.'); }
+    else if (a === 'titulo') {
+      const tem = !!t.dataset.tem, nome = t.dataset.nome;
+      const tit = tem && confirm(`${nome} já tem título especial. OK para tirar; Cancelar para mudar.`) ? '' : prompt(`Título especial para ${nome} (vale no lugar do nível):`, 'Pinky e Cérebro');
+      if (tit === null) { t.disabled = false; return; }
+      const ic = tit ? prompt('Ícone (emoji):', '🐭🧠') : '';
+      await api(`${G}/titulo`, { chave: t.dataset.chave, titulo: tit, icone: ic ?? '' }, 'PUT'); aviso(tit ? `${nome}: ${tit} 🏅` : 'Título removido.');
+    }
     else if (a === 'recusa') { await api(`${G}/whats/recusa`, { celular: $('#wRec').value }); aviso('Pronto: esse cliente não recebe mais convites.'); }
     else if (a === 'convidar') { const n = ($('#wNum')?.value || '').replace(/\D/g, ''); const tel = n.length >= 10 ? (n.startsWith('55') ? n : '55' + n) : ''; const msg = `🎱 Você está convidado para o ${modNome} no Mukifo! ${modInfo}Inscreva-se aqui: ${location.origin}/campeonato.html`; window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener'); }
     else if (a === 'balcao') { await api(`${G}/modalidades/${modId}/inscrever`, { nome: $('#bNome').value }); aviso('Inscrito ✅'); }
