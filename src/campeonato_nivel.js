@@ -6,15 +6,35 @@ const id8 = () => crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 export const FORMATOS = ['sorteio', 'nivel', 'cabecas'];
 const embaralhar = (l) => { const a = [...l]; for (let i = a.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-/** Refaz o score de todos a partir dos jogos terminados (com os dois jogadores), na ordem em que terminaram. */
+const MAX_MESA_POR_DUPLA_DIA = 6;   // a mesma dupla só conta 6 jogos por dia: segura combinação de resultado para inflar score
+
+/** Refaz o score de todos a partir dos jogos terminados: campeonatos (com os dois jogadores) e jogos da mesa confirmados, na ordem em que aconteceram. */
 export async function recalcularScores(db) {
-  const { results } = await db.prepare(`SELECT p.vencedor_id, p.a_id, p.b_id, ia.cliente_id AS ca, ia.nome AS na, ib.cliente_id AS cb, ib.nome AS nb
+  const { results } = await db.prepare(`SELECT p.vencedor_id, p.a_id, p.b_id, p.atualizada_em AS t, ia.cliente_id AS ca, ia.nome AS na, ib.cliente_id AS cb, ib.nome AS nb
     FROM partida p JOIN inscricao ia ON ia.id = p.a_id JOIN inscricao ib ON ib.id = p.b_id
     WHERE p.status = 'finalizada' AND p.vencedor_id IS NOT NULL ORDER BY p.atualizada_em, p.id`).all();
-  const t = calcularScores(results.map((j) => ({ a: chaveJogador(j.ca, j.na), b: chaveJogador(j.cb, j.nb), nomeA: j.na, nomeB: j.nb, clienteA: j.ca, clienteB: j.cb, aVenceu: j.vencedor_id === j.a_id })));
+  const { results: mesa } = await db.prepare("SELECT * FROM sinuca_resultado WHERE status = 'confirmado' ORDER BY resolvido_em, id").all();
+  const pesoCfg = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'sinuca_peso_mesa'").first();
+  const peso = Number.isFinite(Number(pesoCfg?.valor)) && Number(pesoCfg?.valor) > 0 ? Math.min(1, Number(pesoCfg.valor)) : 1;
+  const jogos = results.map((j) => ({ t: j.t ?? '', a: chaveJogador(j.ca, j.na), b: chaveJogador(j.cb, j.nb), nomeA: j.na, nomeB: j.nb, clienteA: j.ca, clienteB: j.cb, aVenceu: j.vencedor_id === j.a_id }));
+  const porDupla = new Map();
+  for (const r of mesa) {
+    const dia = String(r.resolvido_em ?? r.criado_em).slice(0, 10), k = [r.a_chave, r.b_chave].sort().join('|') + dia;
+    porDupla.set(k, (porDupla.get(k) ?? 0) + 1); if (porDupla.get(k) > MAX_MESA_POR_DUPLA_DIA) continue;
+    jogos.push({ t: r.resolvido_em ?? r.criado_em, a: r.a_chave, b: r.b_chave, nomeA: r.a_nome, nomeB: r.b_nome, clienteA: r.a_cliente_id, clienteB: r.b_cliente_id, aVenceu: r.vencedor === 'a', peso });
+  }
+  jogos.sort((x, y) => (x.t < y.t ? -1 : x.t > y.t ? 1 : 0));   // estável: no empate, campeonato antes
+  const t = calcularScores(jogos);
   const ops = [db.prepare('DELETE FROM jogador_score')];
   for (const [k, x] of t) ops.push(db.prepare('INSERT INTO jogador_score (chave, cliente_id, nome, score, jogos, vitorias) VALUES (?, ?, ?, ?, ?, ?)').bind(k, x.cliente_id, x.nome, Math.round(x.score * 10) / 10, x.jogos, x.vitorias));
   for (let i = 0; i < ops.length; i += 50) await db.batch(ops.slice(i, i + 50));
+}
+
+/** Ranking geral da sinuca (campeonatos + mesa): quem já jogou 3 vezes ou mais vem primeiro. */
+export async function rankingJogadores(db, limite = 50, nomeCurto = (n) => n) {
+  const { results: js } = await db.prepare('SELECT chave, nome, score, jogos, vitorias FROM jogador_score ORDER BY (jogos >= 3) DESC, score DESC LIMIT ?').bind(limite).all();
+  const tit = await titulosDe(db, js.map((j) => j.chave));
+  return js.map((j, i) => { const n = nivelDoScore(j.score, j.jogos), t = tit.get(j.chave); return { posicao: i + 1, nome: nomeCurto(j.nome), score: Math.round(j.score), jogos: j.jogos, vitorias: j.vitorias, nivel: t ? nomeDoTitulo(t) : n.nome, cor: t ? COR_TITULO : n.cor }; });
 }
 
 export const COR_TITULO = '#c026d3';

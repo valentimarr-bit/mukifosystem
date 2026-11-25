@@ -21,7 +21,7 @@ select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-r
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let conta = null; try { conta = JSON.parse(localStorage.getItem('mukifo_conta') || 'null'); } catch {}
-let est = null, ultimoStatus = null;
+let est = null, ultimoStatus = null, rank = null, adv = null, advTxt = '';
 async function api(url, corpo) {
   const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...(conta?.token ? { 'X-Sessao-Cliente': conta.token } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
   const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j;
@@ -53,11 +53,15 @@ function desenhar() {
   else if (m.status === 'jogando') topo = `<div class="card"><h2>Você está jogando na ${esc(m.mesa?.nome || '')}</h2><p class="mut">Quando terminar, libere a mesa para o próximo.</p><button class="btn" data-a="terminei" data-mesa="${esc(m.mesa?.id)}">Terminei, liberar a mesa</button></div>`;
   else topo = `<div class="card"><h2>Você é o nº ${m.pos} da fila</h2><div class="mut">Espera estimada: cerca de ${m.espera_min} min. Deixe o celular com a tela ligada ou aceite as notificações: avisamos quando for a sua vez.</div><button class="btn sec" data-a="avisos">🔔 Ativar avisos</button><button class="btn sec" data-a="sair">Sair da fila</button>${cond}</div>`;
   const mesas = d.mesas.length ? d.mesas.map((x) => `<div class="mesa"><div><b>${esc(x.nome)}</b><div class="mut">${x.jogador ? esc(x.jogador) : ''}${x.liberando ? ' · alguém avisou que terminou' : ''}</div></div><div style="display:flex;gap:8px;align-items:center"><span class="st ${x.status}">${ROT[x.status]}</span>${conta && !m && (x.status === 'ocupada' || x.status === 'liberando') && !x.meu ? `<button class="btn sec pq" data-a="terminou" data-mesa="${esc(x.id)}">Terminou</button>` : ''}${x.status === 'liberando' && m?.status === 'jogando' && x.meu ? `<button class="btn sec pq" data-a="ainda" data-mesa="${esc(x.id)}">Ainda jogando</button>` : ''}</div></div>`).join('') : '<div class="mut">Nenhuma mesa cadastrada ainda.</div>';
+  const rs = d.resultado?.sem_resultado, pc = d.resultado?.para_confirmar ?? [];
+  const confirmar = pc.map((c) => `<div class="card" style="border-color:var(--acc)"><h3>🎱 Confere?</h3><p>${esc(c.de)} disse que <b>${c.ganhou === 'ele' ? 'ganhou de você' : 'perdeu para você'}</b>.</p><button class="btn" data-a="resOk" data-id="${esc(c.id)}">Confere</button><button class="btn sec" data-a="resNo" data-id="${esc(c.id)}">Não foi assim</button></div>`).join('');
+  const quem = rs ? `<div class="card" style="border-color:var(--acc)"><h3>Quem ganhou na ${esc(rs.mesa)}?</h3><label class="mut">Contra quem você jogou?</label><input id="advBusca" maxlength="30" placeholder="Digite o nome (3 letras ou mais)" value="${esc(advTxt)}"><div id="advRes">${adv ? `<span class="chip">${esc(adv.nome)} ✓</span>` : ''}</div><button class="btn" data-a="ganhei" data-fila="${esc(rs.fila_id)}">Eu ganhei</button><button class="btn sec" data-a="perdi" data-fila="${esc(rs.fila_id)}">Eu perdi</button><button class="btn sec" data-a="pular" data-fila="${esc(rs.fila_id)}">Foi só treino, pular</button><div class="mut" style="margin-top:6px">O jogo entra no ranking quando o adversário confirmar (ou o balcão, se ele não tiver cadastro).</div></div>` : '';
+  const ranking = rank?.length ? `<div class="card"><h3>🏅 Ranking da sinuca</h3><div class="mut">Campeonatos e jogos da mesa. Cada vitória sobe o score; ganhar de quem é melhor vale mais.</div>${rank.slice(0, 15).map((r) => `<div class="pos"><span class="n">${r.posicao}º</span><span class="p"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${esc(r.cor)}"></i> ${esc(r.nome)}<div class="mut">${esc(r.nivel)} · ${r.vitorias} vitória${r.vitorias === 1 ? '' : 's'} em ${r.jogos}</div></span><span class="pt">${r.score}</span></div>`).join('')}</div>` : '';
   const fila = d.fila.length ? d.fila.map((f) => `<div class="pos"><span class="n">${f.pos}º</span><span class="p">${esc(f.nome)}${f.eu ? ' <span class="chip">você</span>' : ''}</span></div>`).join('') : '<div class="mut">Ninguém esperando.</div>';
-  $('#m').innerHTML = `${topo}<div class="card"><h3>Mesas</h3>${mesas}${conta && !m ? '<div class="mut" style="margin-top:8px">Viu uma mesa vazia que aparece como “em jogo”? Toque em “Terminou”. Avisos falsos custam pontos de conduta.</div>' : ''}</div><div class="card"><h3>Fila (${d.fila.length})</h3>${fila}</div>`;
+  $('#m').innerHTML = `${confirmar}${quem}${topo}<div class="card"><h3>Mesas</h3>${mesas}${conta && !m ? '<div class="mut" style="margin-top:8px">Viu uma mesa vazia que aparece como “em jogo”? Toque em “Terminou”. Avisos falsos custam pontos de conduta.</div>' : ''}</div><div class="card"><h3>Fila (${d.fila.length})</h3>${fila}</div>${ranking}`;
   relogio();
 }
-async function carregar() { try { est = await api('/api/sinuca'); desenhar(); } catch (e) { if (e.status === 401) { conta = null; try { localStorage.removeItem('mukifo_conta'); } catch {} } $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
+async function carregar() { try { est = await api('/api/sinuca'); api('/api/sinuca/ranking').then((x) => { rank = x.ranking; }).catch(() => {}); if (!document.activeElement?.matches?.('#advBusca')) desenhar(); } catch (e) { if (e.status === 401) { conta = null; try { localStorage.removeItem('mukifo_conta'); } catch {} } $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
 document.addEventListener('click', async (e) => {
   const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a; t.disabled = true;
   try {
@@ -69,10 +73,23 @@ document.addEventListener('click', async (e) => {
       aviso(a === 'entrar' ? 'Você está na fila 🎱' : 'Pronto!');
     } else if (a === 'sair') { if (!confirm('Sair da fila?')) { t.disabled = false; return; } est = await api('/api/sinuca/sair', {}); }
     else if (a === 'ainda') est = await api(`/api/sinuca/mesas/${t.dataset.mesa}/ainda-jogando`, {});
+    else if (a === 'adv') { adv = { id: t.dataset.id, nome: t.dataset.nome }; advTxt = t.dataset.nome; }
+    else if (a === 'ganhei' || a === 'perdi') {
+      const nome = ($('#advBusca')?.value || '').trim(); if (!adv && nome.length < 2) { aviso('Diga contra quem você jogou.'); t.disabled = false; return; }
+      const r = await api('/api/sinuca/resultado', { fila_id: t.dataset.fila, ganhei: a === 'ganhei', ...(adv && adv.nome === nome ? { oponente_id: adv.id } : { oponente_nome: nome }) });
+      adv = null; advTxt = ''; aviso(r.aguarda === 'adversario' ? 'Enviado. Falta o adversário confirmar 👍' : 'Enviado. O balcão confere 👍'); est = await api('/api/sinuca');
+    }
+    else if (a === 'pular') { await api('/api/sinuca/resultado/dispensar', { fila_id: t.dataset.fila }); adv = null; advTxt = ''; est = await api('/api/sinuca'); }
+    else if (a === 'resOk' || a === 'resNo') { await api(`/api/sinuca/resultado/${t.dataset.id}/${a === 'resOk' ? 'confirmar' : 'contestar'}`, {}); aviso(a === 'resOk' ? 'Confirmado! Já conta no ranking 🏅' : 'Anotado: o balcão vai conferir.'); est = await api('/api/sinuca'); }
     else if (a === 'avisos') { await assinarPush(); aviso(Notification.permission === 'granted' ? 'Avisos ativados 🔔' : 'Permita as notificações no navegador.'); }
     desenhar();
   } catch (er) { aviso(er.message); }
   t.disabled = false;
+});
+let buscaT; document.addEventListener('input', (e) => {
+  if (e.target.id !== 'advBusca') return; advTxt = e.target.value; if (adv && adv.nome !== advTxt) adv = null; clearTimeout(buscaT);
+  buscaT = setTimeout(async () => { const q = advTxt.trim(), box = $('#advRes'); if (!box) return; if (q.length < 3) { box.innerHTML = ''; return; }
+    try { const j = await api('/api/sinuca/jogadores?q=' + encodeURIComponent(q)); box.innerHTML = j.jogadores.map((x) => `<button class="btn sec" style="min-height:44px;font-size:16px" data-a="adv" data-id="${esc(x.id)}" data-nome="${esc(x.nome)}">${esc(x.nome)}</button>`).join('') + (j.jogadores.length ? '' : '<div class="mut">Ninguém com esse nome. Pode enviar assim mesmo: o balcão confere.</div>'); } catch {} }, 300);
 });
 const relogio = () => { const r = $('#rest'); if (r && est?.minha?.expira_em) { const s = Math.max(0, Math.round((new Date(est.minha.expira_em) - Date.now()) / 1000)); r.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; } };
 setInterval(() => { if (!document.hidden) carregar(); }, 5000); setInterval(relogio, 1000);

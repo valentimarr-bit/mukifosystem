@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 import { distanciaM, nivelDeConduta } from '../src/sinuca.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
-const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') } };
+const env = { DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo', '0033_sinuca_resultado'].map((m) => arq(`../migrations/${m}.sql`))), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') } };
 let ip = 10;
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
   const r = await worker.fetch(new Request('https://mukifo.test' + caminho, { method: metodo, body: corpo ? JSON.stringify(corpo) : undefined,
@@ -85,4 +85,36 @@ test('sinuca: equipe precisa do módulo e a leitura pública não vaza nome comp
   assert.equal((await chamar('/api/sinuca/gestao', 'GET', undefined, {}, null)).status, 401);
   const pub = await chamar('/api/sinuca', 'GET', undefined, {}, null); assert.equal(pub.status, 200);
   for (const f of pub.corpo.fila) assert.ok(!/\s\S{2,}$/.test(f.nome));
+});
+
+test('ranking da sinuca: resultado da mesa confirmado entra no score; contestado e sem cadastro dependem de conferência', async () => {
+  const G = '/api/sinuca/gestao';
+  const [x, y] = [await cliente('Xavier Souza'), await cliente('Yara Prado')];
+  const yId = (await C(y, '/api/conta', {}, 'GET')).corpo.id ?? (await env.DB.prepare("SELECT id FROM cliente WHERE nome = 'Yara Prado'").first()).id;
+  assert.equal((await C(x, '/api/sinuca/resultado', {})).status, 400);                              // sem ganhei/perdi
+  assert.equal((await C(x, '/api/sinuca/resultado', { ganhei: true, oponente_nome: '' })).status, 400);
+  const r1 = await C(x, '/api/sinuca/resultado', { ganhei: true, oponente_id: yId });
+  assert.equal(r1.status, 201); assert.equal(r1.corpo.aguarda, 'adversario');
+  assert.equal((await C(x, `/api/sinuca/resultado/${r1.corpo.id}/confirmar`)).status, 404);        // só o adversário confirma
+  const antes = (await C(y, '/api/sinuca', {}, 'GET')).corpo.resultado.para_confirmar;
+  assert.equal(antes.length, 1); assert.equal(antes[0].ganhou, 'ele');
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM jogador_score').first()).n, 0);    // pendente não conta
+  assert.equal((await C(y, `/api/sinuca/resultado/${r1.corpo.id}/confirmar`)).status, 200);
+  const rk = (await chamar('/api/sinuca/ranking', 'GET', undefined, {}, null)).corpo.ranking;
+  assert.equal(rk[0].nome.startsWith('Xavier'), true); assert.ok(rk[0].score > 1000); assert.ok(rk.at(-1).score < 1000);
+  // contestado: não conta; a equipe vê e decide
+  const r2 = await C(x, '/api/sinuca/resultado', { ganhei: true, oponente_id: yId });
+  await C(y, `/api/sinuca/resultado/${r2.corpo.id}/contestar`);
+  let g = (await chamar(G)).corpo; assert.equal(g.resultados.some((r) => r.id === r2.corpo.id && r.status === 'contestado'), true);
+  assert.equal((await chamar(`${G}/resultados/${r2.corpo.id}/recusar`, 'POST', {})).status, 200);
+  // adversário sem cadastro: fica para a equipe
+  const r3 = await C(x, '/api/sinuca/resultado', { ganhei: false, oponente_nome: 'Zé do Bar' });
+  assert.equal(r3.corpo.aguarda, 'equipe');
+  g = (await chamar(G)).corpo; assert.equal(g.resultados.some((r) => r.id === r3.corpo.id), true);
+  assert.equal((await chamar(`${G}/resultados/${r3.corpo.id}/confirmar`, 'POST', {})).status, 200);
+  assert.ok((await chamar('/api/sinuca/ranking', 'GET', undefined, {}, null)).corpo.ranking.some((j) => j.nome.startsWith('Zé')));
+  // equipe lança direto
+  assert.equal((await chamar(`${G}/resultados`, 'POST', { a_nome: 'Julio', b_nome: 'Valentim', vencedor: 'a' })).status, 201);
+  assert.equal((await chamar(`${G}/resultados`, 'POST', { a_nome: 'Julio', b_nome: 'julio', vencedor: 'a' })).status, 400);
+  assert.ok((await chamar('/api/sinuca/ranking', 'GET', undefined, {}, null)).corpo.ranking.some((j) => j.nome === 'Julio'));
 });

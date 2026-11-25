@@ -6,6 +6,8 @@ import { usuarioLogado } from './auth.js';
 import { clienteLogado } from './clientes.js';
 import { avisarPedido } from './push.js';
 import { modoTeste } from './trava.js';
+import { recalcularScores, rankingJogadores } from './campeonato_nivel.js';
+import { chaveJogador } from './dominio/chaves.js';
 
 const TEXTO = (v, n) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, n);
 const corpoDe = async (request) => { try { return (await request.json()) ?? {}; } catch { return {}; } };
@@ -131,8 +133,56 @@ async function estado(db, cli) {
     minha: minha ? { id: minha.id, status: minha.status, pos, espera_min: pos ? Math.ceil(pos / nMesas) * media : 0, mesa: mesaMinha ? { id: mesaMinha.id, nome: mesaMinha.nome, status: mesaMinha.status } : null,
       expira_em: minha.status === 'chamado' && minha.chamado_em ? new Date(new Date(minha.chamado_em.replace(' ', 'T') + 'Z').getTime() + cfg.chegada * 60000).toISOString() : null } : null,
     conduta,
+    resultado: cli ? await resultadosDe(db, cli) : null,
   };
 }
+
+// ---------- resultado dos jogos da mesa (alimenta o ranking geral) ----------
+async function resultadosDe(db, cli) {
+  const { results: conf } = await db.prepare(`SELECT id, a_nome, vencedor FROM sinuca_resultado WHERE b_cliente_id = ? AND status = 'pendente' AND criado_em > datetime('now', '-1 day') ORDER BY criado_em`).bind(cli.id).all();
+  const sem = await db.prepare(`SELECT f.id, COALESCE(m.nome, 'a mesa') AS mesa FROM fila_sinuca f LEFT JOIN mesa_sinuca m ON m.id = f.mesa_id
+    WHERE f.cliente_id = ? AND f.status = 'finalizado' AND f.fim_em > datetime('now', '-30 minutes')
+      AND NOT EXISTS (SELECT 1 FROM sinuca_resultado r WHERE r.fila_id = f.id)
+      AND NOT EXISTS (SELECT 1 FROM sinuca_evento e WHERE e.cliente_id = f.cliente_id AND e.tipo = 'sem_resultado' AND e.obs = f.id)
+    ORDER BY f.fim_em DESC LIMIT 1`).bind(cli.id).first();
+  return { para_confirmar: conf.map((c) => ({ id: c.id, de: curto(c.a_nome), ganhou: c.vencedor === 'a' ? 'ele' : 'voce' })), sem_resultado: sem ? { fila_id: sem.id, mesa: sem.mesa } : null };
+}
+
+async function reportarResultado(db, cli, corpo) {
+  if (typeof corpo?.ganhei !== 'boolean') return erro('Diga se você ganhou ou perdeu.');
+  if ((await db.prepare("SELECT COUNT(*) AS n FROM sinuca_resultado WHERE a_cliente_id = ? AND criado_em > datetime('now', '-1 hour')").bind(cli.id).first()).n >= 10) return erro('Muitos resultados em pouco tempo. Tente daqui a pouco.', 429);
+  let b;
+  if (corpo.oponente_id) {
+    b = await db.prepare('SELECT id, nome FROM cliente WHERE id = ?').bind(String(corpo.oponente_id)).first();
+    if (!b) return erro('Adversário não encontrado.', 404);
+    if (b.id === cli.id) return erro('O adversário não pode ser você.');
+  } else {
+    const n = TEXTO(corpo.oponente_nome, 30); if (n.length < 2) return erro('Diga contra quem você jogou.');
+    b = { id: null, nome: n };
+  }
+  const a = { id: cli.id, nome: cli.nome.split(' ').slice(0, 2).join(' ') };
+  const ak = chaveJogador(a.id, a.nome), bk = chaveJogador(b.id, b.nome); if (ak === bk) return erro('O adversário não pode ser você.');
+  let filaId = null;
+  if (corpo.fila_id) {
+    const f = await db.prepare("SELECT id, mesa_id FROM fila_sinuca WHERE id = ? AND cliente_id = ? AND status = 'finalizado'").bind(String(corpo.fila_id), cli.id).first();
+    if (!f) return erro('Essa vez na fila não é sua ou ainda não terminou.', 409);
+    if (await db.prepare('SELECT 1 AS ok FROM sinuca_resultado WHERE fila_id = ?').bind(f.id).first()) return erro('Esse resultado já foi enviado.', 409);
+    filaId = f.id;
+  }
+  const id = `res-${id8()}${id8()}`;
+  await db.prepare('INSERT INTO sinuca_resultado (id, fila_id, a_chave, a_nome, a_cliente_id, b_chave, b_nome, b_cliente_id, vencedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, filaId, ak, a.nome, a.id, bk, TEXTO(b.nome, 30), b.id, corpo.ganhei ? 'a' : 'b').run();
+  return json({ ok: true, id, aguarda: b.id ? 'adversario' : 'equipe' }, 201);
+}
+
+async function resolverResultado(db, id, acao, quem) {
+  const novo = acao === 'confirmar' ? 'confirmado' : acao === 'contestar' ? 'contestado' : 'recusado';
+  const u = await db.prepare("UPDATE sinuca_resultado SET status = ?, resolvido_em = datetime('now'), operador = COALESCE(?, operador) WHERE id = ? AND status IN ('pendente', 'contestado')").bind(novo, quem ?? null, id).run();
+  if (!u?.meta?.changes) return false;
+  if (novo === 'confirmado') await recalcularScores(db);
+  return true;
+}
+
 
 // ---------- ações do cliente ----------
 async function entrar(db, env, cli, corpo) {
@@ -232,7 +282,9 @@ async function gestao(db, env, request, url, eu) {
     const { results: ruins } = await db.prepare(`SELECT c.cliente_id, cl.nome, c.pontos, c.bloqueios, c.bloqueado_ate FROM sinuca_conduta c JOIN cliente cl ON cl.id = c.cliente_id
       WHERE c.pontos < 100 OR c.bloqueado_ate > datetime('now') ORDER BY c.pontos LIMIT 30`).all();
     const { results: mesasTodas } = await db.prepare('SELECT id, nome, ativa, status FROM mesa_sinuca ORDER BY nome').all();
-    return json({ config: { lat: cfg.lat, lng: cfg.lng, raio_m: cfg.raio, chegada_min: cfg.chegada, liberar_seg: cfg.liberar, ativa: cfg.ativa }, mesas: mesasTodas, estado: base, fila, conduta: ruins });
+    const { results: resultados } = await db.prepare(`SELECT id, a_nome, b_nome, b_cliente_id, vencedor, status, origem, criado_em FROM sinuca_resultado
+      WHERE status = 'contestado' OR (status = 'pendente' AND (b_cliente_id IS NULL OR criado_em < datetime('now', '-1 hour'))) ORDER BY criado_em DESC LIMIT 30`).all();
+    return json({ resultados, config: { lat: cfg.lat, lng: cfg.lng, raio_m: cfg.raio, chegada_min: cfg.chegada, liberar_seg: cfg.liberar, ativa: cfg.ativa }, mesas: mesasTodas, estado: base, fila, conduta: ruins });
   }
   if (m === 'POST' && p === '/api/sinuca/gestao/mesas') {
     const c = await corpoDe(request), n = TEXTO(c.nome, 30); if (!n) return erro('Dê um nome à mesa.');
@@ -256,6 +308,18 @@ async function gestao(db, env, request, url, eu) {
     await db.prepare("UPDATE fila_sinuca SET status = 'cancelado', fim_em = datetime('now') WHERE id = ?").bind(f.id).run();
     if (f.status === 'chamado') await db.prepare("UPDATE mesa_sinuca SET status = 'livre', fila_id = NULL WHERE id = ? AND status = 'chamando'").bind(f.mesa_id).run();
     await avancar(db, env); return json({ ok: true });
+  }
+  if (m === 'POST' && (r = p.match(/^\/api\/sinuca\/gestao\/resultados\/([\w-]+)\/(confirmar|recusar)$/))) {
+    return (await resolverResultado(db, r[1], r[2], eu.nome)) ? json({ ok: true }) : erro('Resultado não encontrado ou já resolvido.', 404);
+  }
+  if (m === 'POST' && p === '/api/sinuca/gestao/resultados') {   // a equipe lança um jogo (vale na hora)
+    const c = await corpoDe(request), an = TEXTO(c.a_nome, 30), bn = TEXTO(c.b_nome, 30), v = c.vencedor === 'b' ? 'b' : c.vencedor === 'a' ? 'a' : null;
+    if (an.length < 2 || bn.length < 2 || !v) return erro('Informe os dois jogadores e quem ganhou.');
+    const ca = c.a_id ? await db.prepare('SELECT id, nome FROM cliente WHERE id = ?').bind(String(c.a_id)).first() : null, cb = c.b_id ? await db.prepare('SELECT id, nome FROM cliente WHERE id = ?').bind(String(c.b_id)).first() : null;
+    const ak = chaveJogador(ca?.id, an), bk = chaveJogador(cb?.id, bn); if (ak === bk) return erro('Os dois jogadores são a mesma pessoa.');
+    await db.prepare("INSERT INTO sinuca_resultado (id, a_chave, a_nome, a_cliente_id, b_chave, b_nome, b_cliente_id, vencedor, status, origem, operador, resolvido_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmado', 'equipe', ?, datetime('now'))")
+      .bind(`res-${id8()}${id8()}`, ak, an, ca?.id ?? null, bk, bn, cb?.id ?? null, v, eu.nome).run();
+    await recalcularScores(db); return json({ ok: true }, 201);
   }
   if (m === 'POST' && p === '/api/sinuca/gestao/local') {
     const c = await corpoDe(request), lat = Number(c.lat), lng = Number(c.lng), raio = c.raio_m === undefined ? null : Number(c.raio_m);
@@ -288,11 +352,24 @@ export async function rotearSinuca(request, env, url) {
   const cli = await clienteLogado(request, env);
   await avancar(db, env);
   if (m === 'GET' && p === '/api/sinuca') return json(await estado(db, cli));
+  if (m === 'GET' && p === '/api/sinuca/ranking') return json({ ranking: await rankingJogadores(db, 50, curto) });
   if (!cli) return erro('Entre na sua conta para usar a fila da sinuca.', 401);
   let r;
   if (m === 'POST' && p === '/api/sinuca/entrar') return entrar(db, env, cli, await corpoDe(request));
   if (m === 'POST' && p === '/api/sinuca/sair') return sair(db, env, cli);
   if (m === 'POST' && p === '/api/sinuca/cheguei') return cheguei(db, env, cli, await corpoDe(request));
+  if (m === 'GET' && p === '/api/sinuca/jogadores') {   // procura o adversário pelo nome (só nome curto, mínimo 3 letras)
+    const q = TEXTO(url.searchParams.get('q'), 30).toLowerCase(); if (q.length < 3) return json({ jogadores: [] });
+    const { results } = await db.prepare("SELECT id, nome FROM cliente WHERE lower(nome) LIKE ? AND id <> ? ORDER BY nome LIMIT 8").bind(`%${q.replace(/[%_]/g, '')}%`, cli.id).all();
+    return json({ jogadores: results.map((x) => ({ id: x.id, nome: curto(x.nome) })) });
+  }
+  if (m === 'POST' && p === '/api/sinuca/resultado') return reportarResultado(db, cli, await corpoDe(request));
+  if (m === 'POST' && p === '/api/sinuca/resultado/dispensar') { const c = await corpoDe(request); await log(db, cli.id, 'sem_resultado', 0, String(c.fila_id ?? '').slice(0, 40)); return json({ ok: true }); }
+  if (m === 'POST' && (r = p.match(/^\/api\/sinuca\/resultado\/([\w-]+)\/(confirmar|contestar)$/))) {
+    const x = await db.prepare("SELECT id FROM sinuca_resultado WHERE id = ? AND b_cliente_id = ? AND status = 'pendente'").bind(r[1], cli.id).first();
+    if (!x) return erro('Resultado não encontrado ou já respondido.', 404);
+    await resolverResultado(db, x.id, r[2], null); return json({ ok: true });
+  }
   if (m === 'POST' && p === '/api/sinuca/push') return assinarPush(db, cli, await corpoDe(request));
   if (m === 'POST' && (r = p.match(/^\/api\/sinuca\/mesas\/([\w-]+)\/terminou$/))) return terminou(db, env, cli, r[1], await corpoDe(request));
   if (m === 'POST' && (r = p.match(/^\/api\/sinuca\/mesas\/([\w-]+)\/ainda-jogando$/))) return aindaJogando(db, env, cli, r[1]);

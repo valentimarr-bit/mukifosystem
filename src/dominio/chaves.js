@@ -52,9 +52,9 @@ export function gerarChave(jogadores, { modo = 'sementes', terceiro = true } = {
 // ---------- score e níveis ----------
 export const SCORE_INICIAL = 1000;
 /** Elo: ganhar de quem é melhor vale mais. K maior nos primeiros jogos para o score achar o lugar certo rápido. */
-export function novoScore(ra, rb, aVenceu, jogosA = 99, jogosB = 99) {
+export function novoScore(ra, rb, aVenceu, jogosA = 99, jogosB = 99, peso = 1) {
   const ea = 1 / (1 + 10 ** ((rb - ra) / 400)), sa = aVenceu ? 1 : 0;
-  const ka = jogosA < 10 ? 40 : 24, kb = jogosB < 10 ? 40 : 24;
+  const ka = (jogosA < 10 ? 40 : 24) * peso, kb = (jogosB < 10 ? 40 : 24) * peso;   // peso < 1: jogo que vale menos
   return [ra + ka * (sa - ea), rb + kb * ((1 - sa) - (1 - ea))];
 }
 export const NIVEIS = [
@@ -83,7 +83,7 @@ export function calcularScores(jogos) {
   for (const j of jogos) {
     if (!j.a || !j.b || j.a === j.b) continue;
     const A = pega(j.a, j.nomeA, j.clienteA), B = pega(j.b, j.nomeB, j.clienteB);
-    [A.score, B.score] = novoScore(A.score, B.score, j.aVenceu, A.jogos, B.jogos);
+    [A.score, B.score] = novoScore(A.score, B.score, j.aVenceu, A.jogos, B.jogos, j.peso ?? 1);
     A.jogos++; B.jogos++; if (j.aVenceu) A.vitorias++; else B.vitorias++;
   }
   return t;
