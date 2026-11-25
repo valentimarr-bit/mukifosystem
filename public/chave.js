@@ -25,14 +25,15 @@
 .bk-l .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bk-l .s{min-width:26px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-variant-numeric:tabular-nums;background:var(--input);font-size:14px}
 .bk-l.v .n{font-weight:800}.bk-l.v .s{background:var(--ok);color:var(--on-ok,#000)}.bk-l.p{opacity:.45}.bk-l.vz .n{color:var(--mut);font-style:italic}
-.bk-l.eu .n{color:var(--acc);font-weight:800}
+.bk-l.eu .n{color:var(--acc);font-weight:800}.bk-l.rep .n{color:var(--acc);font-style:normal;font-weight:600}
+.nv{flex:0 0 auto;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
 .bk-tag{position:absolute;top:-11px;right:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--input);border:1px solid var(--line);color:var(--mut);white-space:nowrap}
 .bk-m.vivo .bk-tag{background:var(--bad,#e5484d);border-color:var(--bad,#e5484d);color:#fff}
 .bk-m.vivo .bk-tag::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#fff;margin-right:5px;vertical-align:1px;animation:bkp 1.2s infinite}
 @keyframes bkp{50%{opacity:.2}}
 .bk-c{position:absolute;width:150px;border-radius:16px;padding:12px;text-align:center;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 30%,var(--card)),var(--card));border:1.5px solid var(--acc)}
 .bk-c .t{font-size:34px;line-height:1}.bk-c b{display:block;margin-top:4px;font-size:16px;overflow-wrap:anywhere}.bk-c span{font-size:12px;color:var(--mut)}
-.bk-dica{font-size:13px;color:var(--mut);margin-top:6px;text-align:center}
+.bk-g{margin:14px 0 6px;font-size:15px}.bk-dica{font-size:13px;color:var(--mut);margin-top:6px;text-align:center}
 @media (prefers-reduced-motion:reduce){.bk-scroll{scroll-behavior:auto}.bk-m.vivo .bk-tag::before{animation:none}}`;
 
   function estilo() { if (document.getElementById('bk-css')) return; const s = document.createElement('style'); s.id = 'bk-css'; s.textContent = css; document.head.appendChild(s); }
@@ -41,12 +42,12 @@
     if (f === R) return 'Final'; if (f === R - 1) return 'Semifinal'; if (f === R - 2) return 'Quartas'; if (f === R - 3) return 'Oitavas';
     return f === 1 && prelim ? 'Preliminar' : `Rodada ${f}`;
   }
-  const folga = (p) => p.fase === 1 && p.chave === 'W' && (!p.a || !p.b);
+  const folga = (p) => p.fase === 1 && p.chave === 'W' && ((!p.a && !p.vaga_a) || (!p.b && !p.vaga_b));
 
   /** HTML da chave. opts: { editavel: true → jogos clicáveis (data-bk-p); foco: nome a destacar } */
   function html(d, opts = {}) {
     estilo();
-    const ps = d.partidas || [];
+    const ps = (d.partidas || []).filter((p) => p.chave !== 'R');
     if (!ps.length) return '';
     const R = d.rodadas || Math.max(...ps.map((p) => p.fase));
     const W1 = ps.filter((p) => p.fase === 1 && p.chave === 'W'), reais1 = W1.filter((p) => !folga(p)).length;
@@ -75,7 +76,7 @@
 
     let linhas = '', caixas = '', cab = '';
     for (let f = 1; f <= R; f++) cab += `<div class="bk-h" style="left:${xCol(f - 1)}px;width:${W}px">${rotulo(f, R, prelim)}</div>`;
-    cab += `<div class="bk-h" style="left:${xCol(R)}px;width:150px">Campeão</div>`;
+    cab += `<div class="bk-h" style="left:${xCol(R)}px;width:150px">${opts.rotuloFim || 'Campeão'}</div>`;
     cab = `<div class="bk-cab" style="width:${largura}px">${cab}</div>`;
 
     // linhas: de cada jogo até a vaga (a em cima, b embaixo) do próximo
@@ -93,10 +94,12 @@
       linhas += `<path d="M${a.x + W} ${a.y}H${xCol(R)}" fill="none" stroke="${fim ? 'var(--acc)' : 'var(--line)'}" stroke-width="${fim ? 2.5 : 1.5}" ${fim ? '' : 'stroke-dasharray="4 4"'}/>`;
     }
 
-    const linha = (x, pl, venc, perd, mostra) => {
+    const linha = (x, pl, venc, perd, mostra, vaga) => {
+      if (!x && vaga === -1) return '<div class="bk-l vz"><span class="n">W.O. (ninguém da repescagem)</span></div>';
+      if (!x && vaga) return `<div class="bk-l vz rep"><span class="n">↩ Vem da repescagem${vaga > 1 || opts.variasVagas ? ' ' + vaga : ''}</span></div>`;
       if (!x) return '<div class="bk-l vz"><span class="n">a definir</span></div>';
       const eu = foco && norm(x.nome) === foco;
-      return `<div class="bk-l${venc ? ' v' : ''}${perd ? ' p' : ''}${eu ? ' eu' : ''}" data-bk-nome="${esc(x.nome)}"><span class="n" title="${esc(x.nome)}">${esc(x.nome)}</span>${mostra ? `<span class="s">${pl ?? 0}</span>` : ''}</div>`;
+      return `<div class="bk-l${venc ? ' v' : ''}${perd ? ' p' : ''}${eu ? ' eu' : ''}" data-bk-nome="${esc(x.nome)}">${x.cor ? `<i class="nv" style="background:${esc(x.cor)}" title="${esc(x.nivel)}"></i>` : ''}<span class="n" title="${esc(x.nome)}${x.nivel ? ' · ' + esc(x.nivel) : ''}">${esc(x.nome)}</span>${mostra ? `<span class="s">${pl ?? 0}</span>` : ''}</div>`;
     };
     let alvo = null;
     for (const p of ps) {
@@ -108,17 +111,18 @@
       const tag = vivo ? `Ao vivo${p.mesa ? ' · mesa ' + esc(p.mesa) : ''}` : p.chave === 'T' ? '3º lugar' : p.status === 'pronta' ? (p.mesa ? `Mesa ${esc(p.mesa)}` : opts.editavel ? 'Pode começar' : '') : p.mesa && !fim ? `Mesa ${esc(p.mesa)}` : '';
       const clic = opts.editavel && p.a && p.b;
       if (!alvo && !fim && p.a && p.b) alvo = p;
-      caixas += `<div class="bk-m ${p.status === 'em_jogo' ? 'vivo' : p.status}${meu ? ' meu' : ''}${clic ? ' click' : ''}" style="left:${c.x}px;top:${c.y - H / 2}px"${clic ? ` data-bk-p="${esc(p.id)}" role="button" tabindex="0" aria-label="Abrir jogo"` : ''}>${tag ? `<span class="bk-tag">${tag}</span>` : ''}${linha(p.a, p.placar_a, va, vb, mostra)}${linha(p.b, p.placar_b, vb, va, mostra)}</div>`;
+      caixas += `<div class="bk-m ${p.status === 'em_jogo' ? 'vivo' : p.status}${meu ? ' meu' : ''}${clic ? ' click' : ''}" style="left:${c.x}px;top:${c.y - H / 2}px"${clic ? ` data-bk-p="${esc(p.id)}" role="button" tabindex="0" aria-label="Abrir jogo"` : ''}>${tag ? `<span class="bk-tag">${tag}</span>` : ''}${linha(p.a, p.placar_a, va, vb, mostra, p.vaga_a)}${linha(p.b, p.placar_b, vb, va, mostra, p.vaga_b)}</div>`;
     }
     const campeao = final && final.status === 'finalizada' ? [final.a, final.b].find((x) => x && x.id === final.vencedor_id) : null;
     const yc = yFinal;
-    caixas += `<div class="bk-c" style="left:${xCol(R)}px;top:${yc - 46}px"><div class="t">🏆</div><b>${campeao ? esc(campeao.nome) : '?'}</b><span>${campeao ? 'Campeão' : 'a definir'}</span></div>`;
+    const fimTxt = opts.rotuloFim || 'Campeão';
+    caixas += `<div class="bk-c" style="left:${xCol(R)}px;top:${yc - 46}px"><div class="t">${opts.iconeFim || '🏆'}</div><b>${campeao ? esc(campeao.nome) : '?'}</b><span>${campeao ? fimTxt : 'a definir'}</span></div>`;
 
     // aba ativa inicial: a fase do primeiro jogo que ainda falta (ou a final)
     const colAlvo = alvo ? alvo.fase - 1 : R;
     let abas = '';
     for (let f = 1; f <= R; f++) abas += `<button class="bk-tab" data-bk-ir="${f - 1}" aria-current="${f - 1 === colAlvo}">${rotulo(f, R, prelim)}</button>`;
-    abas += `<button class="bk-tab" data-bk-ir="${R}" aria-current="${R === colAlvo}">🏆</button>`;
+    abas += `<button class="bk-tab" data-bk-ir="${R}" aria-current="${R === colAlvo}">${opts.iconeFim || '🏆'}</button>`;
     const z = zoom();
     return `<div class="bk" data-bk-chave="${esc(d.id ?? '')}" data-bk-alvo="${colAlvo}">
       <div class="bk-bar"><div class="bk-tabs">${abas}</div><button class="bk-z" data-bk-z="-1" aria-label="Diminuir">−</button><button class="bk-z" data-bk-z="1" aria-label="Aumentar">+</button></div>
@@ -139,17 +143,17 @@
   /** Troca o conteúdo sem piscar: só mexe se mudou e mantém a rolagem da chave e da página. */
   function trocar(el, conteudo) {
     if (el._bkUltimo === conteudo) return false;
-    const sc = el.querySelector('.bk-scroll'), sx = sc?.scrollLeft, sy = sc?.scrollTop, py = scrollY;
-    const chaveAntes = el.querySelector('[data-bk-chave]')?.dataset.bkChave;
+    const py = scrollY, antes = new Map();
+    el.querySelectorAll('[data-bk-chave]').forEach((bk) => { const sc = bk.querySelector('.bk-scroll'); if (sc) antes.set(bk.dataset.bkChave, [sc.scrollLeft, sc.scrollTop]); });
     el.innerHTML = conteudo; el._bkUltimo = conteudo;
-    const bk = el.querySelector('[data-bk-chave]'), novo = el.querySelector('.bk-scroll');
-    if (novo) {
+    el.querySelectorAll('[data-bk-chave]').forEach((bk) => {
+      const novo = bk.querySelector('.bk-scroll'); if (!novo) return;
       novo.style.scrollBehavior = 'auto'; ajustar(el, bk);
-      if (sc && chaveAntes === bk.dataset.bkChave) { novo.scrollLeft = sx; novo.scrollTop = sy; }
-      else irPara(bk, Number(bk.dataset.bkAlvo), false);
+      const a = antes.get(bk.dataset.bkChave);
+      if (a) { novo.scrollLeft = a[0]; novo.scrollTop = a[1]; } else irPara(bk, Number(bk.dataset.bkAlvo), false);
       novo.style.scrollBehavior = '';
       marcarAba(bk);
-    }
+    });
     if (Math.abs(scrollY - py) > 1) scrollTo(0, py);
     return true;
   }
@@ -187,5 +191,15 @@
   let tAba;
   document.addEventListener('scroll', (e) => { if (e.target.classList?.contains('bk-scroll')) { clearTimeout(tAba); tAba = setTimeout(() => marcarAba(e.target.closest('.bk')), 80); } }, true);
 
-  window.MukifoChave = { html, trocar, irPara };
+  /** Chaves da repescagem (uma por grupo): o campeão de cada uma volta para a chave principal. */
+  function htmlRepescagem(d, opts = {}) {
+    const rs = (d.partidas || []).filter((p) => p.chave === 'R'); if (!rs.length) return '';
+    const grupos = [...new Set(rs.map((p) => p.grupo))].sort((a, b) => a - b);
+    return grupos.map((g) => {
+      const ps = rs.filter((p) => p.grupo === g).map((p) => ({ ...p, chave: 'W' }));
+      return `${grupos.length > 1 ? `<h4 class="bk-g">Grupo ${g}</h4>` : ''}${html({ partidas: ps, rodadas: Math.max(...ps.map((p) => p.fase)), id: `${d.id}:R${g}` }, { ...opts, rotuloFim: 'Volta à chave', iconeFim: '↩' })}`;
+    }).join('');
+  }
+
+  window.MukifoChave = { html, htmlRepescagem, trocar, irPara };
 })();

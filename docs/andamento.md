@@ -266,3 +266,10 @@ Atualize no fim de cada sessão. Mais recente em cima.
 - **Não validado contra a izapia real** (só o formato de envio da página pública; sem documentação de erros nem de webhook). Recusa hoje é pelo balcão: responder "SAIR" no WhatsApp ainda não é lido.
 - **Consentimento (LGPD):** migração `0030_consentimento_whats` (`cliente.whats_aceite_em`, log `consentimento_whats`). Só entra na fila quem aceitou; o aceite é conferido de novo na hora do envio. Aceite opcional no cadastro (`whats: true`) e em `PUT /api/conta/whats`; recusa do balcão revoga e registra. Clientes que já existiam não têm aceite: ninguém recebe até aceitar no app (cartão "Convites por WhatsApp" em Minha conta).
 - **Zapia (zapia.com):** é assistente pessoal de IA; não achei API para sistema enviar mensagens. ZapIA (zapia.business) é atendente de IA por WhatsApp, também sem API/disparo documentado. Seguimos com a izapia.
+
+## Campeonato justo: score, níveis, séries e repescagem (2026-11-25)
+- Migração `0031_campeonato_nivel` (modalidade: `formato`, `rep_vagas`, `rep_valor`, `rep_premio`, `rep_status`; partida: `rep_a`, `rep_b`, `grupo`; tabelas `recompra` e `jogador_score`). Lógica em `src/campeonato_nivel.js`; funções puras em `src/dominio/chaves.js` (`gerarChave` com modo `nivel` e vagas `REP:n`, `novoScore`, `nivelDoScore`, `calcularScores`, `dividirEmSeries`, `gruposRepescagem`). Testes em `test/campeonato_nivel.test.js`.
+- Score é recalculado do zero a cada resultado (ordem de término dos jogos). Identidade: conta do cliente ou nome normalizado (balcão).
+- Repescagem só para perdedores da 1ª rodada; vagas reservadas na 2ª rodada (pegam as folgas). Se não houver folgas suficientes, a vaga cai na 1ª rodada contra um jogador, que espera a repescagem.
+- Prêmio agora soma os valores pagos de verdade (e as recompras, se configurado), em vez de taxa × pagos.
+- Em aberto: recompra por Pix (hoje balcão ou saldo); repescagem para perdedores de fases além da 1ª; dupla eliminação completa.

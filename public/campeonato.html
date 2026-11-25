@@ -15,6 +15,7 @@ select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-r
 .erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
 .vivos h3{display:flex;align-items:center;gap:8px}.vivos .ponto{width:10px;height:10px;border-radius:50%;background:var(--bad,#e5484d);animation:pisca 1.2s infinite}@keyframes pisca{50%{opacity:.2}}
 .vv{display:flex;align-items:center;gap:10px;padding:10px 0 2px}.vv .n{flex:1;min-width:0;font-size:18px;font-weight:600;overflow-wrap:anywhere}.vv .n.d{text-align:right}.vv .n.lid{color:var(--ok)}.vv b{font-size:30px;font-variant-numeric:tabular-nums;white-space:nowrap}.vv b i{font-style:normal;color:var(--mut);margin:0 6px;font-size:20px}.c{text-align:center}
+.nv{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:0}
 </style></head><body data-sem-botao-visual>
 <header><h1>🎱 Campeonato de sinuca</h1><a href="/sinuca.html">⏱ Fila</a><a href="/cliente.html">🍸 Cardápio</a></header>
 <div class="nav"><button data-aba="camps" aria-pressed="true">Campeonatos</button><button data-aba="rank" aria-pressed="false">Ranking</button></div>
@@ -63,9 +64,19 @@ async function telaMod() {
     else if (d.vagas && d.pagas >= d.vagas) acao = '<div class="card"><b>Vagas esgotadas.</b></div>';
     else acao = `<div class="card"><b>${d.taxa > 0 ? `Inscrição ${R$(d.taxa)}` : 'Inscrição grátis'}</b>${d.taxa > 0 ? '<p class="mut">Pague por Pix e entre na chave.</p>' : ''}<button class="btn" id="bIns">Quero me inscrever</button>${d.taxa > 0 && (conta?.cliente?.saldo ?? 0) >= d.taxa ? `<button class="btn sec" id="bInsSaldo">Pagar com meu saldo (${R$(conta.cliente.saldo)})</button>` : ''}</div>`;
   }
-  const insc = d.inscritos.length ? `<div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${d.inscritos.map((i) => `<span class="chip">${esc(i.nome)}</span>`).join('')}</div>` : '';
+  if (d.repescagem?.estado === 'aberta' && minha) {   // perdeu na 1ª rodada: pode recomprar
+    const eu = d.inscritos.find((i) => i.id === minha.id), v = d.repescagem.valor;
+    if (eu?.pode_recomprar) acao = `<div class="card pixbox"><b>↩ Repescagem: volte para o jogo!</b><p class="mut">Você perdeu na 1ª rodada, mas pode recomprar por ${R$(v)}. Quem recompra joga a repescagem e ${d.repescagem.vagas > 1 ? 'os vencedores voltam' : 'o vencedor volta'} na 2ª rodada.</p>${v <= 0 || (conta?.cliente?.saldo ?? 0) >= v ? `<button class="btn" id="bRecompra" data-i="${minha.id}">Recomprar${v > 0 ? ` com meu saldo (${R$(conta.cliente.saldo)})` : ''}</button>` : `<p class="mut">Seu saldo não cobre: recompre no balcão ou recarregue a carteira.</p>`}</div>`;
+    else if (eu?.recomprou) acao = '<div class="card"><b>✅ Você está na repescagem.</b><p class="mut">Os jogos aparecem aqui quando a 1ª rodada terminar.</p></div>';
+  }
+  const insc = d.inscritos.length ? `<div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${[...d.inscritos].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map((i) => `<span class="chip"${i.cor ? ` style="border-color:${i.cor}"` : ''} title="${esc(i.nivel ?? '')}">${i.cor ? `<i class="nv" style="background:${i.cor}"></i> ` : ''}${esc(i.nome)}${i.recomprou ? ' ↩' : ''}</span>`).join('')}${legendaNiveis(d.inscritos)}</div>` : '';
+  const rep = d.partidas.some((p) => p.chave === 'R') ? `<div class="card"><h3>↩ Repescagem</h3><p class="mut">Quem vencer volta para a chave principal.</p>${MukifoChave.htmlRepescagem({ ...d, id: modId }, { foco: foco || conta?.cliente?.nome })}</div>` : '';
   const camp = d.campeao ? `<div class="card" style="text-align:center"><div style="font-size:40px">🏆</div><h2>${esc(d.campeao)}</h2><div class="mut">Campeão · ${esc(d.nome)}</div></div>` : '';
-  return `<button class="btn sec" id="bVolta" style="margin:0 0 12px">← Campeonatos</button><div class="card"><h2>${esc(d.nome)}</h2><div class="mut">${esc(d.campeonato)} · ${ROT[d.status]}</div>${premiacao(d)}</div>${camp}${acao}${aoVivo(d)}${chave(d)}${insc}`;
+  return `<button class="btn sec" id="bVolta" style="margin:0 0 12px">← Campeonatos</button><div class="card"><h2>${esc(d.nome)}</h2><div class="mut">${esc(d.campeonato)} · ${ROT[d.status]}</div>${premiacao(d)}</div>${camp}${acao}${aoVivo(d)}${chave(d)}${rep}${insc}`;
+}
+function legendaNiveis(lista) {
+  const vistos = new Map(); for (const i of lista) if (i.nivel) vistos.set(i.nivel, i.cor);
+  return vistos.size ? `<div class="mut" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:10px">${[...vistos].map(([n, c]) => `<span><i class="nv" style="background:${c}"></i> ${esc(n)}</span>`).join('')}</div>` : '';
 }
 function pagarHtml(i) {
   return `<div class="card pixbox"><b>Falta pagar ${R$(i.valor)}</b><p class="mut">Abra o app do seu banco e pague com Pix. A inscrição confirma sozinha quando o balcão receber.</p>${i.pix ? `<img alt="QR Pix" src="${qrImg(i.pix)}"><code>${esc(i.pix)}</code><button class="btn" id="bCopia" data-pix="${esc(i.pix)}">Copiar Pix copia e cola</button>` : '<p class="erro">Pix indisponível. Fale com o balcão.</p>'}<p class="mut">Vale por 30 minutos.</p></div>`;
@@ -73,8 +84,9 @@ function pagarHtml(i) {
 async function telaRank() {
   const d = await api('/api/campeonato/ranking' + (aba === 'rank' && telaRank.mod ? '?modalidade=' + encodeURIComponent(telaRank.mod) : ''));
   const sel = `<select id="rMod"><option value="">Todas as modalidades</option>${d.modalidades.map((n) => `<option ${n === telaRank.mod ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
-  if (!d.ranking.length) return `<div class="card">${sel}<p class="mut">O ranking começa quando a primeira modalidade terminar.</p></div>`;
-  return `<div class="card">${sel}<div style="margin-top:8px">${d.ranking.map((r) => `<div class="pos"><span class="n">${r.posicao <= 3 ? ['🥇', '🥈', '🥉'][r.posicao - 1] : r.posicao + 'º'}</span><span class="p">${esc(r.nome)}<div class="mut">${r.torneios} torneio${r.torneios === 1 ? '' : 's'}${r.titulos ? ` · ${r.titulos} título${r.titulos === 1 ? '' : 's'}` : ''}${r.vices ? ` · ${r.vices} vice` : ''}</div></span><span class="pt">${r.pontos} pts</span></div>`).join('')}</div></div>`;
+  const niv = d.niveis?.length ? `<div class="card"><h3>Níveis dos jogadores</h3><p class="mut">Score que sobe a cada vitória: ganhar de quem é melhor vale mais. Com menos de 3 jogos o jogador é Novato. O nível ajuda a montar chaves mais justas.</p>${d.niveis.map((r) => `<div class="pos"><span class="n">${r.posicao}º</span><span class="p"><i class="nv" style="background:${r.cor}"></i> ${esc(r.nome)}<div class="mut">${r.nivel} · ${r.vitorias} vitória${r.vitorias === 1 ? '' : 's'} em ${r.jogos} jogo${r.jogos === 1 ? '' : 's'}</div></span><span class="pt">${r.score}</span></div>`).join('')}</div>` : '';
+  if (!d.ranking.length) return `<div class="card">${sel}<p class="mut">O ranking começa quando a primeira modalidade terminar.</p></div>${niv}`;
+  return niv + `<div class="card"><h3>Pontos por colocação</h3>${sel}<div style="margin-top:8px">${d.ranking.map((r) => `<div class="pos"><span class="n">${r.posicao <= 3 ? ['🥇', '🥈', '🥉'][r.posicao - 1] : r.posicao + 'º'}</span><span class="p">${esc(r.nome)}<div class="mut">${r.torneios} torneio${r.torneios === 1 ? '' : 's'}${r.titulos ? ` · ${r.titulos} título${r.titulos === 1 ? '' : 's'}` : ''}${r.vices ? ` · ${r.vices} vice` : ''}</div></span><span class="pt">${r.pontos} pts</span></div>`).join('')}</div></div>`;
 }
 async function desenhar() {
   const ativo = document.activeElement?.id;
@@ -92,6 +104,12 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.mod) { modId = t.dataset.mod; foco = null; scrollTo(0, 0); return desenhar(); }
   if (t.id === 'bVolta') { modId = null; return desenhar(); }
   if (t.id === 'bCopia') { try { await navigator.clipboard.writeText(t.dataset.pix); aviso('Pix copiado. Cole no app do seu banco.'); } catch { aviso('Segure o texto do Pix para copiar.'); } return; }
+  if (t.id === 'bRecompra') {
+    t.disabled = true;
+    try { const r = await api(`/api/campeonato/inscricoes/${t.dataset.i}/recomprar`, {}); aviso('Recompra feita! Você está na repescagem. 🎱'); if (conta?.cliente && r.valor > 0) { conta.cliente.saldo = Math.round((conta.cliente.saldo - r.valor) * 100) / 100; try { localStorage.setItem('mukifo_conta', JSON.stringify(conta)); } catch {} } }
+    catch (er) { aviso(er.message); t.disabled = false; }
+    return desenhar();
+  }
   if (t.id === 'bIns' || t.id === 'bInsSaldo') {
     t.disabled = true;
     try { const i = await api(`/api/campeonato/modalidades/${modId}/inscrever`, { pagar_com_saldo: t.id === 'bInsSaldo' }); aviso(i.status === 'paga' ? 'Inscrição confirmada! 🎱' : 'Quase lá: falta pagar o Pix.'); if (i.status === 'paga' && t.id === 'bInsSaldo' && conta?.cliente) { conta.cliente.saldo = Math.max(0, (conta.cliente.saldo ?? 0) - i.valor); try { localStorage.setItem('mukifo_conta', JSON.stringify(conta)); } catch {} } }

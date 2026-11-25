@@ -8,7 +8,8 @@ import { modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
 import { enfileirar, estadoWhats, salvarConfigWhats, numeroWhats, registrarConsentimento } from './whatsapp.js';
-import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio } from './dominio/chaves.js';
+import { gerarChave, colocacaoDoPerdedor, pontosDaColocacao, dividirPremio, nivelDoScore } from './dominio/chaves.js';
+import { recalcularScores, scoresDasInscricoes, ordemParaChave, candidatosRepescagem, estadoRepescagem, registrarRecompra, fecharRepescagem, acertarChave, dividirSeries, lerConfig } from './campeonato_nivel.js';
 
 const VALIDADE_MIN = 30;
 const corpoDe = async (request) => { try { return (await request.json()) ?? {}; } catch { return {}; } };
@@ -30,12 +31,14 @@ export async function confirmarInscricao(db, id, operador, forma = 'pix') {
 }
 
 async function contagem(db, modId) {
-  const r = await db.prepare("SELECT SUM(status = 'paga') AS pagas, SUM(status = 'pendente' AND (expira_em IS NULL OR expira_em > datetime('now'))) AS pendentes FROM inscricao WHERE modalidade_id = ?").bind(modId).first();
-  return { pagas: r?.pagas ?? 0, pendentes: r?.pendentes ?? 0 };
+  const r = await db.prepare("SELECT SUM(status = 'paga') AS pagas, SUM(status = 'pendente' AND (expira_em IS NULL OR expira_em > datetime('now'))) AS pendentes, SUM(CASE WHEN status = 'paga' THEN valor ELSE 0 END) AS arrec FROM inscricao WHERE modalidade_id = ?").bind(modId).first();
+  const rc = await db.prepare('SELECT COUNT(*) AS n, COALESCE(SUM(r.valor), 0) AS v, MAX(m.rep_premio) AS premio FROM recompra r JOIN modalidade m ON m.id = r.modalidade_id WHERE r.modalidade_id = ?').bind(modId).first();
+  return { pagas: r?.pagas ?? 0, pendentes: r?.pendentes ?? 0, recompras: rc?.n ?? 0, arrecadado: r2((r?.arrec ?? 0) + (rc?.premio ? rc.v : 0)) };
 }
 
 const resumoMod = (m, c) => ({ id: m.id, nome: m.nome, taxa: m.taxa, vagas: m.vagas, status: m.status, rodadas: m.rodadas, pagas: c.pagas, pendentes: c.pendentes,
-  premiacao: dividirPremio(r2(m.taxa * c.pagas), pctDe(m.premio_pct)) });
+  formato: m.formato ?? 'sorteio', repescagem: { vagas: m.rep_vagas ?? 0, valor: r2(m.rep_valor ?? m.taxa), proprio_valor: m.rep_valor != null, premio: m.rep_premio !== 0, estado: estadoRepescagem(m), recompras: c.recompras },
+  premiacao: dividirPremio(c.arrecadado, pctDe(m.premio_pct)) });
 
 /** Lista pública: campeonatos abertos (e os encerrados recentes) com suas modalidades. */
 export async function listarCampeonatos(db) {
@@ -56,13 +59,17 @@ export async function detalheModalidade(db, id, equipe = false) {
   if (!m) return null;
   await expirarInscricoes(db, id);
   const { results: ins } = await db.prepare(`SELECT id, nome, status, forma, colocacao, cliente_id, criada_em FROM inscricao WHERE modalidade_id = ? AND status ${equipe ? "<> 'cancelada'" : "= 'paga'"} ORDER BY criada_em`).bind(id).all();
-  const nomes = new Map(ins.map((i) => [i.id, i.nome]));
-  const { results: ps } = await db.prepare("SELECT * FROM partida WHERE modalidade_id = ? ORDER BY chave DESC, fase, pos").bind(id).all();
-  const partidas = ps.map((p) => ({ id: p.id, fase: p.fase, pos: p.pos, chave: p.chave, status: p.status, mesa: p.mesa, placar_a: p.placar_a, placar_b: p.placar_b, vencedor_id: p.vencedor_id,
-    a: p.a_id ? { id: p.a_id, nome: nomes.get(p.a_id) ?? '?' } : null, b: p.b_id ? { id: p.b_id, nome: nomes.get(p.b_id) ?? '?' } : null }));
+  const nomes = new Map(ins.map((i) => [i.id, i.nome])), sc = await scoresDasInscricoes(db, ins);
+  const { results: ps } = await db.prepare("SELECT * FROM partida WHERE modalidade_id = ? ORDER BY chave DESC, grupo, fase, pos").bind(id).all();
+  const jog = (x) => x ? { id: x, nome: nomes.get(x) ?? '?', nivel: sc.get(x)?.nivel, cor: sc.get(x)?.cor } : null;
+  const partidas = ps.map((p) => ({ id: p.id, fase: p.fase, pos: p.pos, chave: p.chave, grupo: p.grupo, status: p.status, mesa: p.mesa, placar_a: p.placar_a, placar_b: p.placar_b, vencedor_id: p.vencedor_id,
+    a: jog(p.a_id), b: jog(p.b_id), vaga_a: p.rep_a || null, vaga_b: p.rep_b || null }));
   const c = await contagem(db, id);
+  const { results: rec } = await db.prepare('SELECT inscricao_id, valor, forma FROM recompra WHERE modalidade_id = ?').bind(id).all();
+  const recSet = new Set(rec.map((x) => x.inscricao_id));
+  const cand = estadoRepescagem(m) === 'aberta' ? new Set((await candidatosRepescagem(db, id)).map((x) => x.id)) : new Set();
   return { ...resumoMod(m, c), campeonato: m.campeonato, campeonato_id: m.campeonato_id,
-    inscritos: ins.map((i) => ({ id: i.id, nome: i.nome, status: i.status, forma: i.forma, colocacao: i.colocacao, conta: !!i.cliente_id })), partidas,
+    inscritos: ins.map((i) => ({ id: i.id, nome: i.nome, status: i.status, forma: i.forma, colocacao: i.colocacao, conta: !!i.cliente_id, ...sc.get(i.id), recomprou: recSet.has(i.id), pode_recomprar: cand.has(i.id) })), partidas,
     campeao: ins.find((i) => i.colocacao === 1)?.nome ?? null };
 }
 
@@ -77,7 +84,9 @@ export async function ranking(db, modalidadeNome) {
   }
   const lista = [...por.values()].sort((a, b) => b.pontos - a.pontos || b.titulos - a.titulos || a.nome.localeCompare(b.nome, 'pt-BR'));
   const { results: nm } = await db.prepare('SELECT DISTINCT nome FROM modalidade ORDER BY nome').all();
-  return { modalidades: nm.map((x) => x.nome), ranking: lista.map((x, i) => ({ posicao: i + 1, ...x })) };
+  const { results: js } = await db.prepare('SELECT nome, score, jogos, vitorias FROM jogador_score ORDER BY (jogos >= 3) DESC, score DESC LIMIT 100').all();
+  const niveis = js.map((j, i) => { const n = nivelDoScore(j.score, j.jogos); return { posicao: i + 1, nome: j.nome, score: Math.round(j.score), jogos: j.jogos, vitorias: j.vitorias, nivel: n.nome, cor: n.cor }; });
+  return { modalidades: nm.map((x) => x.nome), ranking: lista.map((x, i) => ({ posicao: i + 1, ...x })), niveis };
 }
 
 // ---------- inscrição (cliente logado) ----------
@@ -138,7 +147,9 @@ export async function sortear(db, modId) {
   await expirarInscricoes(db, modId);
   const { results } = await db.prepare("SELECT id FROM inscricao WHERE modalidade_id = ? AND status = 'paga'").bind(modId).all();
   if (results.length < 2) return erro('Precisa de pelo menos 2 inscrições pagas para sortear a chave.', 409);
-  const ordem = embaralhar(results.map((r) => r.id)), { rodadas, partidas } = gerarChave(ordem);
+  const { results: insc } = await db.prepare("SELECT id, nome, cliente_id FROM inscricao WHERE modalidade_id = ? AND status = 'paga'").bind(modId).all();
+  const { lista, modo } = await ordemParaChave(db, m, insc), { rodadas, partidas } = gerarChave(lista, { modo });
+  const vagaDe = (x) => (typeof x === 'string' && x.startsWith('REP:') ? Number(x.slice(4)) : null);
   const por = new Map(partidas.map((p) => [p.id, p]));
   for (const p of partidas) {   // folgas da 1ª rodada: quem não tem adversário já avança
     if (p.fase === 1 && p.chave === 'W' && (!p.a || !p.b)) { p.status = 'finalizada'; p.venc = p.a ?? p.b; const q = por.get(p.prox); if (q) q[p.proxLado] = p.venc; }
@@ -146,12 +157,14 @@ export async function sortear(db, modId) {
   const idp = (x) => `${modId}:${x}`;
   const ops = [db.prepare('DELETE FROM partida WHERE modalidade_id = ?').bind(modId), db.prepare('UPDATE inscricao SET colocacao = NULL WHERE modalidade_id = ?').bind(modId)];
   for (const p of partidas) {
-    const st = p.status === 'finalizada' ? 'finalizada' : p.a && p.b ? 'pronta' : 'aguardando';
-    ops.push(db.prepare('INSERT INTO partida (id, modalidade_id, fase, pos, chave, a_id, b_id, vencedor_id, status, prox_id, prox_lado, perc_id, perc_lado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(idp(p.id), modId, p.fase, p.pos, p.chave, p.a, p.b, p.venc ?? null, st, p.prox ? idp(p.prox) : null, p.proxLado, p.percProx ? idp(p.percProx) : null, p.percLado));
+    const fim = p.status === 'finalizada', va = vagaDe(p.a), vb = vagaDe(p.b);   // vaga da repescagem: fica reservada (a folga dela não aparece)
+    const a = va ? null : p.a, b = vb ? null : p.b, st = fim ? 'finalizada' : a && b ? 'pronta' : 'aguardando';
+    ops.push(db.prepare('INSERT INTO partida (id, modalidade_id, fase, pos, chave, a_id, b_id, rep_a, rep_b, vencedor_id, status, prox_id, prox_lado, perc_id, perc_lado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(idp(p.id), modId, p.fase, p.pos, p.chave, a, b, fim ? null : va, fim ? null : vb, vagaDe(p.venc) ? null : (p.venc ?? null), st, p.prox ? idp(p.prox) : null, p.proxLado, p.percProx ? idp(p.percProx) : null, p.percLado));
   }
-  ops.push(db.prepare("UPDATE modalidade SET status = 'andamento', rodadas = ? WHERE id = ?").bind(rodadas, modId));
+  ops.push(db.prepare("UPDATE modalidade SET status = 'andamento', rodadas = ?, rep_status = NULL WHERE id = ?").bind(rodadas, modId));
   await db.batch(ops);
+  await acertarChave(db, modId);
   return json(await detalheModalidade(db, modId, true), 201);
 }
 
@@ -178,24 +191,22 @@ export async function lancarPlacar(db, partidaId, c) {
   if (p.prox_id) entrar(p.prox_id, p.prox_lado, venc);
   if (p.perc_id) entrar(p.perc_id, p.perc_lado, perd);
   const R = p.rodadas;
-  if (p.chave === 'T') { colocar(venc, 3); colocar(perd, 4); }
+  if (p.chave === 'R') { /* repescagem: quem perde mantém a colocação da 1ª rodada */ }
+  else if (p.chave === 'T') { colocar(venc, 3); colocar(perd, 4); }
   else if (p.fase === R) { colocar(venc, 1); colocar(perd, 2); }
   else colocar(perd, colocacaoDoPerdedor(p.fase, R));
   await db.batch(ops);
-  // quem acabou de ganhar vaga completa: partidas com os dois lados preenchidos ficam "prontas"
-  await db.prepare("UPDATE partida SET status = 'pronta' WHERE modalidade_id = ? AND status = 'aguardando' AND a_id IS NOT NULL AND b_id IS NOT NULL").bind(p.modalidade_id).run();
-  await fecharSeTerminou(db, p.modalidade_id);
+  await acertarChave(db, p.modalidade_id);   // W.O. da repescagem, jogos prontos e fim da modalidade
+  await recalcularScores(db);
   return json({ ok: true, vencedor_id: venc });
 }
 
-async function fecharSeTerminou(db, modId) {
-  const r = await db.prepare("SELECT COUNT(*) AS n FROM partida WHERE modalidade_id = ? AND status <> 'finalizada'").bind(modId).first();
-  if (r.n === 0) await db.prepare("UPDATE modalidade SET status = 'encerrada' WHERE id = ?").bind(modId).run();
-}
 
 /** Corrige um resultado enquanto a rodada seguinte ainda não começou. */
 async function reabrir(db, p) {
   if (p.status !== 'finalizada') return erro('Essa partida não está finalizada.', 409);
+  if (!p.a_id || !p.b_id) return erro('Esse jogo foi W.O.: não tem resultado para corrigir.', 409);
+  if (p.chave === 'W' && p.fase === 1) { const m = await db.prepare('SELECT rep_vagas, rep_status FROM modalidade WHERE id = ?').bind(p.modalidade_id).first(); if (m?.rep_vagas && m.rep_status === 'fechada') return erro('A repescagem já foi montada: não dá para corrigir jogos da 1ª rodada.', 409); }
   const seg = [p.prox_id, p.perc_id].filter(Boolean);
   for (const s of seg) { const q = await db.prepare('SELECT status FROM partida WHERE id = ?').bind(s).first(); if (q && (q.status === 'em_jogo' || q.status === 'finalizada')) return erro('A partida seguinte já começou: não dá para corrigir esta.', 409); }
   const ops = [db.prepare("UPDATE partida SET status = 'em_jogo', vencedor_id = NULL, atualizada_em = datetime('now') WHERE id = ?").bind(p.id)];
@@ -204,6 +215,7 @@ async function reabrir(db, p) {
   ops.push(db.prepare('UPDATE inscricao SET colocacao = NULL WHERE id IN (?, ?)').bind(p.a_id, p.b_id));
   ops.push(db.prepare("UPDATE modalidade SET status = 'andamento' WHERE id = ? AND status = 'encerrada'").bind(p.modalidade_id));
   await db.batch(ops);
+  await recalcularScores(db);
   return json({ ok: true });
 }
 
@@ -216,6 +228,20 @@ export async function rotearCampeonato(request, env, url) {
   if (m === 'GET' && (r = p.match(/^\/api\/campeonato\/modalidades\/([\w-]+)$/))) { const d = await detalheModalidade(db, r[1], false); return d ? json(d) : erro('Modalidade não encontrada.', 404); }
   if (p === '/api/campeonato/minhas' && m === 'GET') { const cli = await clienteLogado(request, env); return cli ? json({ inscricoes: await minhasInscricoes(db, cli) }) : erro('Entre na sua conta.', 401); }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/modalidades\/([\w-]+)\/inscrever$/))) { const cli = await clienteLogado(request, env); return cli ? inscrever(db, cli, r[1], await corpoDe(request), env, request) : erro('Entre na sua conta para se inscrever.', 401); }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/inscricoes\/([\w-]+)\/recomprar$/))) {   // o próprio jogador recompra com o saldo da carteira
+    const cli = await clienteLogado(request, env); if (!cli) return erro('Entre na sua conta.', 401);
+    const i = await db.prepare('SELECT * FROM inscricao WHERE id = ? AND cliente_id = ?').bind(r[1], cli.id).first(); if (!i) return erro('Inscrição não encontrada.', 404);
+    const mod = await db.prepare('SELECT * FROM modalidade WHERE id = ?').bind(i.modalidade_id).first();
+    const valor = r2(mod.rep_valor ?? mod.taxa), teste = await modoTeste(db);
+    if (valor > 0 && !teste) {
+      const u = await db.prepare('UPDATE cliente SET saldo = ROUND(saldo - ?, 2) WHERE id = ? AND saldo >= ?').bind(valor, cli.id, valor).run();
+      if (!u?.meta?.changes) return erro('Saldo insuficiente. Recarregue a carteira ou recompre no balcão.', 402);
+    }
+    const x = await registrarRecompra(db, mod, i.id, valor <= 0 ? 'gratis' : teste ? 'teste' : 'saldo', 'saldo');
+    if (x.erro) { if (valor > 0 && !teste) await db.prepare('UPDATE cliente SET saldo = ROUND(saldo + ?, 2) WHERE id = ?').bind(valor, cli.id).run(); return erro(x.erro, x.status); }
+    if (valor > 0 && !teste) await db.prepare("INSERT INTO carteira_mov (cliente_id, valor, motivo, operador, obs) VALUES (?, ?, 'inscricao', 'saldo', ?)").bind(cli.id, -valor, `recompra ${mod.nome}`.slice(0, 80)).run();
+    return json(x, 201);
+  }
   if (m === 'GET' && (r = p.match(/^\/api\/campeonato\/inscricoes\/([\w-]+)$/))) {
     const cli = await clienteLogado(request, env); if (!cli) return erro('Entre na sua conta.', 401);
     const i = await db.prepare('SELECT * FROM inscricao WHERE id = ? AND cliente_id = ?').bind(r[1], cli.id).first(); return i ? json(await estadoInscricao(db, i, null)) : erro('Inscrição não encontrada.', 404);
@@ -242,7 +268,9 @@ export async function rotearCampeonato(request, env, url) {
     const pct = Array.isArray(c.premio) ? c.premio.map(Number).filter((x) => Number.isFinite(x) && x >= 0).slice(0, 8) : [50, 25, 15];
     if (pct.reduce((a, b) => a + b, 0) > 100) return erro('Os prêmios somam mais de 100%.');
     const camp = await db.prepare('SELECT id FROM campeonato WHERE id = ?').bind(r[1]).first(); if (!camp) return erro('Campeonato não encontrado.', 404);
-    const id = `mod-${id8()}`; await db.prepare('INSERT INTO modalidade (id, campeonato_id, nome, taxa, vagas, premio_pct) VALUES (?, ?, ?, ?, ?, ?)').bind(id, r[1], n, taxa, vagas, JSON.stringify(pct)).run();
+    const cf = lerConfig(c, { formato: 'sorteio', rep_vagas: 0, rep_valor: null, rep_premio: 1 }); if (cf.erro) return erro(cf.erro);
+    const v = cf.valores, id = `mod-${id8()}`;
+    await db.prepare('INSERT INTO modalidade (id, campeonato_id, nome, taxa, vagas, premio_pct, formato, rep_vagas, rep_valor, rep_premio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, r[1], n, taxa, vagas, JSON.stringify(pct), v.formato, v.rep_vagas, v.rep_valor, v.rep_premio).run();
     let convite = null;   // convite automático por WhatsApp (só se estiver ligado e configurado)
     try { const w = await estadoWhats(db, env); if (w.ativo && w.configurado && w.auto) convite = await enfileirar(db, id, `${env.URL_PUBLICA || url.origin}/campeonato.html`); } catch (e) { console.error('convite whats:', e.message); }
     return json({ id, convite }, 201);
@@ -282,6 +310,26 @@ export async function rotearCampeonato(request, env, url) {
     const cli = await db.prepare('SELECT id, celular FROM cliente WHERE celular = ? OR celular = ?').bind(num, num.slice(2)).first(); if (!cli) return erro('Nenhum cliente com esse celular.', 404);
     await db.prepare('UPDATE cliente SET whats_recusou = 1 WHERE id = ?').bind(cli.id).run(); await registrarConsentimento(db, cli, false, 'balcao');
     return json({ ok: true });
+  }
+  if (m === 'PUT' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/config$/))) {   // formato da chave e repescagem
+    const mod = await db.prepare('SELECT * FROM modalidade WHERE id = ?').bind(r[1]).first(); if (!mod) return erro('Modalidade não encontrada.', 404);
+    if (mod.status !== 'inscricoes') return erro('A chave já foi sorteada: o formato não muda mais.', 409);
+    const cf = lerConfig(await corpoDe(request), mod); if (cf.erro) return erro(cf.erro); const v = cf.valores;
+    await db.prepare('UPDATE modalidade SET formato = ?, rep_vagas = ?, rep_valor = ?, rep_premio = ? WHERE id = ?').bind(v.formato, v.rep_vagas, v.rep_valor, v.rep_premio, mod.id).run(); return json({ ok: true });
+  }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/dividir$/))) {   // séries por nível
+    const mod = await db.prepare('SELECT * FROM modalidade WHERE id = ?').bind(r[1]).first(); if (!mod) return erro('Modalidade não encontrada.', 404);
+    const x = await dividirSeries(db, mod, Math.floor(Number((await corpoDe(request)).series))); return x.erro ? erro(x.erro, x.status) : json(x);
+  }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/inscricoes\/([\w-]+)\/recomprar$/))) {   // recompra paga no balcão
+    const i = await db.prepare('SELECT modalidade_id FROM inscricao WHERE id = ?').bind(r[1]).first(); if (!i) return erro('Inscrição não encontrada.', 404);
+    const mod = await db.prepare('SELECT * FROM modalidade WHERE id = ?').bind(i.modalidade_id).first();
+    const teste = await modoTeste(db), valor = r2(mod.rep_valor ?? mod.taxa);
+    const x = await registrarRecompra(db, mod, r[1], valor <= 0 ? 'gratis' : teste ? 'teste' : 'balcao', nome); return x.erro ? erro(x.erro, x.status) : json(x, 201);
+  }
+  if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/repescagem\/fechar$/))) {
+    const mod = await db.prepare('SELECT * FROM modalidade WHERE id = ?').bind(r[1]).first(); if (!mod) return erro('Modalidade não encontrada.', 404);
+    const x = await fecharRepescagem(db, mod); return x.erro ? erro(x.erro, x.status) : json(x);
   }
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/modalidades\/([\w-]+)\/sortear$/))) return sortear(db, r[1]);
   if (m === 'POST' && (r = p.match(/^\/api\/campeonato\/gestao\/partidas\/([\w:.%-]+)\/placar$/))) return lancarPlacar(db, decodeURIComponent(r[1]), await corpoDe(request));   // o navegador manda ':' como %3A

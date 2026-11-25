@@ -15,5 +15,6 @@ Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 - 2026-11-24 — **Gateways de pagamento** plugáveis (Mercado Pago, Woovi) e tabela comparativa com Getnet (`/pagamentos.html`).
 - 2026-11-24 — **Campeonato de sinuca**: modalidades, inscrição por Pix, chave, placar ao vivo e ranking (`/campeonato.html`, `/torneio.html`).
 - 2026-11-24 — **App do cliente**: a primeira tela passou a ser o login.
+- 2026-11-25 — **Campeonato justo**: score por jogador (estilo Elo) e níveis, chave por nível ou cabeças de chave, divisão em séries e repescagem por recompra (balcão ou saldo), configuráveis por modalidade.
 - 2026-11-24 — **Chave do campeonato nova**: árvore com linhas ligando os jogos, caminho do vencedor destacado, campeão no fim, abas por fase, zoom, "Ao vivo agora" e seguir um jogador; atualiza sem piscar nem perder a posição. Na mesa da equipe, bloco "Agora" e painel grande de placar ao tocar num jogo.
 - 2026-11-24 — **Correção**: os botões − e + do placar na mesa do campeonato davam "Rota não encontrada" (o número da partida ia codificado). Também protegido o botão de entrega dos pedidos de iFood/99Food.

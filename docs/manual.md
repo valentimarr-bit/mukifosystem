@@ -120,6 +120,20 @@ O Pix do app é gerado com um código copia e cola e um QR. O sistema funciona d
   - **Seguir um jogador:** toque no nome e os jogos dele ficam destacados. Quem entrou com a conta já aparece destacado. Toque de novo para parar de seguir.
   - A tela atualiza sozinha sem piscar e sem perder o ponto onde você estava.
 
+### Score, níveis e chave justa
+- **Score:** cada jogador tem um score que começa em 1000 e muda a cada jogo terminado, no estilo do xadrez (Elo): ganhar de quem é melhor sobe muito, ganhar de quem é pior sobe pouco, perder desce. Vale para quem tem conta e para quem joga só pelo balcão (pelo nome: escreva sempre igual).
+- **Níveis:** Novato (menos de 3 jogos), Bronze, Prata (1025+), Ouro (1075+), Platina (1150+), Diamante (1250+). Aparecem como bolinha colorida na chave e na lista de inscritos, e em Ranking → "Níveis dos jogadores".
+- **Formato da chave** (escolhido ao criar a modalidade, ou em "Formato da chave" antes do sorteio):
+  - 🎲 **Sorteio:** qualquer um contra qualquer um.
+  - ⚖️ **Por nível:** na 1ª rodada se enfrentam os parecidos (1º×2º, 3º×4º…), e quem tem o maior score folga. Os dois melhores pares só se cruzam no fim.
+  - 🏅 **Cabeças de chave:** os melhores ficam separados e só se encontram no fim (modelo Copa do Mundo).
+- **Séries por nível:** "Dividir em séries por nível" separa os inscritos pelo score (Série A com os melhores, depois B, C, D). Cada série vira uma modalidade com chave e prêmio próprios. Só antes do sorteio, e com pelo menos 2 jogadores por série.
+- **Repescagem por recompra** (opcional, por modalidade): escolha quantas vagas (1, 2 ou 4), o valor da recompra (vazio = o mesmo da inscrição) e se o dinheiro vai para o prêmio ou para a casa.
+  - No sorteio, as vagas ficam guardadas na 2ª rodada ("↩ Vem da repescagem").
+  - Quem perde na 1ª rodada pode recomprar uma vez: no balcão ("Recebi R$ …" no cartão "Repescagem aberta") ou pelo app, com o saldo da carteira.
+  - Quando a 1ª rodada acabar, toque em "Fechar repescagem e montar os jogos": os recompradores jogam entre si (por grupo, se houver mais de uma vaga) e cada vencedor entra na vaga reservada. Se ninguém recomprar, a vaga vira W.O. e o adversário avança sozinho.
+  - Quem perde na repescagem fica com a colocação da 1ª rodada. Depois que a repescagem é montada, os jogos da 1ª rodada não podem mais ser corrigidos.
+
 ### Para a equipe (`/torneio.html`)
 - **Agora:** no topo da modalidade, os jogos em andamento e os que podem começar. Toque num deles para abrir o placar.
 - **Chave:** a mesma árvore do jogador. Toque num jogo para abrir o **painel de placar** (de baixo para cima): − e + grandes para cada jogador, o número da mesa e "Finalizar". Jogo terminado mostra "Corrigir resultado". Feche pelo botão, tocando fora ou com Esc.

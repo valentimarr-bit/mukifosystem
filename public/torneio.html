@@ -22,6 +22,7 @@ label{display:block;margin:10px 0 4px;color:var(--mut);font-size:14px}input,sele
 #folha .painel{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:22px 22px 0 0;padding:10px 14px calc(14px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:sobe .18s ease-out}
 #folha .pega{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 10px}#folha .jg{margin:0;border:0;padding:4px 0;background:none}#folha .jg .j .pl{font-size:44px}#folha .passo{width:64px;height:64px}
 @keyframes sobe{from{transform:translateY(40px);opacity:0}}
+.nivel{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);vertical-align:2px}
 </style></head><body data-sem-botao-visual>
 <header><h1>🎱 Mesa do campeonato</h1><a href="/mesas.html">Mesas e fila</a><a href="/campeonato.html" target="_blank">Ver como jogador</a><a href="/gestao.html">Gestão</a></header>
 <main id="m"><div class="card mut">Carregando…</div></main>
@@ -42,8 +43,17 @@ async function api(url, corpo, metodo) {
 }
 const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => (m.hidden = true), 3500); };
 const ROT = { inscricoes: 'Inscrições', andamento: 'Em andamento', encerrada: 'Encerrada', aberto: 'Aberto', encerrado: 'Encerrado' };
-const fase = (f, R, c) => c === 'T' ? '3º lugar' : f === R ? 'Final' : f === R - 1 ? 'Semifinal' : f === R - 2 ? 'Quartas' : f === R - 3 ? 'Oitavas' : `Rodada ${f}`;
+const fase = (f, R, c) => c === 'R' ? 'Repescagem' : c === 'T' ? '3º lugar' : f === R ? 'Final' : f === R - 1 ? 'Semifinal' : f === R - 2 ? 'Quartas' : f === R - 3 ? 'Oitavas' : `Rodada ${f}`;
 
+const FORMATOS = { sorteio: '🎲 Sorteio (qualquer um contra qualquer um)', nivel: '⚖️ Por nível (1ª rodada entre parecidos)', cabecas: '🏅 Cabeças de chave (os melhores só se cruzam no fim)' };
+function camposFormato(d) {   // usado ao criar a modalidade e para mudar antes do sorteio
+  const r = d.repescagem;
+  return `<label>Como montar a chave</label><select data-f="formato">${Object.entries(FORMATOS).map(([k, v]) => `<option value="${k}"${d.formato === k ? ' selected' : ''}>${v}</option>`).join('')}</select>
+    <label>Repescagem (quem perde na 1ª rodada pode recomprar)</label><select data-f="rep_vagas">${[0, 1, 2, 4].map((n) => `<option value="${n}"${r.vagas === n ? ' selected' : ''}>${n ? `Sim: ${n} vaga${n > 1 ? 's' : ''} na 2ª rodada` : 'Sem repescagem'}</option>`).join('')}</select>
+    <div class="row"><div><label>Valor da recompra (R$)</label><input data-f="rep_valor" inputmode="decimal" placeholder="igual à inscrição" value="${r.proprio_valor ? String(r.valor).replace('.', ',') : ''}"></div>
+      <div><label>A recompra vai para</label><select data-f="rep_premio"><option value="1"${r.premio ? ' selected' : ''}>o prêmio</option><option value="0"${r.premio ? '' : ' selected'}>a casa</option></select></div></div>`;
+}
+const lerFormato = (el) => { const v = pega(el, 'rep_valor').trim(); return { formato: pega(el, 'formato'), rep_vagas: Number(pega(el, 'rep_vagas')), rep_valor: v ? Number(v.replace(',', '.')) : null, rep_premio: pega(el, 'rep_premio') === '1' }; };
 async function lista() {
   const { campeonatos } = await api(G);
   return `<div class="card"><h2>Novo campeonato</h2><div class="row"><div><label>Nome</label><input id="cNome" maxlength="60" placeholder="Copa Mukifo"></div><div><label>Data</label><input id="cData" type="date"></div></div><label>Local (opcional)</label><input id="cLocal" maxlength="60"><button class="btn" data-acao="novoCamp">Criar campeonato</button></div>`
@@ -51,7 +61,9 @@ async function lista() {
       ${c.modalidades.map((m) => `<div class="mod" data-mod="${m.id}"><div><b>${esc(m.nome)}</b><div class="mut">${m.taxa > 0 ? R$(m.taxa) : 'grátis'} · ${m.pagas} pago${m.pagas === 1 ? '' : 's'}${m.pendentes ? ` · ${m.pendentes} esperando Pix` : ''}</div></div><span class="chip">${ROT[m.status]}</span></div>`).join('')}
       <details style="margin-top:10px"><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">➕ Nova modalidade</summary>
         <label>Nome (ex.: Bola 8, Bola 9, Duplas)</label><input data-f="nome" maxlength="40"><div class="row"><div><label>Taxa (R$)</label><input data-f="taxa" inputmode="decimal" value="0"></div><div><label>Vagas (opcional)</label><input data-f="vagas" inputmode="numeric"></div></div>
-        <label>Prêmio em % do arrecadado (1º, 2º, 3º…)</label><input data-f="premio" value="50,25,15"><div class="mut">O que sobrar fica com a casa.</div><button class="btn" data-acao="novaMod" data-camp="${c.id}">Criar modalidade</button></details>
+        <label>Prêmio em % do arrecadado (1º, 2º, 3º…)</label><input data-f="premio" value="50,25,15"><div class="mut">O que sobrar fica com a casa.</div>
+        ${camposFormato({ formato: 'sorteio', repescagem: { vagas: 0, valor: null, premio: true } })}
+        <button class="btn" data-acao="novaMod" data-camp="${c.id}">Criar modalidade</button></details>
       <button class="btn sec" data-acao="${c.status === 'aberto' ? 'encerrarCamp' : 'reabrirCamp'}" data-camp="${c.id}">${c.status === 'aberto' ? 'Encerrar campeonato' : 'Reabrir campeonato'}</button></div>`).join('');
 }
 function cartaoJogo(p, R) {
@@ -68,6 +80,15 @@ function agora(d, R) {   // o que a equipe precisa ver primeiro: o que está na 
   if (!v.length) return '';
   return `<div class="card"><h3>Agora</h3>${v.map((p) => `<button class="ag ${p.status}" data-abrir="${esc(p.id)}"><span class="st">${p.status === 'em_jogo' ? '🔴 ' : ''}${fase(p.fase, R, p.chave)}${p.mesa ? ' · mesa ' + esc(p.mesa) : ''} · ${ROTJ[p.status]}</span><span class="li"><span class="nm">${esc(p.a.nome)}</span><b>${p.placar_a} × ${p.placar_b}</b><span class="nm d">${esc(p.b.nome)}</span></span></button>`).join('')}</div>`;
 }
+const nivelTag = (i) => i.nivel ? `<span class="nivel" style="--c:${i.cor}" title="score ${i.score} · ${i.jogos} jogo${i.jogos === 1 ? '' : 's'}">${esc(i.nivel)}</span>` : '';
+function cartaoRepescagem(d) {
+  const perd = d.inscritos.filter((i) => i.pode_recomprar), rec = d.inscritos.filter((i) => i.recomprou);
+  const falta = d.partidas.filter((p) => p.chave === 'W' && p.fase === 1 && p.a && p.b && p.status !== 'finalizada').length;
+  return `<div class="card"><h3>↩ Repescagem aberta</h3><p class="mut">Quem perde na 1ª rodada pode recomprar (${R$(d.repescagem.valor)}, ${d.repescagem.premio ? 'soma ao prêmio' : 'fica com a casa'}). Os recompradores jogam entre si e ${d.repescagem.vagas > 1 ? `os ${d.repescagem.vagas} vencedores voltam` : 'o vencedor volta'} na 2ª rodada.</p>
+    ${perd.length ? `<label>Perderam e podem recomprar</label>${perd.map((i) => `<div class="ins"><span class="n">${nivelTag(i)} ${esc(i.nome)}</span><button class="btn mini" data-acao="recomprar" data-i="${i.id}" data-nome="${esc(i.nome)}">Recebi ${R$(d.repescagem.valor)}</button></div>`).join('')}` : '<p class="mut">Ninguém para recomprar agora.</p>'}
+    ${rec.length ? `<div class="mut" style="margin-top:8px">Já recompraram: ${rec.map((i) => esc(i.nome)).join(', ')}</div>` : ''}
+    <button class="btn" data-acao="fecharRep"${falta ? ' disabled' : ''}>${falta ? `Falta${falta > 1 ? 'm' : ''} ${falta} jogo${falta > 1 ? 's' : ''} da 1ª rodada` : 'Fechar repescagem e montar os jogos'}</button></div>`;
+}
 function abrirJogo(id) { aberta = id; desenharFolha(); }
 function fecharJogo() { aberta = null; $('#folha').hidden = true; document.body.style.overflow = ''; }
 function desenharFolha() {
@@ -79,11 +100,11 @@ async function modalidade() {
   const [d, w] = await Promise.all([api(`${G}/modalidades/${modId}`), api(`${G}/whats`).catch(() => ({ configurado: false }))]), R = d.rodadas; ultimoD = d;
   const insc = d.status === 'inscricoes';
   modNome = `${d.campeonato} (${d.nome})`; modInfo = (d.taxa > 0 ? `Inscrição ${R$(d.taxa)}. ` : 'Inscrição grátis. ');
-  const ins = d.inscritos.map((i) => `<div class="ins"><span class="n">${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
-    ${i.status === 'pendente' ? `<button class="btn ok mini" data-acao="conf" data-i="${i.id}">Recebi o Pix</button>` : ''}${insc ? `<button class="btn sec mini" data-acao="canc" data-i="${i.id}">Tirar</button>` : ''}</div>`).join('') || '<p class="mut">Ninguém inscrito ainda.</p>';
+  const ins = [...d.inscritos].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map((i) => `<div class="ins"><span class="n">${nivelTag(i)} ${esc(i.nome)}${i.conta ? '' : ' <span class="mut">(balcão)</span>'}${i.recomprou ? ' <span class="chip">recomprou</span>' : ''}${i.colocacao ? ` <span class="chip">${i.colocacao}º</span>` : ''}</span><span class="chip">${i.status === 'paga' ? 'pago' + (i.forma ? ' · ' + i.forma : '') : 'esperando Pix'}</span>
+    ${i.status === 'pendente' ? `<button class="btn ok mini" data-acao="conf" data-i="${i.id}">Recebi o Pix</button>` : ''}${i.pode_recomprar ? `<button class="btn mini" data-acao="recomprar" data-i="${i.id}" data-nome="${esc(i.nome)}">Recompra ${R$(d.repescagem.valor)}</button>` : ''}${insc ? `<button class="btn sec mini" data-acao="canc" data-i="${i.id}">Tirar</button>` : ''}</div>`).join('') || '<p class="mut">Ninguém inscrito ainda.</p>';
   const pr = d.premiacao.premios.filter((x) => x.valor > 0).map((x) => `${x.colocacao}º ${R$(x.valor)}`).join(' · ');
   return `<button class="btn sec" data-acao="voltar" style="margin:0 0 12px">← Campeonatos</button>
-    <div class="card"><h2>${esc(d.nome)} <span class="chip">${ROT[d.status]}</span></h2><div class="mut">${esc(d.campeonato)} · ${d.pagas} pago${d.pagas === 1 ? '' : 's'} · arrecadado ${R$(d.taxa * d.pagas)}${pr ? ' · prêmios: ' + pr : ''}</div>${d.campeao ? `<h3 style="margin-top:10px">🏆 Campeão: ${esc(d.campeao)}</h3>` : ''}</div>
+    <div class="card"><h2>${esc(d.nome)} <span class="chip">${ROT[d.status]}</span></h2><div class="mut">${esc(d.campeonato)} · ${d.pagas} pago${d.pagas === 1 ? '' : 's'} · arrecadado ${R$(d.premiacao.premios.reduce((a, x) => a + x.valor, 0) + d.premiacao.casa)}${d.repescagem.recompras ? ` (${d.repescagem.recompras} recompra${d.repescagem.recompras > 1 ? 's' : ''})` : ''}${pr ? ' · prêmios: ' + pr : ''}</div>${d.campeao ? `<h3 style="margin-top:10px">🏆 Campeão: ${esc(d.campeao)}</h3>` : ''}</div>
     ${insc ? `<div class="card"><h3>📲 Convite por WhatsApp</h3>${w.configurado
       ? `<p class="mut">${w.ativo ? `Ligado. ${w.auto ? 'Cada modalidade nova convida sozinha os clientes cadastrados.' : 'Convite automático desligado: use o botão abaixo.'} Ritmo: ${w.por_minuto} por minuto, até ${w.max_dia} por dia. Hoje saíram ${w.enviados_hoje}.` : 'Desligado. O superadmin liga abaixo.'}</p>
         <div class="mut">${w.audiencia} cliente${w.audiencia === 1 ? '' : 's'} com celular · ${w.fila} na fila · ${w.enviados} enviado${w.enviados === 1 ? '' : 's'}${w.erros ? ` · ${w.erros} com erro` : ''}</div>${w.ultimo_erro ? `<div class="erro">Último erro: ${esc(w.ultimo_erro)}</div>` : ''}
@@ -92,8 +113,14 @@ async function modalidade() {
         <label>Cliente pediu para não receber? Celular dele</label><div class="row"><input id="wRec" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn sec fixo" style="width:auto;margin:0" data-acao="recusa">Não enviar</button></div>`
       : '<p class="mut">Falta ligar a izapia (WhatsApp automático): guarde <b>IZAPIA_API_KEY</b> e <b>IZAPIA_SID</b> no Cloudflare. Enquanto isso, use o envio manual abaixo.</p>'}
       <details style="margin-top:8px"><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">Enviar manualmente</summary><label>WhatsApp do convidado (opcional)</label><input id="wNum" inputmode="tel" placeholder="(51) 99999-9999" maxlength="20"><button class="btn sec" data-acao="convidar">Abrir WhatsApp com o convite</button></details></div>` : ''}
-    ${d.status !== 'encerrada' && !d.partidas.some((p) => p.status === 'em_jogo' || (p.status === 'finalizada' && p.a && p.b)) ? `<div class="card"><h3>${insc ? 'Fechar inscrições e sortear' : 'Sortear de novo'}</h3><p class="mut">Só entram jogadores com inscrição paga. Com número ímpar, os primeiros sorteados folgam na 1ª rodada.</p><button class="btn" data-acao="sortear">${insc ? '🎲 Sortear chave' : '🎲 Refazer sorteio'}</button></div>` : ''}
-    ${d.partidas.length ? agora(d, R) + `<div class="card"><h3>Chave</h3>${MukifoChave.html({ ...d, id: modId }, { editavel: true })}</div>` : ''}
+    ${insc ? `<div class="card"><h3>Formato da chave</h3><p class="mut">Agora: <b>${FORMATOS[d.formato]}</b>${d.repescagem.vagas ? ` · repescagem com ${d.repescagem.vagas} vaga${d.repescagem.vagas > 1 ? 's' : ''}, recompra ${R$(d.repescagem.valor)} para ${d.repescagem.premio ? 'o prêmio' : 'a casa'}` : ' · sem repescagem'}.</p>
+      <details><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">Mudar formato e repescagem</summary>${camposFormato(d)}<button class="btn" data-acao="salvarFormato">Salvar</button></details>
+      <details><summary style="cursor:pointer;min-height:44px;display:flex;align-items:center">Dividir em séries por nível</summary><p class="mut">Separa os inscritos pelo score: Série A com os melhores, depois B, C… Cada série vira uma modalidade com chave e prêmio próprios. Precisa de pelo menos 2 jogadores por série.</p>
+        <select id="nSeries">${[2, 3, 4].map((n) => `<option value="${n}">${n} séries (${['A', 'B', 'C', 'D'].slice(0, n).join(', ')})${d.inscritos.length < 2 * n ? ' — inscritos insuficientes' : ''}</option>`).join('')}</select><button class="btn sec" data-acao="dividir">Dividir agora</button></details></div>` : ''}
+    ${d.status !== 'encerrada' && !d.partidas.some((p) => p.status === 'em_jogo' || (p.status === 'finalizada' && p.a && p.b)) ? `<div class="card"><h3>${insc ? 'Fechar inscrições e sortear' : 'Sortear de novo'}</h3><p class="mut">Só entram jogadores com inscrição paga. ${d.formato === 'sorteio' ? 'Quando o número de jogadores não fecha a chave, alguns sorteados folgam na 1ª rodada.' : 'Quando o número de jogadores não fecha a chave, quem tem o maior score folga na 1ª rodada.'}${d.repescagem.vagas ? ' As vagas da repescagem ficam guardadas na 2ª rodada.' : ''}</p><button class="btn" data-acao="sortear">${insc ? '🎲 Sortear chave' : '🎲 Refazer sorteio'}</button></div>` : ''}
+    ${d.repescagem.estado === 'aberta' ? cartaoRepescagem(d) : ''}
+    ${d.partidas.length ? agora(d, R) + `<div class="card"><h3>Chave</h3>${MukifoChave.html({ ...d, id: modId }, { editavel: true, variasVagas: d.repescagem.vagas > 1 })}</div>` : ''}
+    ${d.partidas.some((p) => p.chave === 'R') ? `<div class="card"><h3>↩ Repescagem</h3><p class="mut">Quem vencer volta para a chave principal na vaga reservada.</p>${MukifoChave.htmlRepescagem({ ...d, id: modId }, { editavel: true })}</div>` : ''}
     <div class="card"><h3>Inscritos (${d.inscritos.length})</h3>${ins}${insc ? `<label>Inscrever no balcão (pagou em dinheiro ou maquininha)</label><div class="row"><input id="bNome" placeholder="Nome do jogador" maxlength="40"><button class="btn fixo" style="width:auto;margin:0" data-acao="balcao">Inscrever</button></div>` : ''}</div>`;
 }
 async function desenhar() {
@@ -103,7 +130,7 @@ async function desenhar() {
   try { MukifoChave.trocar($('#m'), modId ? await modalidade() : await lista()); if (aberta) desenharFolha(); } catch (e) { if (!$('#m').children.length || $('#m').textContent === 'Carregando…') $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }
   clearInterval(timer); timer = setInterval(() => { if (!document.hidden && !document.activeElement?.matches?.('input,details[open] *')) desenhar(); }, 5000);
 }
-const pega = (el, f) => el.closest('details').querySelector(`[data-f=${f}]`).value;
+const pega = (el, f) => el.closest('details,.card').querySelector(`[data-f=${f}]`).value;
 document.addEventListener('click', async (e) => {
   if (e.target.closest('[data-fechar]')) return fecharJogo();
   const ab = e.target.closest('[data-abrir],[data-bk-p]'); if (ab) return abrirJogo(ab.dataset.abrir || ab.dataset.bkP);
@@ -113,10 +140,14 @@ document.addEventListener('click', async (e) => {
   try {
     if (a === 'voltar') { modId = null; fecharJogo(); }
     else if (a === 'novoCamp') { await api(`${G}/campeonatos`, { nome: $('#cNome').value, data: $('#cData').value, local: $('#cLocal').value }); aviso('Campeonato criado.'); }
-    else if (a === 'novaMod') { const premio = pega(t, 'premio').split(',').map((x) => Number(x.trim().replace(',', '.'))).filter((x) => !Number.isNaN(x)); await api(`${G}/campeonatos/${t.dataset.camp}/modalidades`, { nome: pega(t, 'nome'), taxa: Number(pega(t, 'taxa').replace(',', '.')) || 0, vagas: pega(t, 'vagas') || null, premio }); aviso('Modalidade criada.'); }
+    else if (a === 'novaMod') { const premio = pega(t, 'premio').split(',').map((x) => Number(x.trim().replace(',', '.'))).filter((x) => !Number.isNaN(x)); await api(`${G}/campeonatos/${t.dataset.camp}/modalidades`, { nome: pega(t, 'nome'), taxa: Number(pega(t, 'taxa').replace(',', '.')) || 0, vagas: pega(t, 'vagas') || null, premio, ...lerFormato(t) }); aviso('Modalidade criada.'); }
     else if (a === 'encerrarCamp' || a === 'reabrirCamp') await api(`${G}/campeonatos/${t.dataset.camp}/${a === 'encerrarCamp' ? 'encerrar' : 'reabrir'}`, {});
     else if (a === 'conf') { await api(`${G}/inscricoes/${t.dataset.i}/confirmar`, {}); aviso('Inscrição paga ✅'); }
     else if (a === 'canc') { if (!confirm('Tirar esse jogador da modalidade?')) { t.disabled = false; return; } const r = await api(`${G}/inscricoes/${t.dataset.i}/cancelar`, {}); aviso(r.reembolso === 'saldo' ? 'Tirado. O valor voltou para a carteira dele.' : r.reembolso === 'manual' ? 'Tirado. Devolva o valor pago a ele (Pix ou dinheiro).' : 'Tirado.'); }
+    else if (a === 'salvarFormato') { await api(`${G}/modalidades/${modId}/config`, lerFormato(t), 'PUT'); aviso('Formato salvo.'); }
+    else if (a === 'dividir') { const n = Number($('#nSeries').value); if (!confirm(`Dividir em ${n} séries pelo nível? Cada série vira uma modalidade própria.`)) return; const r = await api(`${G}/modalidades/${modId}/dividir`, { series: n }); aviso(`Pronto: ${r.series.map((x) => `Série ${x.serie} com ${x.inscritos}`).join(', ')}.`); }
+    else if (a === 'recomprar') { if (!confirm(`Confirmar que ${t.dataset.nome} pagou a recompra?`)) return; await api(`${G}/inscricoes/${t.dataset.i}/recomprar`, {}); aviso(`${t.dataset.nome} está na repescagem.`); }
+    else if (a === 'fecharRep') { if (!confirm('Fechar a repescagem? Depois disso ninguém mais recompra.')) return; const r = await api(`${G}/modalidades/${modId}/repescagem/fechar`, {}); aviso(r.recompras ? `Repescagem montada com ${r.recompras} jogador${r.recompras > 1 ? 'es' : ''}.` : 'Ninguém recomprou: a vaga virou W.O.'); }
     else if (a === 'convidarTodos') { const r = await api(`${G}/modalidades/${modId}/convidar`, {}); aviso(r.na_fila ? `${r.na_fila} convite(s) na fila. Saem aos poucos, todo minuto.` : 'Todo mundo já foi convidado.'); }
     else if (a === 'whatsOn' || a === 'whatsOff') { await api(`${G}/whats`, { ativo: a === 'whatsOn' }, 'PUT'); aviso(a === 'whatsOn' ? 'WhatsApp automático ligado.' : 'WhatsApp automático desligado.'); }
     else if (a === 'recusa') { await api(`${G}/whats/recusa`, { celular: $('#wRec').value }); aviso('Pronto: esse cliente não recebe mais convites.'); }
