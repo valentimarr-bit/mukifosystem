@@ -21,14 +21,24 @@ export const MODULOS = [
 export const IDS = MODULOS.map((m) => m.id);
 export const PADRAO_GERENTE = MODULOS.filter((m) => m.padrao).map((m) => m.id);
 
-export function modulosDe(u) {
-  if (!u || u.papel === 'superadmin') return [...IDS];
-  if (u.modulos == null) return [...PADRAO_GERENTE];
-  try { const l = JSON.parse(u.modulos); return Array.isArray(l) ? l.filter((x) => IDS.includes(x)) : [...PADRAO_GERENTE]; } catch { return [...PADRAO_GERENTE]; }
+export const PADRAO_ATENDENTE = ['venda', 'producao'];
+
+/** Papel de quem está logado: superadmin (Dono), atendente (cargo) ou gerente. */
+export function papelDe(u) {
+  return u?.papel === 'superadmin' ? 'superadmin' : u?.cargo === 'atendente' ? 'atendente' : 'gerente';
 }
 
-/** Que módulo protege essa rota? (null = livre para qualquer pessoa logada, ou pública). */
-export function moduloDaRota(p) {
+export const NOME_CARGO = { superadmin: 'Dono', gerente: 'Gerente', atendente: 'Atendente' };
+
+export function modulosDe(u) {
+  if (!u || u.papel === 'superadmin') return [...IDS];
+  const padrao = papelDe(u) === 'atendente' ? PADRAO_ATENDENTE : PADRAO_GERENTE;
+  if (u.modulos == null) return [...padrao];
+  try { const l = JSON.parse(u.modulos); return Array.isArray(l) ? l.filter((x) => IDS.includes(x)) : [...padrao]; } catch { return [...padrao]; }
+}
+
+/** Que módulo protege essa rota? Devolve um módulo, uma lista (basta ter um deles) ou null (livre para qualquer pessoa logada, ou pública). */
+export function moduloDaRota(p, m = 'GET') {
   if (p === '/api/venda/cardapio') return null;
   if (p.startsWith('/api/venda/')) return 'venda';
   if (p === '/api/cancelamentos' || /^\/api\/pedidos\/[\w-]+\/cancelar$/.test(p)) return 'cancelar';
@@ -44,7 +54,14 @@ export function moduloDaRota(p) {
   if (p.startsWith('/api/financeiro/')) return 'financeiro';
   if (p.startsWith('/api/desempenho')) return 'desempenho';
   if (p.startsWith('/api/combos')) return 'combos';
-  if (p.startsWith('/api/recomendados') || p.startsWith('/api/lista-compras')) return 'recomendado';
+  if (p === '/api/recomendados' || p.startsWith('/api/recomendados/')) return 'recomendado';
+  if (p === '/api/lista-compras') return ['recomendado', 'registrar'];
+  if (p === '/api/listas' || p.startsWith('/api/listas/')) return ['registrar', 'recomendado'];
+  if (p === '/api/estoque') return ['estoque', 'recomendado', 'niveis', 'fotos', 'registrar'];
+  if (p === '/api/insumos') return ['produtos', 'registrar', 'estoque', 'fotos'];
+  if (p === '/api/produtos' || p.startsWith('/api/produtos/')) return m === 'GET' ? ['produtos', 'combos', 'fotos'] : 'produtos';
+  if (['/api/compras', '/api/contagem', '/api/vendas/relatorio'].includes(p)) return 'registrar';
+  if (p.startsWith('/api/fotos/') && m !== 'GET') return 'fotos';
   if (p.startsWith('/api/alertas')) return 'niveis';
   return null;
 }

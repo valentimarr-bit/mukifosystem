@@ -477,10 +477,10 @@ export async function rotearApi(request, env, url) {
     const r = await db.batch(passos.map(([, sql]) => db.prepare(sql)));
     return json({ ok: true, apagado: Object.fromEntries(passos.map(([nome], i) => [nome, r[i]?.meta?.changes ?? 0])) });
   }
-  const modulo = moduloDaRota(p);
+  const modulo = moduloDaRota(p, request.method);
   if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
     const eu = await usuarioLogado(request, env);
-    if (eu && !eu.modulos.includes(modulo)) return erro('Seu login não tem acesso a esta parte. Peça ao superadmin.', 403);
+    if (eu && ![].concat(modulo).some((x) => eu.modulos.includes(x))) return erro('Seu login não tem acesso a esta parte. Peça ao superadmin.', 403);
   }
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
