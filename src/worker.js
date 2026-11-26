@@ -51,7 +51,7 @@ export default {
         return resp;
       } catch (e) {
         console.error(e);
-        return json({ erro: 'Erro interno', detalhe: String(e?.message ?? e) }, 500);
+        return json({ erro: 'Erro interno. Tente de novo; se continuar, avise o responsável.' }, 500);
       }
     }
 

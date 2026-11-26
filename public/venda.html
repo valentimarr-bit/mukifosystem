@@ -74,6 +74,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
 <script>
 Tema.ligarSeletor(document.getElementById('tema'));
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let espera = null, token = Mukifo.token(), cardapio = [], cat = -1, busca = '', comandas = [], atual = null, maqs = [], forma = null;
 const msg = (t, ruim) => { const m = $('#msg'); m.textContent = t; m.style.color = ruim ? 'var(--bad)' : 'var(--txt)'; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 5000); };
 async function api(url, metodo = 'GET', corpo) {
@@ -87,21 +88,21 @@ async function recarregarCardapio() { try { const d = await (await fetch('/api/v
 
 const EMOJI = { 'Promoções e kits': '🎉', Drinks: '🍹', Doses: '🥃', 'Cervejas e long necks': '🍺', Energéticos: '⚡', 'Refrigerantes e águas': '🥤', Porções: '🍟', 'Pratos e lanches': '🍔' };
 const sem = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const prodBtn = (p) => `<button class="prod${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}><span>${p.nome}${p.restam === 0 ? '<br><small>ESGOTADO</small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`;
+const prodBtn = (p) => `<button class="prod${p.restam === 0 ? ' fim' : ''}" data-id="${p.id}"${p.restam === 0 ? ' disabled' : ''}><span>${esc(p.nome)}${p.restam === 0 ? '<br><small>ESGOTADO</small>' : p.restam != null && p.restam <= 5 ? `<br><small>restam ${p.restam}</small>` : ''}</span><b>${R$(p.preco)}</b></button>`;
 function desenharCardapio() {
   const q = sem(busca.trim()), cab = $('#cabset');
   if (q) { cab.hidden = true; $('#grade').innerHTML = cardapio.flatMap((c) => c.produtos.map((p) => ({ ...p, _s: c.nome }))).filter((p) => sem(p.nome).includes(q) || sem(p._s).includes(q)).map(prodBtn).join('') || '<p class="mut">Nenhum produto com esse nome.</p>';
-  } else if (cat >= 0 && cardapio[cat]) { cab.hidden = false; cab.innerHTML = `<button class="volta" id="bSetores">← Setores</button><b>${EMOJI[cardapio[cat].nome] ?? '🍽️'} ${cardapio[cat].nome}</b>`; $('#grade').innerHTML = cardapio[cat].produtos.map(prodBtn).join('');
-  } else { cat = -1; cab.hidden = true; $('#grade').innerHTML = cardapio.map((c, i) => `<button class="setor" data-i="${i}"><span>${EMOJI[c.nome] ?? '🍽️'}</span>${c.nome}<small>${c.produtos.length} ${c.produtos.length === 1 ? 'item' : 'itens'}</small></button>`).join(''); }
+  } else if (cat >= 0 && cardapio[cat]) { cab.hidden = false; cab.innerHTML = `<button class="volta" id="bSetores">← Setores</button><b>${EMOJI[cardapio[cat].nome] ?? '🍽️'} ${esc(cardapio[cat].nome)}</b>`; $('#grade').innerHTML = cardapio[cat].produtos.map(prodBtn).join('');
+  } else { cat = -1; cab.hidden = true; $('#grade').innerHTML = cardapio.map((c, i) => `<button class="setor" data-i="${i}"><span>${EMOJI[c.nome] ?? '🍽️'}</span>${esc(c.nome)}<small>${c.produtos.length} ${c.produtos.length === 1 ? 'item' : 'itens'}</small></button>`).join(''); }
 }
 function desenharComanda() {
-  $('#cmd').innerHTML = comandas.map((c) => `<button data-id="${c.id}" class="${atual?.id === c.id ? 'on' : ''}">Pedido ${c.numero}${c.mesa ? ' · ' + c.mesa : ''}</button>`).join('') + '<button id="nova">+ Outro pedido</button>';
+  $('#cmd').innerHTML = comandas.map((c) => `<button data-id="${c.id}" class="${atual?.id === c.id ? 'on' : ''}">Pedido ${esc(c.numero)}${c.mesa ? ' · ' + esc(c.mesa) : ''}</button>`).join('') + '<button id="nova">+ Outro pedido</button>';
   const c = atual;
   $('#itens').innerHTML = !c ? '<p class="mut">Toque nos produtos: cada toque coloca 1 no pedido.</p>' : (c.itens.length ? c.itens.map((i) =>
-    `<div class="lin"><span class="n">${i.nome}<br><span class="mut">${R$(i.preco)}</span></span><button data-p="${i.produto_id}" data-d="-1">−</button><b>${i.quantidade}</b><button data-p="${i.produto_id}" data-d="1">+</button></div>`).join('') : '<p class="mut">Pedido vazio. Toque nos produtos.</p>');
+    `<div class="lin"><span class="n">${esc(i.nome)}<br><span class="mut">${R$(i.preco)}</span></span><button data-p="${i.produto_id}" data-d="-1">−</button><b>${i.quantidade}</b><button data-p="${i.produto_id}" data-d="1">+</button></div>`).join('') : '<p class="mut">Pedido vazio. Toque nos produtos.</p>');
   $('#total').textContent = R$(c?.total ?? 0);
   $('#cobsPend').innerHTML = (c?.cobrancas ?? []).filter((x) => x.status === 'pendente').map((x) =>
-    `<div class="cob"><b>${R$(x.valor)}</b> · ${x.forma}${x.maquininha ? ' na <b>' + x.maquininha + '</b>' : ''}<br>
+    `<div class="cob"><b>${R$(x.valor)}</b> · ${esc(x.forma)}${x.maquininha ? ' na <b>' + esc(x.maquininha) + '</b>' : ''}<br>
      <button class="grande ok" data-conf="${x.id}">Recebido ✓</button><button class="grande sec" data-canc="${x.id}">Cancelar cobrança</button></div>`).join('')
     + (c && c.pago ? `<p class="bom">Já pago: ${R$(c.pago)}</p>` : '');
   $('#bCobrar').disabled = !c || c.restante <= 0; $('#bCancelar').style.display = c && !c.pago ? '' : 'none';
@@ -151,7 +152,7 @@ $('#bCancelar').onclick = tentar(async () => { await esvaziar(); if (confirm('De
 
 $('#bCobrar').onclick = async () => { await esvaziar(); if (!atual?.id) return; forma = null; $('#dErro').textContent = ''; $('#dValor').textContent = R$(atual.restante); $('#valor').value = String(atual.restante).replace('.', ',');
   document.querySelectorAll('#formas button').forEach((b) => b.classList.remove('on')); $('#boxMaq').hidden = true; $('#boxDin').hidden = true;
-  $('#maq').innerHTML = '<option value="">Automática (padrão)</option>' + maqs.filter((m) => m.ativa).map((m) => `<option value="${m.id}">${m.nome}</option>`).join(''); $('#dCobrar').showModal(); };
+  $('#maq').innerHTML = '<option value="">Automática (padrão)</option>' + maqs.filter((m) => m.ativa).map((m) => `<option value="${m.id}">${esc(m.nome)}</option>`).join(''); $('#dCobrar').showModal(); };
 $('#formas').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; forma = b.dataset.f; document.querySelectorAll('#formas button').forEach((x) => x.classList.toggle('on', x === b)); $('#boxMaq').hidden = forma === 'dinheiro'; $('#boxDin').hidden = forma !== 'dinheiro'; if (forma === 'dinheiro') { $('#recebido').value = ''; calcTroco(); } };
 const num = (v) => parseFloat(String(v).replace(',', '.'));
 function calcTroco() {   // troco = recebido − valor cobrado (só na tela; o sistema registra o valor cobrado)
@@ -188,9 +189,9 @@ async function lerHistorico() {
   const r = await api('/api/venda/historico' + ($('#hDia').value ? '?dia=' + $('#hDia').value : '')); $('#hDia').value = r.dia;   // sem data: o servidor usa o dia do turno
   const validos = r.pedidos.filter((p) => p.status !== 'cancelado'), soma = validos.reduce((s, p) => s + p.total, 0);
   $('#hResumo').textContent = `${validos.length} pedido(s) · ${R$(soma)}` + (r.pedidos.length > validos.length ? ` · ${r.pedidos.length - validos.length} cancelado(s)` : '');
-  $('#hLista').innerHTML = r.pedidos.length ? r.pedidos.map((p) => `<div class="ret" style="margin-bottom:8px${p.status === 'cancelado' ? ';opacity:.55' : ''}"><div style="display:flex;justify-content:space-between;gap:8px"><b>#${p.numero} ${p.origem === 'celular' ? '📱' : '🍸'} ${p.nome_cliente ?? ''}</b><b>${R$(p.total)}</b></div>
-    <div class="mut">${new Date(String(p.criado_em).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} · ${ROTULO[p.status] ?? p.status}${p.pagamentos.length ? ' · ' + p.pagamentos.map((c) => `${FORMA[c.forma] ?? c.forma} ${R$(c.valor)}`).join(' + ') : ''}</div>
-    <div>${p.itens.map((i) => `${i.quantidade}× ${i.nome}`).join(', ')}</div>${etapasTxt(p)}</div>`).join('') : '<p class="mut">Nenhum pedido neste dia.</p>';
+  $('#hLista').innerHTML = r.pedidos.length ? r.pedidos.map((p) => `<div class="ret" style="margin-bottom:8px${p.status === 'cancelado' ? ';opacity:.55' : ''}"><div style="display:flex;justify-content:space-between;gap:8px"><b>#${esc(p.numero)} ${p.origem === 'celular' ? '📱' : '🍸'} ${esc(p.nome_cliente)}</b><b>${R$(p.total)}</b></div>
+    <div class="mut">${new Date(String(p.criado_em).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} · ${ROTULO[p.status] ?? esc(p.status)}${p.pagamentos.length ? ' · ' + p.pagamentos.map((c) => `${FORMA[c.forma] ?? esc(c.forma)} ${R$(c.valor)}`).join(' + ') : ''}</div>
+    <div>${p.itens.map((i) => `${i.quantidade}× ${esc(i.nome)}`).join(', ')}</div>${etapasTxt(p)}</div>`).join('') : '<p class="mut">Nenhum pedido neste dia.</p>';
 }
 $('#aH').onclick = () => { abas('H'); lerHistorico().catch((e) => msg(e.message, true)); };
 $('#hDia').onchange = () => lerHistorico().catch((e) => msg(e.message, true));
@@ -199,23 +200,23 @@ $('#aV').onclick = () => abas('V');
 $('#aR').onclick = () => { abas('R'); lerRetiradas(); if (!stream) $('#bCam').click(); };
 $('#listaAg').onclick = tentar(async (e) => { const b = e.target.closest('[data-cob]'); if (b) { await api(`/api/venda/cobrancas/${b.dataset.cob}/confirmar`, 'POST', {}); lerRetiradas(); atualizarResumo(); } });
 async function lerRetiradas() { const r = await api('/api/venda/retiradas'); aguardandoRecargas(r.recargas ?? []); $('#nRet').textContent = r.pedidos.length ? `(${r.pedidos.length})` : '';
-  $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
-  $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${p.numero}</b> ${p.nome_cliente ?? ''} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
+  $('#listaAg').innerHTML = r.aguardando.map((p) => `<div class="ret"><b>#${esc(p.numero)}</b> ${esc(p.nome_cliente)} · ${R$(p.total)}<button class="grande ok" data-cob="${p.cobranca_id}">Pix recebido ✓</button></div>`).join('') || '<p class="mut">Nenhum.</p>';
+  $('#listaRet').innerHTML = r.pedidos.map((p) => `<div class="ret"><b>#${esc(p.numero)}</b> ${esc(p.nome_cliente)} · ${R$(p.total)} <span class="bom">pago</span></div>`).join('') || '<p class="mut">Nenhum pedido esperando.</p>'; }
 function aguardandoRecargas(rs) { let el = $('#listaRec'); if (!el) { el = document.createElement('div'); el.id = 'listaRec'; $('#listaAg').after(el); }
-  el.innerHTML = rs.length ? `<h3>💳 Recargas de saldo esperando Pix</h3>` + rs.map((x) => `<div class="ret"><b>${x.nome}</b> · ${R$(x.valor)}<button class="grande ok" data-rec="${x.id}">Pix recebido ✓</button></div>`).join('') : ''; }
+  el.innerHTML = rs.length ? `<h3>💳 Recargas de saldo esperando Pix</h3>` + rs.map((x) => `<div class="ret"><b>${esc(x.nome)}</b> · ${R$(x.valor)}<button class="grande ok" data-rec="${x.id}">Pix recebido ✓</button></div>`).join('') : ''; }
 document.addEventListener('click', tentar(async (e) => { const b = e.target.closest('[data-rec]'); if (b) { await api(`/api/venda/recargas/${b.dataset.rec}/confirmar`, 'POST', {}); lerRetiradas(); } }));
 async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
 function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="ruim">REP ${p.remessa}</b>` : '';
-  const linha = (i) => i.falta > 0 ? `<li><label><input type="checkbox" data-item="${i.id}" data-max="${i.falta}" checked> ${i.falta}× ${i.nome}${i.entregue ? ` <small class="mut">(${i.entregue} já entregue)</small>` : ''}</label>${i.falta > 1 ? ` <select data-qtd="${i.id}">${Array.from({ length: i.falta }, (_, k) => `<option value="${i.falta - k}">${i.falta - k}</option>`).join('')}</select>` : ''}</li>` : `<li class="mut"><s>${i.quantidade}× ${i.nome}</s> ✓ entregue</li>`;
-  const topo = `<div class="ret"><b class="bom">✔ Pago e válido</b>${rep}<br><b>#${p.numero}</b> ${p.nome ?? ''}`;
-  if (r.entregue) { $('#confRes').innerHTML = `${topo}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${i.nome}</li>`).join('')}</ul><b class="bom">Entrega TOTAL ✓ — pedido concluído</b></div>`; return; }
+  const linha = (i) => i.falta > 0 ? `<li><label><input type="checkbox" data-item="${i.id}" data-max="${i.falta}" checked> ${i.falta}× ${esc(i.nome)}${i.entregue ? ` <small class="mut">(${i.entregue} já entregue)</small>` : ''}</label>${i.falta > 1 ? ` <select data-qtd="${i.id}">${Array.from({ length: i.falta }, (_, k) => `<option value="${i.falta - k}">${i.falta - k}</option>`).join('')}</select>` : ''}</li>` : `<li class="mut"><s>${i.quantidade}× ${esc(i.nome)}</s> ✓ entregue</li>`;
+  const topo = `<div class="ret"><b class="bom">✔ Pago e válido</b>${rep}<br><b>#${esc(p.numero)}</b> ${esc(p.nome)}`;
+  if (r.entregue) { $('#confRes').innerHTML = `${topo}<ul>${p.itens.map((i) => `<li>${i.quantidade}× ${esc(i.nome)}</li>`).join('')}</ul><b class="bom">Entrega TOTAL ✓ — pedido concluído</b></div>`; return; }
   if (r.parcial) { $('#confRes').innerHTML = `${topo}<ul>${p.itens.map(linha).join('')}</ul><b class="ruim">Entrega PARCIAL (REP ${p.remessa}). Faltam itens: o cliente já tem um QR NOVO no app.</b></div>`; return; }
   $('#confRes').innerHTML = `${topo}<ul>${p.itens.map(linha).join('')}</ul><p class="mut">Desmarque o que NÃO está sendo entregue agora.</p><button class="grande ok" id="bEntregar">Confirmar entrega ✓</button></div>`;
   $('#bEntregar').onclick = tentar(async () => { const entrega = [...document.querySelectorAll('#confRes [data-item]')].filter((c) => c.checked).map((c) => ({ item_id: Number(c.dataset.item), qtd: Number(document.querySelector(`#confRes [data-qtd="${c.dataset.item}"]`)?.value ?? c.dataset.max) }));
     mostrar(await api('/api/venda/retirada', 'POST', { codigo, confirmar: true, entrega }), codigo); lerRetiradas(); atualizarResumo(); }); }
 // QR lido: pedido simples (uma linha, uma unidade) já dá a baixa; pedido com vários itens abre a lista para marcar o que está saindo (entrega parcial)
 const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { const v = await conferir(codigo, false), its = v.pedido.itens.filter((i) => i.falta > 0);
-    if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${e.message}</b></div>`; navigator.vibrate?.(400); } });
+    if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${esc(e.message)}</b></div>`; navigator.vibrate?.(400); } });
 let stream = null;
 // o resultado da leitura abre em popup grande; o botão Fechar é posto aqui, em qualquer conteúdo que entrar
 new MutationObserver(() => { const r = $('#confRes').firstElementChild; if (r && !r.querySelector('#popFechar')) { const b = document.createElement('button'); b.id = 'popFechar'; b.className = 'grande sec'; b.textContent = '✖ Fechar'; b.onclick = () => { $('#confRes').innerHTML = ''; }; r.appendChild(b); } }).observe($('#confRes'), { childList: true });
