@@ -3,6 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-26 — **Correção**: no "Entrar" do app do cliente, o campo "Celular ou e-mail" abria só o teclado de números; agora abre o teclado com letras e @ (`/cliente.html`).
 - 2026-11-26 — **Sem níveis no app do cliente**: saiu o cartão "suba de nível", o nível no botão da conta e a tela de níveis (`/cliente.html`).
 - 2026-11-26 — **Zerar testes**: botão na aba Conta (só superadmin) que apaga pedidos, cobranças, carteira e caixa de teste, mantendo cadastros e histórico.
 - 2026-11-25 — **Login de demonstração**: botão "Só quero ver" na entrada, com todas as telas liberadas; vem ligado e desliga com `LOGIN_DEMO=nao` na Cloudflare (tela de login).
