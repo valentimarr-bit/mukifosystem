@@ -25,7 +25,6 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
 
 <div id="telaConta" class="tela" hidden>
   <div id="cVisitante">
-    <div class="card"><b>Crie sua conta e suba de nível</b><p class="mut">A cada pedido você sobe de nível: do Caramelo 🐕 até a Nota de 200 💸.</p></div>
     <div id="cAbas" style="display:flex;gap:8px;margin-bottom:12px"><button class="grande sec" id="aEntrar">Entrar</button><button class="grande" id="aCriar">Criar conta</button></div>
     <div id="cNomeBox"><label>Seu nome</label><input id="cNome" autocomplete="name" maxlength="40"></div>
     <label id="cLoginLbl">Celular com DDD</label><input id="cLogin" inputmode="tel" autocomplete="username">
@@ -37,7 +36,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
     <div class="erro" id="cErro"></div><button class="grande" id="cOk">Continuar</button><p style="text-align:center"><a href="#" id="cEsqueci">Esqueci minha senha</a></p><div id="cGoogle" style="margin-top:12px;display:flex;justify-content:center"></div>
   </div>
   <div id="cLogado" hidden>
-    <div class="card centro"><div id="lEmoji" style="font-size:64px"></div><h2 id="lNivel" style="margin:4px 0"></h2><p class="mut" id="lFrase"></p>
+    <div class="card centro" style="display:none"><div id="lEmoji" style="font-size:64px"></div><h2 id="lNivel" style="margin:4px 0"></h2><p class="mut" id="lFrase"></p>
       <p id="lPontos"></p></div>
     <div class="card"><b>💳 Sua carteira</b><h2 id="wSaldo" style="margin:6px 0">R$ 0,00</h2>
       <div style="display:flex;gap:8px"><input id="wValor" inputmode="decimal" placeholder="Valor (R$ 5 a 500)" style="flex:1"><button class="grande" id="wAdd" style="flex:0 0 auto;width:auto;padding:0 16px">Adicionar saldo</button></div>
@@ -45,7 +44,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
       <div id="wPix" hidden><p>Pague <b id="wPixValor"></b> no Pix — o saldo entra assim que o bar confirmar:</p><div class="qr"><img id="wQr" alt="QR do Pix"></div><div class="cola" id="wCola"></div></div>
       <div id="wExtrato" class="mut" style="margin-top:8px"></div></div>
     <div class="card"><b>📲 Convites por WhatsApp</b><p class="mut" id="wZapTxt"></p><div class="erro" id="wZapErro"></div><button class="grande sec" id="wZapBtn">…</button></div>
-    <div class="card"><b>Todos os níveis</b><div id="lNiveis"></div></div>
+    <div class="card" style="display:none"><b>Todos os níveis</b><div id="lNiveis"></div></div>
     <div class="card"><b>Seus últimos pedidos</b><div id="lPedidos" class="mut"></div></div>
     <button class="grande sec" id="lSair">Sair da conta</button>
   </div>
@@ -56,7 +55,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
   <div class="card"><b>Seu pedido</b><div id="resumo"></div></div>
   <div id="dadosVisitante"><label>Seu nome</label><input id="nome" autocomplete="name" maxlength="40">
   <label>Seu celular (com DDD)</label><input id="cel" inputmode="tel" autocomplete="tel" placeholder="(51) 99999-9999">
-  <p class="mut">Com uma conta você não digita isso de novo e sobe de nível. <a href="#" id="criarAqui" style="color:var(--acc)">Criar conta</a></p></div>
+  <p class="mut">Com uma conta você não digita isso de novo. <a href="#" id="criarAqui" style="color:var(--acc)">Criar conta</a></p></div>
   <p id="dadosConta" class="mut" hidden></p>
   <p class="mut">Usamos só para avisar sobre o pedido. O pedido só entra na fila depois que o Pix for pago, e vale por alguns minutos.</p>
   <div class="erro" id="erro"></div><button class="grande ok" id="bSaldo" hidden></button><button class="grande" id="bPagar">Pagar com Pix</button><button class="grande sec" id="bVoltar">Voltar</button></div>
@@ -161,8 +160,8 @@ let primeiroLogin = false; const SC = 'mukifo_conta'; let conta = null, modo = '
 try { conta = JSON.parse(localStorage.getItem(SC) || 'null'); } catch {}
 const cabConta = () => (conta?.token ? { 'X-Sessao-Cliente': conta.token } : {});
 const salvarConta = (c) => { conta = c; try { c ? localStorage.setItem(SC, JSON.stringify(c)) : localStorage.removeItem(SC); } catch {} botaoConta(); };
-function botaoConta() { const c = conta?.cliente; $('#bConta').textContent = c ? `${c.nivel.emoji} ${c.nome.split(' ')[0]}` : 'Entrar';
-  $('#dadosVisitante').hidden = !c; $('#dadosVisitante').hidden = !!c; $('#dadosConta').hidden = !c; if (c) $('#dadosConta').textContent = `Pedido no nome de ${c.nome}. Seu nível sobe quando o Pix cair.`; }
+function botaoConta() { const c = conta?.cliente; $('#bConta').textContent = c ? c.nome.split(' ')[0] : 'Entrar';
+  $('#dadosVisitante').hidden = !c; $('#dadosVisitante').hidden = !!c; $('#dadosConta').hidden = !c; if (c) $('#dadosConta').textContent = `Pedido no nome de ${c.nome}.`; }
 async function api(url, corpo, metodo) { const r = await fetch(url, { method: metodo || (corpo ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', ...cabConta() }, body: corpo ? JSON.stringify(corpo) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error(j.erro || 'Erro ' + r.status); e.status = r.status; throw e; } return j; }
 function formaConta() { const novo = modo === 'criar', rec = modo === 'recuperar'; $('#cRecBox').hidden = !rec; $('#cEsqueci').hidden = novo || rec; $('#cOk').textContent = rec ? 'Criar nova senha' : 'Continuar'; $('#cSenha').previousElementSibling.textContent = rec ? 'Nova senha (mínimo 6)' : 'Senha (mínimo 6)'; $('#cNomeBox').hidden = !novo; $('#cEmailBox').hidden = !novo; $('#cAceiteBox').hidden = !novo; $('#cWhatsBox').hidden = !novo; $('#cLoginLbl').textContent = novo ? 'Celular com DDD' : 'Celular ou e-mail';
   $('#aEntrar').className = 'grande' + (novo || rec ? ' sec' : ''); $('#aCriar').className = 'grande' + (novo ? '' : ' sec'); $('#cErro').textContent = ''; }

@@ -102,7 +102,7 @@ Qualquer pessoa logada lança **sangria** (tirar dinheiro do caixa) e **suprimen
 - **A primeira tela é o login.** A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há "esqueci a senha" por e-mail, quando o envio de e-mail está configurado.
 - **Pedir:** o cliente escolhe os itens, paga no Pix ou com saldo e **só então** o pedido é aceito. O QR do pedido é validado no balcão.
 - **Carteira:** saldo pré-pago por recarga via Pix. O saldo pode ser usado nos pedidos e na inscrição de campeonatos.
-- **Nível:** o cliente vê só o nível, nunca pontos ou valores gastos.
+- **Níveis de cliente:** não aparecem mais no app do cliente (cartão de convite, nível no botão e tela de níveis). O cálculo continua por trás e o painel Clientes ainda mostra. Nunca aparecem pontos ou valores gastos.
 - Atalhos no topo: 🏆 campeonato e 🎱 fila da sinuca.
 
 ## 6.1. Pagamentos pelo celular do cliente
