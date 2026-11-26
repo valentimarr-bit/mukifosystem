@@ -1,5 +1,5 @@
 // Contas de cliente: cadastro, login (celular/e-mail + senha, ou Google), pontos e níveis; e a área de clientes da gestão.
-import { registrarConsentimento } from './whatsapp.js';
+import { registrarConsentimento, configurado as whatsLigado, numeroWhats, enviarTexto } from './whatsapp.js';
 import { json } from './api.js';
 import { hashSenha, hashToken, aleatorio, igual, usuarioLogado } from './auth.js';
 import { celularValido } from './cliente.js';
@@ -99,14 +99,22 @@ async function acharConta(db, login) {
   const l = String(login ?? '').trim().toLowerCase(), cel = celularValido(l);
   return db.prepare('SELECT * FROM cliente WHERE ativo = 1 AND ((? IS NOT NULL AND celular = ?) OR email = ?)').bind(cel, cel, l).first();
 }
+/** Esqueci a senha: manda o código de 6 dígitos pelo WhatsApp do bar (izapia) e/ou por e-mail (Resend), o que estiver configurado.
+ * É mensagem que a própria pessoa pediu (não é propaganda), então não depende do aceite de convites. */
 async function esqueci(db, env, c) {
   const cli = await acharConta(db, c?.login);
-  const resposta = { ok: true, email: !!(env.RESEND_API_KEY && env.EMAIL_REMETENTE), mensagem: 'Se existir uma conta com esses dados, o código foi enviado por e-mail. Se não chegar, peça um código no balcão do bar.' };
-  if (!cli || !cli.email || !resposta.email) return json(resposta);   // mesma resposta para quem não existe: ninguém descobre quem tem conta
+  const porWhats = whatsLigado(env), porEmail = !!(env.RESEND_API_KEY && env.EMAIL_REMETENTE);
+  const meios = [porWhats && 'WhatsApp', porEmail && 'e-mail'].filter(Boolean).join(' ou ');
+  const mensagem = meios ? `Se existir uma conta com esses dados, mandamos um código por ${meios}. Se não chegar em 2 minutos, peça um código no balcão do bar.` : 'Peça o código no balcão do bar.';
+  const resposta = { ok: true, email: porEmail, whats: porWhats, mensagem };
+  if (!cli) return json(resposta);   // mesma resposta para quem não existe: ninguém descobre quem tem conta
+  const para = porWhats ? numeroWhats(cli.celular) : null, mail = porEmail ? cli.email : null;
+  if (!para && !mail) return json(resposta);
   const recente = await db.prepare("SELECT 1 AS x FROM cliente WHERE id = ? AND reset_ate > datetime('now', '+14 minutes')").bind(cli.id).first();
   if (recente) return json(resposta);   // no máximo 1 envio por minuto
   const codigo = await gravarCodigo(db, cli.id);
-  await enviarEmail(env, cli.email, 'Seu código do Mukifo', `Seu código para criar uma nova senha: ${codigo}\n\nValem ${RESET_MIN} minutos. Se não foi você, ignore este e-mail.`);
+  const texto = `Mukifo: seu código para criar uma nova senha é ${codigo}. Vale ${RESET_MIN} minutos. Se não foi você, ignore.`;
+  await Promise.all([para && enviarTexto(env, para, texto), mail && enviarEmail(env, mail, 'Seu código do Mukifo', texto)]);
   return json(resposta);
 }
 async function redefinir(db, c) {

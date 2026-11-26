@@ -316,3 +316,22 @@ test('fila do cliente: mostra quantos pedidos estão na frente e some quando fic
   assert.equal((await ver(a)).fila, null);
   await chamar('/api/teste', 'PUT', { ativo: false });
 });
+
+test('esqueci a senha pelo WhatsApp: o código vai para o celular da conta e serve para criar a senha nova', async () => {
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Zap Teste', celular: '51977776666', senha: 'senha-velha-1', aceite: true }, {}, null);
+  assert.equal(cad.status, 201);
+  const fetchOriginal = globalThis.fetch, envios = [];
+  globalThis.fetch = async (url, op) => { envios.push({ url: String(url), corpo: JSON.parse(op.body) }); return new Response('{}', { status: 200 }); };
+  Object.assign(env, { IZAPIA_API_KEY: 'chave', IZAPIA_SID: 'sessao-1' });
+  try {
+    const r = await chamar('/api/conta/esqueci', 'POST', { login: '(51) 97777-6666' }, {}, null);
+    assert.equal(r.status, 200); assert.match(r.corpo.mensagem, /WhatsApp/);
+    assert.equal(envios.length, 1); assert.equal(envios[0].corpo.to, '5551977776666');
+    const codigo = envios[0].corpo.text.match(/(\d{6})/)[1];
+    await chamar('/api/conta/esqueci', 'POST', { login: '51977776666' }, {}, null);
+    assert.equal(envios.length, 1);   // no máximo 1 envio por minuto
+    const ok = await chamar('/api/conta/redefinir', 'POST', { login: '51977776666', codigo, senha: 'senha-nova-1' }, {}, null);
+    assert.equal(ok.status, 200);
+    assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51977776666', senha: 'senha-nova-1' }, {}, null)).status, 200);
+  } finally { globalThis.fetch = fetchOriginal; delete env.IZAPIA_API_KEY; delete env.IZAPIA_SID; }
+});

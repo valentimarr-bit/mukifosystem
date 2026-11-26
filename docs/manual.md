@@ -99,8 +99,10 @@ Qualquer pessoa logada lança **sangria** (tirar dinheiro do caixa) e **suprimen
 - No balcão, a entrega confere o **QR** do cliente. Pedido do app que ainda não foi pago aparece como **não pago**: não entregue.
 
 ## 6. App do cliente
-- **A primeira tela é o login.** A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há "esqueci a senha" por e-mail, quando o envio de e-mail está configurado.
+- **A primeira tela é o login.** A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há "esqueci a senha": o código de 6 dígitos chega pelo WhatsApp do bar (quando a izapia está ligada) e/ou por e-mail (quando o Resend está configurado); sem nenhum dos dois, o código sai no balcão.
 - **Pedir:** o cliente escolhe os itens, paga no Pix ou com saldo e **só então** o pedido é aceito. O QR do pedido é validado no balcão.
+- **Vários pedidos:** com um pedido feito, o cliente continua no cardápio e pode fazer outros. O botão 🧾 no topo mostra os pedidos abertos (fica verde quando algum está pronto); tocando, volta para o QR. O aviso de "pronto" toca mesmo com o cliente olhando o cardápio.
+- **Botão voltar do celular:** volta um passo (do carrinho ou do pedido para o cardápio, do setor para a lista de setores). Só sai do app quando já está no começo do cardápio.
 - **Carteira:** saldo pré-pago por recarga via Pix. O saldo pode ser usado nos pedidos e na inscrição de campeonatos.
 - **Níveis de cliente:** não aparecem mais no app do cliente (cartão de convite, nível no botão e tela de níveis). O cálculo continua por trás e o painel Clientes ainda mostra. Nunca aparecem pontos ou valores gastos.
 - Atalhos no topo: 🏆 campeonato e 🎱 fila da sinuca.

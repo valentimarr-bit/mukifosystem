@@ -2,6 +2,14 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-26 — app do cliente: senha, vários pedidos, voltar
+**Feito**
+- "Esqueci a senha" manda o código pelo WhatsApp (izapia) e/ou e-mail (Resend); botão "Mandar código" na tela de recuperar.
+- Vários pedidos abertos ao mesmo tempo: `localStorage['mukifo_pedido_app']` virou lista (aceita o formato antigo); todos são consultados, só o da tela é desenhado; alerta de etapa por pedido.
+- Botão voltar do celular: `history.pushState` a cada passo para dentro; `popstate` sobe um degrau.
+**Próximo / em aberto**
+- Ligar `IZAPIA_API_KEY`/`IZAPIA_SID` (e/ou `RESEND_API_KEY`/`EMAIL_REMETENTE`) na Cloudflare para o código de senha sair sozinho.
+
 ## 2026-11-26 — login do cliente por e-mail
 **Feito**
 - No "Entrar" do app do cliente o campo "Celular ou e-mail" tinha `inputmode="tel"` (só números no celular). Agora troca: teclado de telefone ao criar conta, teclado de e-mail ao entrar/recuperar.

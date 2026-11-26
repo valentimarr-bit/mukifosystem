@@ -3,6 +3,9 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-26 — **Voltar do celular no app do cliente**: volta para onde estava (setor, carrinho, pedido) em vez de sair do app (`/cliente.html`).
+- 2026-11-26 — **Vários pedidos ao mesmo tempo no app do cliente**: o cardápio não trava com um pedido aberto; botão 🧾 no topo alterna entre os QRs e o cardápio (`/cliente.html`).
+- 2026-11-26 — **Esqueci a senha pelo WhatsApp**: o código de 6 dígitos agora também vai pelo WhatsApp do bar (izapia), além do e-mail (`/cliente.html`).
 - 2026-11-26 — **Correção**: no "Entrar" do app do cliente, o campo "Celular ou e-mail" abria só o teclado de números; agora abre o teclado com letras e @ (`/cliente.html`).
 - 2026-11-26 — **Zerar testes também zera os pontos dos clientes** (aba Conta).
 - 2026-11-26 — **Sem níveis no app do cliente**: saiu o cartão "suba de nível", o nível no botão da conta e a tela de níveis (`/cliente.html`).
