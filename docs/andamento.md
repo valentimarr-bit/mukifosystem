@@ -2,6 +2,10 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-26 — login do cliente por e-mail
+**Feito**
+- No "Entrar" do app do cliente o campo "Celular ou e-mail" tinha `inputmode="tel"` (só números no celular). Agora troca: teclado de telefone ao criar conta, teclado de e-mail ao entrar/recuperar.
+
 ## 2026-11-26 — zerar métricas
 **Feito**
 - "Zerar testes" (Conta, superadmin) agora também zera `ponto_mov` e os pontos de todos os clientes. Teste atualizado.
