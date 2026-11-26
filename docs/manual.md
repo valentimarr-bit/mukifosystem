@@ -7,7 +7,7 @@ Este manual é para quem opera o bar: balcão, cozinha, gerência e dono. Ele é
 ### Entrar e quem vê o quê
 - Quem trabalha entra com **nome e senha**. O primeiro acesso cria o **superadmin** (o dono), usando o código de primeiro acesso guardado na Cloudflare.
 - O superadmin vê tudo e, na aba **Conta**, escolhe o que cada gerente pode ver (painel de permissões). O sistema também bloqueia no servidor: esconder o botão não é o único cuidado.
-- **Login de demonstração** (botão "Só quero ver" na tela de entrada): mostra o sistema sem senha, só para olhar — não grava nada e não mostra clientes, financeiro, desempenho nem Excel. Vem **desligado**; o superadmin liga criando `LOGIN_DEMO` = `sim` na Cloudflare (Settings → Variables and Secrets) e desliga apagando. A sessão dura 1 dia.
+- **Login de demonstração** (botão "Só quero ver" na tela de entrada): entra sem senha, com todas as telas liberadas, para mostrar o sistema (7 dias). Só não gerencia pessoas nem passa o cargo. **Vem ligado**: para desligar, crie `LOGIN_DEMO` = `nao` na Cloudflare (Settings → Variables and Secrets).
 - Módulos que podem ser liberados ou escondidos: Venda, Produção, Caixa, Estoque, Recomendado, Produtos e lucro, Combos, Níveis, Fotos, Registrar, Fornecedores, Clientes, Campeonato, Desempenho, Financeiro e Excel. **Desempenho, Financeiro e Excel** vêm desligados para gerentes novos.
 - A sessão fica salva no aparelho. Para trocar de pessoa, use **Conta → Sair**.
 

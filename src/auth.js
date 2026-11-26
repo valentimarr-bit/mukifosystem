@@ -4,11 +4,10 @@ import { modulosDe, MODULOS, IDS, PADRAO_GERENTE } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
-// Login de demonstração: só para mostrar o sistema. Fica desligado até existir LOGIN_DEMO=sim na Cloudflare.
-// Só olha (nunca grava) e não enxerga clientes, financeiro, desempenho nem Excel.
+// Login de demonstração: um botão que entra sem senha, com todas as telas liberadas (menos o que é só do superadmin).
+// Vem ligado; para desligar, crie LOGIN_DEMO = nao na Cloudflare.
 export const NOME_DEMO = 'Demonstração';
-export const MODULOS_DEMO = ['venda', 'producao', 'estoque', 'recomendado', 'produtos', 'combos', 'niveis', 'fotos', 'campeonato'];
-const demoLigado = (env) => String(env.LOGIN_DEMO ?? '').toLowerCase() === 'sim';
+const demoLigado = (env) => String(env.LOGIN_DEMO ?? '').toLowerCase() !== 'nao';
 const enc = new TextEncoder();
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -48,7 +47,7 @@ export async function usuarioLogado(request, env) {
   if (!u) return null;
   // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
   if (u.nome === NOME_DEMO && !demoLigado(env)) return null;
-  return { id: u.id, nome: u.nome, papel: u.papel, modulos: u.nome === NOME_DEMO ? MODULOS_DEMO : modulosDe(u), ...(u.nome === NOME_DEMO ? { demo: true } : {}) };
+  return { id: u.id, nome: u.nome, papel: u.papel, modulos: u.nome === NOME_DEMO ? modulosDe({ papel: 'superadmin' }) : modulosDe(u), ...(u.nome === NOME_DEMO ? { demo: true } : {}) };
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -65,7 +64,7 @@ export async function rotearAuth(request, env, url) {
     return json({ primeiroAcesso: r.n === 0, pedeCodigo: r.n === 0, faltaCodigo: r.n === 0 && !env.CODIGO_PRIMEIRO_ACESSO, demo: r.n > 0 && demoLigado(env) });
   }
 
-  // Entrar como demonstração: sem senha, só leitura, sessão de 1 dia.
+  // Entrar como demonstração: sem senha, sessão de 7 dias.
   if (m === 'POST' && p === '/api/auth/demo') {
     if (!demoLigado(env)) return erro('O login de demonstração está desligado.', 403);
     if (!(await db.prepare('SELECT 1 AS x FROM usuario WHERE papel = ? LIMIT 1').bind('superadmin').first())) return erro('Faça o primeiro acesso antes.', 409);
@@ -74,7 +73,7 @@ export async function rotearAuth(request, env, url) {
     const u = await db.prepare('SELECT id FROM usuario WHERE nome = ? AND papel = ?').bind(NOME_DEMO, 'gerente').first();
     if (!u) return erro('Não foi possível criar a demonstração.', 500);
     await db.prepare(`DELETE FROM sessao WHERE usuario_id = ? AND expira_em <= datetime('now')`).bind(u.id).run();
-    return json({ ok: true, token: await novaSessao(db, u.id, 1), usuario: { id: u.id, nome: NOME_DEMO, papel: 'gerente', demo: true } });
+    return json({ ok: true, token: await novaSessao(db, u.id, 7), usuario: { id: u.id, nome: NOME_DEMO, papel: 'gerente', demo: true } });
   }
 
   if (m === 'POST' && p === '/api/auth/primeiro-acesso') {

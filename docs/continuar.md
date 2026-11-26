@@ -23,7 +23,7 @@ Estado em 2026-11-24: tudo commitado e enviado a `main` (https://github.com/vale
 | `ADMIN_TOKEN` | acesso técnico | opcional |
 | `PAGAMENTO_WEBHOOK_SECRET` | assinatura do webhook de pagamento (Pix automático) | quando houver gateway |
 | `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO` | avisos push no celular | para push |
-| `LOGIN_DEMO` | `sim` liga o botão "Só quero ver" (login de demonstração, só leitura) | opcional |
+| `LOGIN_DEMO` | `nao` desliga o botão "Só quero ver" (login de demonstração, ligado por padrão) | opcional |
 | `GOOGLE_CLIENT_ID` | entrar com Google | opcional |
 | `RESEND_API_KEY`, `EMAIL_REMETENTE` | e-mail de recuperar senha | opcional |
 | `NAVI_API_URL`, `NAVI_TOKEN` | integração Navi | pendente |

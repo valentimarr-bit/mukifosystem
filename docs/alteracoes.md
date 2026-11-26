@@ -3,7 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
-- 2026-11-25 — **Login de demonstração**: botão "Só quero ver" na entrada, só leitura e sem dados de clientes/financeiro; liga com `LOGIN_DEMO=sim` na Cloudflare (tela de login).
+- 2026-11-25 — **Login de demonstração**: botão "Só quero ver" na entrada, com todas as telas liberadas; vem ligado e desliga com `LOGIN_DEMO=nao` na Cloudflare (tela de login).
 - 2026-11-25 — **Placar online da sinuca** (Hall da Fama): jogos, vitórias, aproveitamento e sequência por período, com modo TV (`/placar.html`, `/placar.html?tv=1`).
 - 2026-11-25 — **Ranking de toda a sinuca**: jogos da mesa, confirmados pelo adversário ou pelo balcão, entram no mesmo score dos campeonatos (`/sinuca.html`, `/mesas.html`).
 - 2026-11-25 — **Título especial por jogador** (ex.: "Pinky e Cérebro" 🐭🧠) no lugar do nível, pelo botão 🏅 na lista de inscritos (`/torneio.html`).
