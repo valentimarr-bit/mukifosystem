@@ -34,6 +34,19 @@ export function igual(a, b) {
   return d === 0;
 }
 
+// Limite de tentativas: senha errada demais bloqueia a chave por 15 minutos (tabela tentativa).
+const MSG_BLOQUEADO = 'Muitas tentativas. Espere 15 minutos e tente de novo.';
+export async function bloqueado(db, chave) {
+  return !!(await db.prepare(`SELECT 1 AS x FROM tentativa WHERE chave = ? AND bloqueado_ate > datetime('now')`).bind(chave).first());
+}
+export async function falhou(db, chave, max) {
+  await db.prepare(`INSERT INTO tentativa (chave, falhas) VALUES (?, 1) ON CONFLICT(chave) DO UPDATE SET falhas = falhas + 1`).bind(chave).run();
+  await db.prepare(`UPDATE tentativa SET bloqueado_ate = datetime('now', '+15 minutes'), falhas = 0 WHERE chave = ? AND falhas >= ?`).bind(chave, max).run();
+}
+export async function limpar(db, chave) {
+  await db.prepare('DELETE FROM tentativa WHERE chave = ?').bind(chave).run();
+}
+
 async function novaSessao(db, usuarioId, dias = DIAS_SESSAO) {
   const token = aleatorio(32);
   await db.prepare(`INSERT INTO sessao (token_hash, usuario_id, expira_em) VALUES (?, ?, datetime('now', ?))`)
@@ -101,7 +114,9 @@ export async function rotearAuth(request, env, url) {
     const e = validarNovaSenha(corpo.senha); if (e) return erro(e);
     // Sem o código, qualquer um que achasse o site primeiro viraria superadmin.
     if (!env.CODIGO_PRIMEIRO_ACESSO) return erro('Falta criar o código de primeiro acesso na Cloudflare (Settings → Variables and Secrets → CODIGO_PRIMEIRO_ACESSO).', 503);
-    if (!igual(String(corpo.codigo ?? ''), env.CODIGO_PRIMEIRO_ACESSO)) return erro('Código de primeiro acesso inválido.', 403);
+    const ipCodigo = 'codigo:' + (request.headers.get('cf-connecting-ip') ?? 'sem-ip');
+    if (await bloqueado(db, ipCodigo)) return erro(MSG_BLOQUEADO, 429);
+    if (!igual(String(corpo.codigo ?? ''), env.CODIGO_PRIMEIRO_ACESSO)) { await falhou(db, ipCodigo, 5); return erro('Código de primeiro acesso inválido.', 403); }
     const sal = aleatorio(16);
     // Atômico: só insere se ainda não existe ninguém. Quem chegar primeiro vira superadmin.
     const r = await db.prepare(
@@ -113,9 +128,18 @@ export async function rotearAuth(request, env, url) {
   }
 
   if (m === 'POST' && p === '/api/auth/entrar') {
-    const u = await db.prepare('SELECT * FROM usuario WHERE nome = ? AND ativo = 1').bind(String(corpo.nome ?? '').trim()).first();
+    const nomeLogin = String(corpo.nome ?? '').trim();
+    const cNome = 'nome:' + nomeLogin.toLowerCase();
+    const cIp = 'ip:' + (request.headers.get('cf-connecting-ip') ?? 'sem-ip');
+    if ((await bloqueado(db, cNome)) || (await bloqueado(db, cIp))) return erro(MSG_BLOQUEADO, 429);
+    const u = await db.prepare('SELECT * FROM usuario WHERE nome = ? AND ativo = 1').bind(nomeLogin).first();
     const hash = await hashSenha(String(corpo.senha ?? ''), u?.senha_sal ?? 'x'); // gasta o mesmo tempo mesmo se o nome não existir
-    if (!u || !igual(hash, u.senha_hash)) return erro('Nome ou senha incorretos.', 401);
+    if (!u || !igual(hash, u.senha_hash)) {
+      await falhou(db, cNome, 5);
+      await falhou(db, cIp, 20);
+      return erro('Nome ou senha incorretos.', 401);
+    }
+    await limpar(db, cNome);
     return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: papelDe(u) }, trocarSenha: !!u.trocar_senha });
   }
 

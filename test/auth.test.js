@@ -70,7 +70,7 @@ test('passar o cargo: exige a senha; quem passa vira gerente e o novo vira super
 });
 
 test('código de primeiro acesso é obrigatório', async () => {
-  const env2 = { ...env, DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql')]), CODIGO_PRIMEIRO_ACESSO: 'abc123' };
+  const env2 = { ...env, DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0035_seguranca.sql')]), CODIGO_PRIMEIRO_ACESSO: 'abc123' }; // 0035: tabela de tentativas
   const t = (corpo) => worker.fetch(new Request('https://x.test/api/auth/primeiro-acesso', { method: 'POST', body: JSON.stringify(corpo) }), env2);
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa' })).status, 403);
   const semCodigo = { ...env2, CODIGO_PRIMEIRO_ACESSO: undefined };
