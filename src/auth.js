@@ -4,6 +4,10 @@ import { modulosDe, MODULOS, IDS, PADRAO_GERENTE } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
+// Login de demonstração: um botão que entra sem senha, com todas as telas liberadas (menos o que é só do superadmin).
+// Vem ligado; para desligar, crie LOGIN_DEMO = nao na Cloudflare.
+export const NOME_DEMO = 'Demonstração';
+const demoLigado = (env) => String(env.LOGIN_DEMO ?? '').toLowerCase() !== 'nao';
 const enc = new TextEncoder();
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -23,10 +27,10 @@ export function igual(a, b) {
   return d === 0;
 }
 
-async function novaSessao(db, usuarioId) {
+async function novaSessao(db, usuarioId, dias = DIAS_SESSAO) {
   const token = aleatorio(32);
   await db.prepare(`INSERT INTO sessao (token_hash, usuario_id, expira_em) VALUES (?, ?, datetime('now', ?))`)
-    .bind(await hashToken(token), usuarioId, `+${DIAS_SESSAO} days`).run();
+    .bind(await hashToken(token), usuarioId, `+${dias} days`).run();
   return token;
 }
 
@@ -40,7 +44,10 @@ export async function usuarioLogado(request, env) {
   const u = await env.DB.prepare(
     `SELECT u.id, u.nome, u.papel, u.modulos FROM sessao s JOIN usuario u ON u.id = s.usuario_id
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
-  return u ? { id: u.id, nome: u.nome, papel: u.papel, modulos: modulosDe(u) } : null;
+  if (!u) return null;
+  // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
+  if (u.nome === NOME_DEMO && !demoLigado(env)) return null;
+  return { id: u.id, nome: u.nome, papel: u.papel, modulos: u.nome === NOME_DEMO ? modulosDe({ papel: 'superadmin' }) : modulosDe(u), ...(u.nome === NOME_DEMO ? { demo: true } : {}) };
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -54,7 +61,19 @@ export async function rotearAuth(request, env, url) {
 
   if (m === 'GET' && p === '/api/auth/estado') {
     const r = await db.prepare('SELECT COUNT(*) AS n FROM usuario').first();
-    return json({ primeiroAcesso: r.n === 0, pedeCodigo: r.n === 0, faltaCodigo: r.n === 0 && !env.CODIGO_PRIMEIRO_ACESSO });
+    return json({ primeiroAcesso: r.n === 0, pedeCodigo: r.n === 0, faltaCodigo: r.n === 0 && !env.CODIGO_PRIMEIRO_ACESSO, demo: r.n > 0 && demoLigado(env) });
+  }
+
+  // Entrar como demonstração: sem senha, sessão de 7 dias.
+  if (m === 'POST' && p === '/api/auth/demo') {
+    if (!demoLigado(env)) return erro('O login de demonstração está desligado.', 403);
+    if (!(await db.prepare('SELECT 1 AS x FROM usuario WHERE papel = ? LIMIT 1').bind('superadmin').first())) return erro('Faça o primeiro acesso antes.', 409);
+    await db.prepare(`INSERT OR IGNORE INTO usuario (nome, senha_hash, senha_sal, papel) VALUES (?, ?, ?, 'gerente')`)
+      .bind(NOME_DEMO, aleatorio(32), aleatorio(16)).run(); // senha aleatória que ninguém conhece: só entra por este botão
+    const u = await db.prepare('SELECT id FROM usuario WHERE nome = ? AND papel = ?').bind(NOME_DEMO, 'gerente').first();
+    if (!u) return erro('Não foi possível criar a demonstração.', 500);
+    await db.prepare(`DELETE FROM sessao WHERE usuario_id = ? AND expira_em <= datetime('now')`).bind(u.id).run();
+    return json({ ok: true, token: await novaSessao(db, u.id, 7), usuario: { id: u.id, nome: NOME_DEMO, papel: 'gerente', demo: true } });
   }
 
   if (m === 'POST' && p === '/api/auth/primeiro-acesso') {
@@ -94,7 +113,7 @@ export async function rotearAuth(request, env, url) {
   }
 
   if (m === 'POST' && p === '/api/auth/trocar-senha') {
-    if (!eu.id) return erro('A chave de emergência não tem senha para trocar.');
+    if (!eu.id || eu.demo) return erro('Este login não tem senha para trocar.');
     const e = validarNovaSenha(corpo.senhaNova); if (e) return erro(e);
     const u = await db.prepare('SELECT * FROM usuario WHERE id = ?').bind(eu.id).first();
     if (!igual(await hashSenha(String(corpo.senhaAtual ?? ''), u.senha_sal), u.senha_hash)) return erro('Senha atual incorreta.', 403);
@@ -114,7 +133,7 @@ export async function rotearAuth(request, env, url) {
   }
   if (m === 'PUT' && (km = p.match(/^\/api\/usuarios\/(\d+)\/modulos$/))) {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
-    const alvo = await db.prepare('SELECT id, papel FROM usuario WHERE id = ?').bind(Number(km[1])).first();
+    const alvo = await db.prepare('SELECT id, papel FROM usuario WHERE id = ? AND nome <> ?').bind(Number(km[1]), NOME_DEMO).first();
     if (!alvo) return erro('Pessoa não encontrada.', 404);
     if (alvo.papel === 'superadmin') return erro('O superadmin sempre enxerga tudo.', 409);
     if (corpo.padrao === true) { await db.prepare('UPDATE usuario SET modulos = NULL WHERE id = ?').bind(alvo.id).run(); return json({ ok: true, modulos: PADRAO_GERENTE }); }
@@ -129,12 +148,13 @@ export async function rotearAuth(request, env, url) {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
 
     if (m === 'GET' && p === '/api/usuarios') {
-      const { results } = await db.prepare('SELECT id, nome, papel, ativo, criado_em, modulos FROM usuario ORDER BY id').all();
+      const { results } = await db.prepare('SELECT id, nome, papel, ativo, criado_em, modulos FROM usuario WHERE nome <> ? ORDER BY id').bind(NOME_DEMO).all();
       return json(results.map((u) => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo, criado_em: u.criado_em, modulos: modulosDe(u), personalizado: u.modulos != null })));
     }
     if (m === 'POST' && p === '/api/usuarios') {
       const nome = String(corpo.nome ?? '').trim();
       if (nome.length < 2) return erro('Digite o nome.');
+      if (nome.toLowerCase() === NOME_DEMO.toLowerCase()) return erro('Esse nome é reservado para o login de demonstração.');
       const e = validarNovaSenha(corpo.senha); if (e) return erro(e);
       const sal = aleatorio(16);
       try {
@@ -146,7 +166,7 @@ export async function rotearAuth(request, env, url) {
     // Passa o cargo de superadmin para outro usuário; quem passa vira gerente.
     if (m === 'POST' && p === '/api/auth/passar-cargo') {
       if (!eu.id) return erro('Entre com seu nome e senha para passar o cargo.');
-      const alvo = await db.prepare('SELECT id, nome FROM usuario WHERE id = ? AND ativo = 1').bind(Number(corpo.usuarioId)).first();
+      const alvo = await db.prepare('SELECT id, nome FROM usuario WHERE id = ? AND ativo = 1 AND nome <> ?').bind(Number(corpo.usuarioId), NOME_DEMO).first();
       if (!alvo || alvo.id === eu.id) return erro('Escolha outra pessoa.');
       const u = await db.prepare('SELECT * FROM usuario WHERE id = ?').bind(eu.id).first();
       if (!igual(await hashSenha(String(corpo.senha ?? ''), u.senha_sal), u.senha_hash)) return erro('Senha incorreta.', 403);
