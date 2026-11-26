@@ -78,29 +78,31 @@ test('código de primeiro acesso é obrigatório', async () => {
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa', codigo: 'abc123' })).status, 200);
 });
 
-test('login de demonstração: vem ligado, libera as telas, não aparece na lista nem recebe o cargo, e dá para desligar', async () => {
-  assert.equal((await chamar('/api/auth/estado')).corpo.demo, true);
-  const d = await chamar('/api/auth/demo', {});
-  assert.equal(d.status, 200);
-  assert.equal(d.corpo.usuario.demo, true);
-  const t = d.corpo.token;
-  assert.equal((await chamar('/api/auth/eu', null, t)).corpo.usuario.demo, true);
-  assert.notEqual((await chamar('/api/listas/atual', null, t)).status, 401);
-  assert.notEqual((await chamar('/api/clientes', null, t)).status, 403);          // vê tudo
-  assert.notEqual((await chamar('/api/financeiro/resultado', null, t)).status, 403);
-  assert.equal((await chamar('/api/usuarios', { nome: 'Fulano', senha: 'senha-longa' }, t)).status, 403); // mas não gerencia gente
-  assert.equal((await chamar('/api/auth/entrar', { nome: 'Demonstração', senha: 'qualquer-coisa' })).status, 401);
-  const lista = (await chamar('/api/usuarios', null, tokenB)).corpo;
-  assert.ok(!lista.some((u) => u.nome === 'Demonstração'));
-  assert.equal((await chamar('/api/usuarios', { nome: 'demonstração', senha: 'senha-longa' }, tokenB)).status, 400);
-  assert.equal((await chamar('/api/auth/sair', {}, t)).status, 200);
-  assert.equal((await chamar('/api/auth/eu', null, t)).status, 401);
-  const t2 = (await chamar('/api/auth/demo', {})).corpo.token;
-  env.LOGIN_DEMO = 'nao';
+test('login de demonstração: vem desligado; ligado, é só de leitura e não recebe o cargo nem aparece na lista', async () => {
+  // Desligado por padrão
+  assert.equal((await chamar('/api/auth/estado')).corpo.demo, false);
+  assert.equal((await chamar('/api/auth/demo', {})).status, 403);
+
+  // Ligado com LOGIN_DEMO = sim
+  env.LOGIN_DEMO = 'sim';
   try {
-    assert.equal((await chamar('/api/auth/eu', null, t2)).status, 401);
-    assert.equal((await chamar('/api/auth/demo', {})).status, 403);
-    assert.equal((await chamar('/api/auth/estado')).corpo.demo, false);
+    assert.equal((await chamar('/api/auth/estado')).corpo.demo, true);
+    const d = await chamar('/api/auth/demo', {});
+    assert.equal(d.status, 200);
+    assert.equal(d.corpo.usuario.demo, true);
+    const t = d.corpo.token;
+    assert.equal((await chamar('/api/auth/eu', null, t)).corpo.usuario.demo, true);
+    assert.notEqual((await chamar('/api/listas/atual', null, t)).status, 401);     // lê as telas liberadas
+    assert.equal((await chamar('/api/clientes', null, t)).status, 403);            // telas fora da lista ficam fechadas
+    assert.equal((await chamar('/api/financeiro/resultado', null, t)).status, 403);
+    assert.equal((await chamar('/api/venda/comandas', { mesa: 1 }, t)).status, 401); // escrita recusada
+    assert.equal((await chamar('/api/usuarios', { nome: 'Fulano', senha: 'senha-longa' }, t)).status, 401);
+    assert.equal((await chamar('/api/auth/entrar', { nome: 'Demonstração', senha: 'qualquer-coisa' })).status, 401);
+    const lista = (await chamar('/api/usuarios', null, tokenB)).corpo;
+    assert.ok(!lista.some((u) => u.nome === 'Demonstração'));
+    assert.equal((await chamar('/api/usuarios', { nome: 'demonstração', senha: 'senha-longa' }, tokenB)).status, 400);
+    assert.equal((await chamar('/api/auth/sair', {}, t)).status, 200);
+    assert.equal((await chamar('/api/auth/eu', null, t)).status, 401);
   } finally { delete env.LOGIN_DEMO; }
 });
 

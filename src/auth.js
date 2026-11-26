@@ -4,10 +4,11 @@ import { modulosDe, MODULOS, IDS, PADRAO_GERENTE } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
-// Login de demonstração: um botão que entra sem senha, com todas as telas liberadas (menos o que é só do superadmin).
-// Vem ligado; para desligar, crie LOGIN_DEMO = nao na Cloudflare.
+// Login de demonstração: um botão que entra sem senha, só para ver as telas, e só de leitura.
+// Vem desligado; para ligar, crie LOGIN_DEMO = sim na Cloudflare.
 export const NOME_DEMO = 'Demonstração';
-const demoLigado = (env) => String(env.LOGIN_DEMO ?? '').toLowerCase() !== 'nao';
+const MODULOS_DEMO = ['venda', 'producao', 'estoque', 'recomendado', 'produtos', 'combos', 'niveis', 'fotos', 'desempenho', 'campeonato'];
+const demoLigado = (env) => String(env.LOGIN_DEMO ?? '').toLowerCase() === 'sim';
 const enc = new TextEncoder();
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -46,8 +47,15 @@ export async function usuarioLogado(request, env) {
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
   if (!u) return null;
   // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
-  if (u.nome === NOME_DEMO && !demoLigado(env)) return null;
-  return { id: u.id, nome: u.nome, papel: u.papel, modulos: u.nome === NOME_DEMO ? modulosDe({ papel: 'superadmin' }) : modulosDe(u), ...(u.nome === NOME_DEMO ? { demo: true } : {}) };
+  if (u.nome === NOME_DEMO) {
+    if (!demoLigado(env)) return null;
+    // A demonstração só olha: qualquer pedido que escreve (exceto sair) é recusado.
+    const metodo = request.method;
+    const caminho = new URL(request.url).pathname;
+    if (metodo !== 'GET' && metodo !== 'HEAD' && caminho !== '/api/auth/sair') return null;
+    return { id: u.id, nome: u.nome, papel: u.papel, modulos: MODULOS_DEMO, demo: true };
+  }
+  return { id: u.id, nome: u.nome, papel: u.papel, modulos: modulosDe(u) };
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -66,10 +74,11 @@ export async function rotearAuth(request, env, url) {
 
   // Entrar como demonstração: sem senha, sessão de 7 dias.
   if (m === 'POST' && p === '/api/auth/demo') {
-    if (!demoLigado(env)) return erro('O login de demonstração está desligado.', 403);
+    if (!demoLigado(env)) return erro('A demonstração está desligada.', 403);
     if (!(await db.prepare('SELECT 1 AS x FROM usuario WHERE papel = ? LIMIT 1').bind('superadmin').first())) return erro('Faça o primeiro acesso antes.', 409);
     await db.prepare(`INSERT OR IGNORE INTO usuario (nome, senha_hash, senha_sal, papel) VALUES (?, ?, ?, 'gerente')`)
       .bind(NOME_DEMO, aleatorio(32), aleatorio(16)).run(); // senha aleatória que ninguém conhece: só entra por este botão
+    await db.prepare('UPDATE usuario SET ativo = 1 WHERE nome = ?').bind(NOME_DEMO).run(); // a coluna ativo existe em 0003_usuarios.sql
     const u = await db.prepare('SELECT id FROM usuario WHERE nome = ? AND papel = ?').bind(NOME_DEMO, 'gerente').first();
     if (!u) return erro('Não foi possível criar a demonstração.', 500);
     await db.prepare(`DELETE FROM sessao WHERE usuario_id = ? AND expira_em <= datetime('now')`).bind(u.id).run();
