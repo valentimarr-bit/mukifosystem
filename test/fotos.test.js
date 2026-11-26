@@ -16,9 +16,9 @@ const put = (caminho, corpo, token = 'segredo-teste', tipo = 'image/jpeg') =>
   req(caminho, { method: 'PUT', body: corpo, headers: { 'content-type': tipo, ...(token ? { authorization: `Bearer ${token}` } : {}) } });
 
 test('os ids de produtos e insumos aparecem nas respostas (a tela precisa deles)', async () => {
-  const prods = await (await req('/api/produtos')).json();
+  const prods = await (await req('/api/produtos', { headers: { authorization: 'Bearer segredo-teste' } })).json();
   assert.ok(prods.every((p) => Number.isInteger(p.id)));
-  const est = await (await req('/api/estoque?dia=quinta')).json();
+  const est = await (await req('/api/estoque?dia=quinta', { headers: { authorization: 'Bearer segredo-teste' } })).json();
   assert.ok(est.itens.every((i) => Number.isInteger(i.insumo_id)));
 });
 
