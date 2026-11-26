@@ -3,6 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-26 — **Segurança e acessos**: gestão só com login (`/entrar.html`), cargos Dono/Gerente/Atendente, tela inicial por cargo (`/inicio.html`), senha provisória obrigatória de trocar, bloqueio após 5 erros, recuperação do dono pelo código; demonstração desligada.
 - 2026-11-26 — **Cancelar pedido com histórico**: gerentes cancelam pela Produção com motivo, devolução (saldo ou balcão) e estoque; tudo fica em "📜 Cancelados" (`/producao.html`, migração 0034, permissão "Cancelar pedidos").
 - 2026-11-26 — **Voltar do celular no app do cliente**: volta para onde estava (setor, carrinho, pedido) em vez de sair do app (`/cliente.html`).
 - 2026-11-26 — **Vários pedidos ao mesmo tempo no app do cliente**: o cardápio não trava com um pedido aberto; botão 🧾 no topo alterna entre os QRs e o cardápio (`/cliente.html`).
