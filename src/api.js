@@ -480,7 +480,8 @@ export async function rotearApi(request, env, url) {
   const modulo = moduloDaRota(p, request.method);
   if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
     const eu = await usuarioLogado(request, env);
-    if (eu && ![].concat(modulo).some((x) => eu.modulos.includes(x))) return erro('Seu login não tem acesso a esta parte. Peça ao superadmin.', 403);
+    if (!eu) return erro('Entre com seu nome e senha', 401);
+    if (![].concat(modulo).some((x) => eu.modulos.includes(x))) return erro('Seu login não tem acesso a esta parte. Peça ao dono.', 403);
   }
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);

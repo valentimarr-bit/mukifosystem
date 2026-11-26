@@ -353,10 +353,11 @@ document.querySelectorAll('#navAbas button').forEach((b) => b.addEventListener('
 }));
 
 async function api(caminho, corpo) {
-  const op = corpo ? { method: 'POST', body: JSON.stringify(corpo), headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } } : {};
+  const cab = { authorization: 'Bearer ' + Mukifo.token() };
+  const op = corpo ? { method: 'POST', body: JSON.stringify(corpo), headers: { ...cab, 'content-type': 'application/json' } } : { headers: cab };
   const r = await fetch(caminho, op);
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401 && corpo) { Mukifo.pedir(carregarEstoque); }
+  if (r.status === 401) { Mukifo.pedir(carregarEstoque); }
   if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
   return j;
 }

@@ -182,6 +182,7 @@ export async function rotearConta(request, env, url) {
 export async function rotearClientes(request, env, url) {
   const eu = await usuarioLogado(request, env); if (!eu) return erro('Entre com seu nome e senha', 401);
   const db = env.DB, m = request.method, p = url.pathname;
+  const atendente = eu?.papel === 'atendente' || eu?.cargo === 'Atendente';   // atendente não mexe em saldo nem senha do cliente
   if (m === 'GET' && p === '/api/clientes') {
     const q = `%${(url.searchParams.get('q') ?? '').trim().toLowerCase().replace(/[%_]/g, '')}%`;
     const { results } = await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM pedido p WHERE p.cliente_id = c.id AND p.status IN ('recebido','preparando','pronto','entregue')) AS pedidos,
@@ -191,6 +192,7 @@ export async function rotearClientes(request, env, url) {
     return json({ total: results.length, por_nivel: porNivel, clientes: results.map((x) => ({ id: x.id, nome: x.nome, celular: x.celular, email: x.email, pontos: x.pontos, pontos_total: x.pontos_total, nivel: nivelDe(x.pontos_total).nome, emoji: nivelDe(x.pontos_total).emoji, pedidos: x.pedidos, ultima_visita: x.ultima_visita, ativo: !!x.ativo, criado_em: x.criado_em })) });
   }
   const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos|\/codigo-senha|\/saldo)?$/); if (!k) return null;
+  if (m === 'POST' && (k[2] === '/saldo' || k[2] === '/codigo-senha') && atendente) return erro('Só gerente ou dono pode fazer isso.', 403);
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(k[1]).first(); if (!cli) return erro('Cliente não encontrado.', 404);
   if (m === 'GET' && !k[2]) {
     const [{ results: pedidos }, { results: pontos }] = await Promise.all([

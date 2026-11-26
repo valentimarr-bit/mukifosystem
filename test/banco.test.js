@@ -17,10 +17,10 @@ test('src/banco/sql.js está em dia com migrations/ e seed/ (senão: npm run sql
 });
 
 test('banco vazio: o primeiro acesso cria as tabelas e carrega a planilha', async () => {
-  const env = { DB: criarD1(), ASSETS: { fetch: () => new Response('x') } };
+  const env = { DB: criarD1(), ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') } };
   const r = await (await worker.fetch(new Request('https://x.test/api/saude'), env)).json();
   assert.match(r.banco, /conectado \(78 insumos\)/);
-  const est = await (await worker.fetch(new Request('https://x.test/api/estoque?dia=quinta'), env)).json();
+  const est = await (await worker.fetch(new Request('https://x.test/api/estoque?dia=quinta', { headers: { authorization: 'Bearer segredo-teste' } }), env)).json();
   assert.equal(est.itens.length, 78);
   const { results } = await env.DB.prepare('SELECT nome FROM _mukifo_migracao ORDER BY nome').all();
   assert.deepEqual(results.map((x) => x.nome), [...MIGRACOES.map((m) => m.nome), 'seed', 'categorias-v1'].sort());
