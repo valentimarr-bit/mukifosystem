@@ -5,6 +5,11 @@ import { modulosDe, MODULOS, IDS, PADRAO_GERENTE, PADRAO_ATENDENTE, papelDe, NOM
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
 const CARGOS = ['gerente', 'atendente'];   // cargo de quem não é o Dono (o Dono é o superadmin)
+// Senhas fracas demais: não são aceitas na troca (comparadas em minúsculas).
+export const FRACAS = ['123456', '1234567', '12345678', '123456789', '000000', '111111', '654321', 'mukifo', 'senha', 'senha123', 'abcdef'];
+const MSG_FRACA = 'Escolha uma senha mais difícil (não use 123456).';
+// Com a senha pendente, só estas rotas funcionam.
+const ROTAS_COM_SENHA_PENDENTE = ['/api/auth/eu', '/api/auth/trocar-senha', '/api/auth/sair'];
 // Login de demonstração: um botão que entra sem senha, só para ver as telas, e só de leitura.
 // Vem desligado; para ligar, crie LOGIN_DEMO = sim na Cloudflare.
 export const NOME_DEMO = 'Demonstração';
@@ -47,6 +52,9 @@ export async function usuarioLogado(request, env) {
     `SELECT u.id, u.nome, u.papel, u.cargo, u.trocar_senha, u.modulos FROM sessao s JOIN usuario u ON u.id = s.usuario_id
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
   if (!u) return null;
+  // Quem ainda tem a senha de fábrica (ou a senha dada pelo Dono) só pode ver quem é, trocar a senha e sair.
+  const caminhoAtual = new URL(request.url).pathname;
+  if (u.trocar_senha === 1 && !ROTAS_COM_SENHA_PENDENTE.includes(caminhoAtual)) return null;
   // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
   if (u.nome === NOME_DEMO) {
     if (!demoLigado(env)) return null;
@@ -57,7 +65,7 @@ export async function usuarioLogado(request, env) {
     return { id: u.id, nome: u.nome, papel: u.papel, modulos: MODULOS_DEMO, demo: true };
   }
   const papel = papelDe(u);
-  return { id: u.id, nome: u.nome, papel, cargo: NOME_CARGO[papel], modulos: modulosDe(u) };
+  return { id: u.id, nome: u.nome, papel, cargo: NOME_CARGO[papel], modulos: modulosDe(u), trocarSenha: !!u.trocar_senha };
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -108,7 +116,7 @@ export async function rotearAuth(request, env, url) {
     const u = await db.prepare('SELECT * FROM usuario WHERE nome = ? AND ativo = 1').bind(String(corpo.nome ?? '').trim()).first();
     const hash = await hashSenha(String(corpo.senha ?? ''), u?.senha_sal ?? 'x'); // gasta o mesmo tempo mesmo se o nome não existir
     if (!u || !igual(hash, u.senha_hash)) return erro('Nome ou senha incorretos.', 401);
-    return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: papelDe(u) } });
+    return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: papelDe(u) }, trocarSenha: !!u.trocar_senha });
   }
 
   // Daqui para baixo precisa estar logado.
@@ -116,7 +124,7 @@ export async function rotearAuth(request, env, url) {
   if (!eu) return erro('Entre com seu nome e senha.', 401);
   const token = (request.headers.get('authorization') ?? '').slice(7).trim();
 
-  if (m === 'GET' && p === '/api/auth/eu') return json({ usuario: eu });
+  if (m === 'GET' && p === '/api/auth/eu') return json({ usuario: eu, trocarSenha: !!eu.trocarSenha });
 
   if (m === 'POST' && p === '/api/auth/sair') {
     await db.prepare('DELETE FROM sessao WHERE token_hash = ?').bind(await hashToken(token)).run();
@@ -126,11 +134,13 @@ export async function rotearAuth(request, env, url) {
   if (m === 'POST' && p === '/api/auth/trocar-senha') {
     if (!eu.id || eu.demo) return erro('Este login não tem senha para trocar.');
     const e = validarNovaSenha(corpo.senhaNova); if (e) return erro(e);
+    if (FRACAS.includes(String(corpo.senhaNova).toLowerCase())) return erro(MSG_FRACA);
     const u = await db.prepare('SELECT * FROM usuario WHERE id = ?').bind(eu.id).first();
     if (!igual(await hashSenha(String(corpo.senhaAtual ?? ''), u.senha_sal), u.senha_hash)) return erro('Senha atual incorreta.', 403);
+    if (igual(await hashSenha(corpo.senhaNova, u.senha_sal), u.senha_hash)) return erro(MSG_FRACA);   // senha nova igual à atual
     const sal = aleatorio(16);
     await db.batch([
-      db.prepare('UPDATE usuario SET senha_hash = ?, senha_sal = ? WHERE id = ?').bind(await hashSenha(corpo.senhaNova, sal), sal, eu.id),
+      db.prepare('UPDATE usuario SET senha_hash = ?, senha_sal = ?, trocar_senha = 0 WHERE id = ?').bind(await hashSenha(corpo.senhaNova, sal), sal, eu.id),
       db.prepare('DELETE FROM sessao WHERE usuario_id = ? AND token_hash <> ?').bind(eu.id, await hashToken(token)), // derruba os outros aparelhos
     ]);
     return json({ ok: true });

@@ -46,10 +46,12 @@ test('atendente: login devolve papel atendente e não alcança o financeiro', as
   assert.equal(r.status, 200);
   assert.equal(r.corpo.usuario.papel, 'atendente');
   tokenAtendente = r.corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: 'senha-da-carla', senhaNova: 'carla-nova-2026' }, tokenAtendente)).status, 200);
   assert.equal((await chamar('/api/financeiro/resultado', null, tokenAtendente)).status, 403);
   const beto = await chamar('/api/auth/entrar', { nome: 'Beto', senha: 'senha-do-beto' });
   assert.equal(beto.corpo.usuario.papel, 'gerente');
   tokenGerente = beto.corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: 'senha-do-beto', senhaNova: 'beto-nova-2026' }, tokenGerente)).status, 200);
 });
 
 test('gerente não edita login; o Dono edita e o token antigo cai ao desativar', async () => {

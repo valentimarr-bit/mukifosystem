@@ -48,6 +48,7 @@ test('superadmin cria gerente; gerente não cria ninguém', async () => {
   const lista = (await chamar('/api/usuarios', null, tokenA)).corpo;
   idB = lista.find((u) => u.nome === 'Beto').id;
   tokenB = (await chamar('/api/auth/entrar', { nome: 'Beto', senha: 'senha-do-beto' })).corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: 'senha-do-beto', senhaNova: 'beto-nova-2026' }, tokenB)).status, 200); // senha nova obrigatória no primeiro acesso
   assert.equal((await chamar('/api/usuarios', { nome: 'X', senha: 'xxxxxxx' }, tokenB)).status, 403);
 });
 
