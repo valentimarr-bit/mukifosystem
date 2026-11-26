@@ -451,7 +451,7 @@ export async function rotearApi(request, env, url) {
     }
     return json({ ativo: await modoTeste(db) });
   }
-  // Zerar testes (só superadmin): apaga pedidos, cobranças, carteira e caixa feitos no sistema. Mantém produtos, estoque, fotos, clientes, usuários e o histórico importado.
+  // Zerar testes (só superadmin): apaga pedidos, cobranças, carteira, caixa e pontos dos clientes. Mantém produtos, estoque, fotos, clientes, usuários e o histórico importado.
   if (p === '/api/zerar-testes' && m === 'POST') {
     const eu = await usuarioLogado(request, env);
     if (!eu || eu.papel !== 'superadmin') return erro('Só o superadmin zera os testes.', 403);
@@ -462,7 +462,8 @@ export async function rotearApi(request, env, url) {
       ["movimento_estoque", `DELETE FROM movimento_estoque WHERE tipo = 'venda' AND referencia IN ${meus}`],
       ["cobranca", `DELETE FROM cobranca WHERE pedido_id IN ${meus}`],
       ["nota_emitida", `DELETE FROM nota_emitida WHERE pedido_id IN ${meus}`],
-      ["ponto_mov", `DELETE FROM ponto_mov WHERE pedido_id IN ${meus}`],
+      ["ponto_mov", 'DELETE FROM ponto_mov'],
+      ["cliente_pontos", 'UPDATE cliente SET pontos = 0, pontos_total = 0 WHERE pontos <> 0 OR pontos_total <> 0'],
       ["push_assinatura", `DELETE FROM push_assinatura WHERE pedido_id IN ${meus}`],
       ["pedido_externo", `DELETE FROM pedido_externo WHERE id IN ${meus}`],
       ["carteira_mov", 'DELETE FROM carteira_mov'],
