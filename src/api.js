@@ -451,6 +451,30 @@ export async function rotearApi(request, env, url) {
     }
     return json({ ativo: await modoTeste(db) });
   }
+  // Zerar testes (só superadmin): apaga pedidos, cobranças, carteira e caixa feitos no sistema. Mantém produtos, estoque, fotos, clientes, usuários e o histórico importado.
+  if (p === '/api/zerar-testes' && m === 'POST') {
+    const eu = await usuarioLogado(request, env);
+    if (!eu || eu.papel !== 'superadmin') return erro('Só o superadmin zera os testes.', 403);
+    let c = {}; try { c = await request.json(); } catch { /* vazio */ }
+    if (c.confirmar !== 'ZERAR') return erro('Confirmação ausente.');
+    const meus = "(SELECT id FROM pedido WHERE origem <> 'relatorio')";
+    const passos = [
+      ["movimento_estoque", `DELETE FROM movimento_estoque WHERE tipo = 'venda' AND referencia IN ${meus}`],
+      ["cobranca", `DELETE FROM cobranca WHERE pedido_id IN ${meus}`],
+      ["nota_emitida", `DELETE FROM nota_emitida WHERE pedido_id IN ${meus}`],
+      ["ponto_mov", `DELETE FROM ponto_mov WHERE pedido_id IN ${meus}`],
+      ["push_assinatura", `DELETE FROM push_assinatura WHERE pedido_id IN ${meus}`],
+      ["pedido_externo", `DELETE FROM pedido_externo WHERE id IN ${meus}`],
+      ["carteira_mov", 'DELETE FROM carteira_mov'],
+      ["recarga", 'DELETE FROM recarga'],
+      ["caixa_mov", 'DELETE FROM caixa_mov'],
+      ["caixa_fechamento", 'DELETE FROM caixa_fechamento'],
+      ["item_pedido", `DELETE FROM item_pedido WHERE pedido_id IN ${meus}`],
+      ["pedido", "DELETE FROM pedido WHERE origem <> 'relatorio'"],
+    ];
+    const r = await db.batch(passos.map(([, sql]) => db.prepare(sql)));
+    return json({ ok: true, apagado: Object.fromEntries(passos.map(([nome], i) => [nome, r[i]?.meta?.changes ?? 0])) });
+  }
   const modulo = moduloDaRota(p);
   if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
     const eu = await usuarioLogado(request, env);
