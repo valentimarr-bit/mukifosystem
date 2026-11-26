@@ -2,6 +2,12 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-26 — zerar métricas
+**Feito**
+- "Zerar testes" (Conta, superadmin) agora também zera `ponto_mov` e os pontos de todos os clientes. Teste atualizado.
+**Próximo**
+- Depois de publicar, o superadmin aperta o botão em Gestão → Conta para limpar os pedidos e métricas de teste no banco de produção.
+
 ## 2026-11-25 — ranking e placar da sinuca
 **Feito**
 - Score Elo, níveis, formatos de chave, séries e repescagem por recompra no campeonato; título especial por jogador (migração 0032).

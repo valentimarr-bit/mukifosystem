@@ -108,10 +108,13 @@ test('zerar testes: só o superadmin, pede confirmação e preserva o histórico
   const sa = tokenB, gerente = tokenA;
   await env.DB.prepare("INSERT INTO pedido (id, numero, dia, origem, total) VALUES ('t1', 'A1', '2026-11-25', 'celular', 20), ('h1', 'H1', '2026-10-25', 'relatorio', 30)").run();
   await env.DB.prepare("INSERT INTO item_pedido (pedido_id, produto_id, quantidade, preco) VALUES ('t1', 1, 1, 20)").run().catch(() => {});
+  await env.DB.prepare("INSERT INTO cliente (id, nome, pontos, pontos_total) VALUES ('c1', 'Teste', 50, 80)").run();
   assert.equal((await chamar('/api/zerar-testes', { confirmar: 'ZERAR' }, gerente)).status, 403);
   assert.equal((await chamar('/api/zerar-testes', {}, sa)).status, 400);
   const r = await chamar('/api/zerar-testes', { confirmar: 'ZERAR' }, sa);
   assert.equal(r.status, 200);
   const restam = (await env.DB.prepare('SELECT id FROM pedido').all()).results.map((x) => x.id);
   assert.ok(restam.includes('h1') && !restam.includes('t1'));
+  const c = await env.DB.prepare("SELECT pontos, pontos_total FROM cliente WHERE id = 'c1'").first();
+  assert.deepEqual([c.pontos, c.pontos_total], [0, 0]);
 });
