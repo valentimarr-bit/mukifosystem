@@ -2,6 +2,12 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-26 — cancelar pedido
+**Feito**
+- `src/cancelamento.js`: `POST /api/pedidos/:id/cancelar` { motivo, estorno: saldo|por_fora|nenhum, devolver_estoque } e `GET /api/cancelamentos?dias=`; tabela `cancelamento` (migração 0034); módulo `cancelar` (padrão ligado). Estorna saldo (carteira_mov 'estorno'), devolve estoque (movimento 'ajuste' ao contrário da baixa), tira os pontos. Cliente recebe `cancelado_pelo_bar`.
+**Próximo / em aberto**
+- Devolução automática pelo gateway (hoje "devolvido no balcão" é manual) e saída no caixa do turno; cancelar NFC-e se já emitida.
+
 ## 2026-11-26 — app do cliente: senha, vários pedidos, voltar
 **Feito**
 - "Esqueci a senha" manda o código pelo WhatsApp (izapia) e/ou e-mail (Resend); botão "Mandar código" na tela de recuperar.

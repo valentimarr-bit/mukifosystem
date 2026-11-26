@@ -93,6 +93,8 @@ Qualquer pessoa logada lança **sangria** (tirar dinheiro do caixa) e **suprimen
 - A **trava de estoque** impede vender o que não tem (pode ser desligada).
 
 ## 5. Produção
+- **Cancelar pedido:** botão "✖ Cancelar pedido" no fim de cada cartão (para quem tem a permissão **Cancelar pedidos**; vem ligada para gerentes). O motivo é obrigatório. Se o pedido já foi pago, escolha como o dinheiro volta: no **saldo do cliente** (só quem tem conta; pago com saldo volta sozinho), **devolvido no balcão** ou **sem devolução**. Marque se os itens voltam para o estoque (vem marcado quando ainda não começou o preparo). Os pontos do cliente daquele pedido saem. O cliente vê "Pedido cancelado pelo bar".
+- **📜 Cancelados:** histórico dos últimos 30 dias — número, itens, cliente, motivo, quem cancelou, quando, quanto tinha entrado e como voltou. Não dá para apagar.
 - Quadro com três colunas: **Recebido**, **Em produção** e **Entregue**.
 - Cada pedido mostra o tempo de espera. É possível marcar **pronto por item** e fazer **entrega parcial** (REP 1, REP 2…), quando só parte do pedido ficou pronta.
 - O cliente é avisado quando o pedido fica pronto: vibração e som na tela, e notificação no celular quando os avisos push estão configurados.

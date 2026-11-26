@@ -176,6 +176,7 @@ async function consultar(p) {
   if (r.status === 404) return fim(p, 'Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
   const s = await r.json(); s.id = p.id;
   if (s.retirado) return fim(p, 'Pedido entregue ✓', 'Obrigado e boa noite!');
+  if (s.status === 'cancelado' && s.cancelado_pelo_bar) return fim(p, 'Pedido cancelado pelo bar', 'Se você já tinha pago, fale com o balcão sobre a devolução.');
   if (s.status === 'cancelado') return fim(p, 'Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
   const antes = estado.get(p.id); estado.set(p.id, s);
   if (s.pago) { textos = s.textos; avisarEtapa(p, antes?.pago ? antes.status : null, s.status); if (vendo === p.id) desenharQr(s); }

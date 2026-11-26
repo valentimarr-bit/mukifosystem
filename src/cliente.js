@@ -143,6 +143,7 @@ async function verStatus(db, request, id) {
   const pix = c.status === 'aguardando_pagamento' ? await lerPix(db) : null;
   return json({
     id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
+    cancelado_pelo_bar: c.status === 'cancelado' && !!(await db.prepare('SELECT 1 AS x FROM cancelamento WHERE pedido_id = ?').bind(id).first()),
     remessa: (await db.prepare('SELECT remessa FROM pedido WHERE id = ?').bind(id).first())?.remessa ?? 0,
     fila: ['recebido', 'preparando'].includes(c.status) ? await filaDoPedido(db, id) : null, espera: await esperaDoDia(db),
     itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,

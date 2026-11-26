@@ -2,6 +2,7 @@
 export const MODULOS = [
   { id: 'venda', nome: 'Venda (balcão)', padrao: true },
   { id: 'producao', nome: 'Produção (pedidos e receitas)', padrao: true },
+  { id: 'cancelar', nome: 'Cancelar pedidos (com motivo; fica no histórico)', padrao: true },
   { id: 'caixa', nome: 'Caixa do turno (sangria e fechamento)', padrao: true },
   { id: 'estoque', nome: 'Estoque', padrao: true },
   { id: 'recomendado', nome: 'Recomendado (segunda e quinta)', padrao: true },
@@ -30,6 +31,7 @@ export function modulosDe(u) {
 export function moduloDaRota(p) {
   if (p === '/api/venda/cardapio') return null;
   if (p.startsWith('/api/venda/')) return 'venda';
+  if (p === '/api/cancelamentos' || /^\/api\/pedidos\/[\w-]+\/cancelar$/.test(p)) return 'cancelar';
   if (p.startsWith('/api/producao') || p === '/api/canais/sincronizar') return 'producao';
   if (p.startsWith('/api/canais')) return 'venda';
   if (p.startsWith('/api/fiscal')) return 'financeiro';

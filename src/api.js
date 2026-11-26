@@ -18,6 +18,7 @@ import { rotearCanais } from './canais.js';
 import { rotearPagamentos } from './pagamentos/aviso.js';
 import { rotearAuditoria } from './auditoria.js';
 import { rotearProducao } from './producao.js';
+import { rotearCancelamento } from './cancelamento.js';
 import { moduloDaRota } from './dominio/modulos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha, sugestaoCompra,
@@ -494,6 +495,7 @@ export async function rotearApi(request, env, url) {
   if (p.startsWith('/api/conta/')) return rotearConta(request, env, url);
   if (p === '/api/clientes' || p.startsWith('/api/clientes/')) return rotearClientes(request, env, url);
   if (p === '/api/producao' || p.startsWith('/api/producao/')) return rotearProducao(request, env, url);
+  if (p === '/api/cancelamentos' || /^\/api\/pedidos\/[\w-]+\/cancelar$/.test(p)) return rotearCancelamento(request, env, url);
   if (p === '/api/fornecedores' || p.startsWith('/api/fornecedores/')) return rotearFornecedores(request, env, url);
   if (p === '/api/planilhas' || p.startsWith('/api/planilhas/')) return rotearPlanilhas(request, env, url);
   if (p === '/api/desempenho' && request.method === 'GET') return getDesempenho(request, env, url);
