@@ -127,6 +127,30 @@ export async function rotearAuth(request, env, url) {
     return json({ ok: true, token: await novaSessao(db, r.id), usuario: { id: r.id, nome, papel: 'superadmin' } });
   }
 
+  // Dono esqueceu a senha: com o código de primeiro acesso, troca a senha e pode trocar o nome.
+  if (m === 'POST' && p === '/api/auth/recuperar') {
+    if (!env.CODIGO_PRIMEIRO_ACESSO) return erro('Falta criar o código de primeiro acesso na Cloudflare (Settings → Variables and Secrets → CODIGO_PRIMEIRO_ACESSO).', 503);
+    const cCodigo = 'codigo:' + (request.headers.get('cf-connecting-ip') ?? 'sem-ip');
+    if (await bloqueado(db, cCodigo)) return erro(MSG_BLOQUEADO, 429);
+    if (!igual(String(corpo.codigo ?? ''), env.CODIGO_PRIMEIRO_ACESSO)) { await falhou(db, cCodigo, 5); return erro('Código de primeiro acesso inválido.', 403); }
+    const dono = await db.prepare(`SELECT id, nome FROM usuario WHERE papel = 'superadmin'`).first();
+    if (!dono) return erro('Ainda não há dono: faça o primeiro acesso.', 409);
+    const e = validarNovaSenha(corpo.senhaNova); if (e) return erro(e);
+    let nome = dono.nome;
+    if (corpo.nome !== undefined) {
+      nome = String(corpo.nome ?? '').trim();
+      if (nome.length < 2 || nome.length > 40) return erro('Digite um nome com 2 a 40 letras.');
+      if (await db.prepare('SELECT 1 AS x FROM usuario WHERE nome = ? AND id <> ?').bind(nome, dono.id).first()) return erro('Já existe alguém com esse nome.', 409);
+    }
+    const sal = aleatorio(16);
+    const trocar = FRACAS.includes(String(corpo.senhaNova).toLowerCase()) ? 1 : 0;
+    await db.batch([
+      db.prepare('UPDATE usuario SET nome = ?, senha_hash = ?, senha_sal = ?, ativo = 1, trocar_senha = ? WHERE id = ?').bind(nome, await hashSenha(corpo.senhaNova, sal), sal, trocar, dono.id),
+      db.prepare('DELETE FROM sessao WHERE usuario_id = ?').bind(dono.id),   // derruba quem estava logado como dono
+    ]);
+    return json({ ok: true, token: await novaSessao(db, dono.id), usuario: { id: dono.id, nome, papel: 'superadmin' }, trocarSenha: !!trocar });
+  }
+
   if (m === 'POST' && p === '/api/auth/entrar') {
     const nomeLogin = String(corpo.nome ?? '').trim();
     const cNome = 'nome:' + nomeLogin.toLowerCase();
