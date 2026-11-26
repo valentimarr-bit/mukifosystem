@@ -439,6 +439,10 @@ export async function rotearApi(request, env, url) {
   if (!db) return erro('Banco de dados ainda não configurado (fase 2: ver README)', 503);
   const m = request.method;
   const p = url.pathname;
+  if (m !== 'GET' && m !== 'HEAD' && p !== '/api/auth/sair' && p !== '/api/auth/demo' && request.headers.get('authorization')) {
+    const quem = await usuarioLogado(request, env);   // login de demonstração só olha, nunca grava
+    if (quem?.demo) return erro('Na demonstração dá só para olhar. Nada é salvo.', 403);
+  }
   if (p.startsWith('/api/auth/') || p === '/api/usuarios' || p === '/api/modulos' || p.startsWith('/api/usuarios/')) return rotearAuth(request, env, url);
   if (p === '/api/auditoria') return rotearAuditoria(request, env, url);
   if (p === '/api/visual') return visualDaCasa(request, env, db);

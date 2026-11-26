@@ -18,6 +18,7 @@ window.Mukifo = (() => {
   #mkLogin input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line,#2c2c2c);background:var(--input,#111);color:var(--txt,#f2f2f2);box-sizing:border-box}
   #mkLogin button:disabled{opacity:.5}
   #mkLogin button{width:100%;min-height:52px;margin-top:16px;border-radius:12px;border:0;background:var(--acc,#ffb347);color:var(--on-acc,#111);font-size:17px;font-weight:600;cursor:pointer}
+  #mkLogin button.sec{background:transparent;border:1px solid var(--line,#2c2c2c);color:var(--txt,#f2f2f2);font-weight:500;margin-top:10px}
   #mkLogin .erro{color:var(--bad,#ff8a80);min-height:20px;margin-top:8px;font-size:14px}`;
 
   function montar() {
@@ -28,7 +29,8 @@ window.Mukifo = (() => {
       <label for="mkNome">Seu nome</label><input id="mkNome" autocomplete="username">
       <label for="mkSenha">Senha</label><input id="mkSenha" type="password" autocomplete="current-password">
       <div id="mkCodigoBox" hidden><label for="mkCodigo">Código de primeiro acesso</label><input id="mkCodigo" autocomplete="off"></div>
-      <div class="erro" id="mkErro"></div><button id="mkOk"></button>`;
+      <div class="erro" id="mkErro"></div><button id="mkOk"></button>
+      <button id="mkDemo" class="sec" hidden>👀 Só quero ver (demonstração)</button>`;
     d.addEventListener('cancel', (e) => e.preventDefault()); // só fecha entrando
     document.body.appendChild(d);
   }
@@ -49,6 +51,13 @@ window.Mukifo = (() => {
       ? 'Antes do primeiro acesso, crie o segredo CODIGO_PRIMEIRO_ACESSO na Cloudflare (Settings → Variables and Secrets) e recarregue a página.' : '';
     $('#mkOk').disabled = !!est.faltaCodigo;
     const d = $('#mkLogin'); if (!d.open) d.showModal();
+    $('#mkDemo').hidden = !est.demo;
+    $('#mkDemo').onclick = async () => {
+      $('#mkDemo').disabled = true; $('#mkErro').textContent = '';
+      try { const r = await post('/api/auth/demo', {}); salvar({ token: r.token, usuario: r.usuario }); d.close(); aoEntrar && aoEntrar(r.usuario); if (!aoEntrar) location.reload(); }
+      catch (e) { $('#mkErro').textContent = e.message; }
+      $('#mkDemo').disabled = false;
+    };
     $('#mkOk').onclick = async () => {
       $('#mkOk').disabled = true; $('#mkErro').textContent = '';
       try {
