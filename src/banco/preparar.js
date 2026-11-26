@@ -11,9 +11,10 @@ export function prepararBanco(db) {
 }
 
 async function executar(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS _mukifo_migracao (
-    nome TEXT PRIMARY KEY, aplicada_em TEXT NOT NULL DEFAULT (datetime('now')))`).run();
-  const { results } = await db.prepare('SELECT nome FROM _mukifo_migracao').all();
+  let results;
+  try { ({ results } = await db.prepare('SELECT nome FROM _mukifo_migracao').all()); }
+  catch { await db.prepare(`CREATE TABLE IF NOT EXISTS _mukifo_migracao (nome TEXT PRIMARY KEY, aplicada_em TEXT NOT NULL DEFAULT (datetime('now')))`).run();
+          ({ results } = await db.prepare('SELECT nome FROM _mukifo_migracao').all()); }
   const feitas = new Set(results.map((r) => r.nome));
 
   // Banco montado antes pelo terminal (wrangler d1 migrations): aproveita o registro dele.
