@@ -12,9 +12,10 @@ export async function modoTeste(db) {
 }
 
 export async function travaLigada(db) {
-  if (await modoTeste(db)) return false;
-  const c = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'travar_estoque'").first();
-  return (c?.valor ?? 'sim') !== 'nao';
+  const { results } = await db.prepare("SELECT chave, valor FROM configuracao WHERE chave IN ('modo_teste','travar_estoque')").all();
+  const c = Object.fromEntries(results.map((r) => [r.chave, r.valor]));
+  if (c.modo_teste === 'sim') return false;
+  return (c.travar_estoque ?? 'sim') !== 'nao';
 }
 
 async function base(db) {
@@ -61,12 +62,12 @@ function restam(b, produtoId, comprometido) {
   return min;
 }
 
-/** Para o cardápio: produto -> quantas ainda dá para vender (só quem tem limite). */
+/** Para o cardápio: produto -> quantas ainda dá para vender (só quem tem limite). produtoIds null = todos os que têm ficha. */
 export async function disponibilidade(db, produtoIds) {
   if (!(await travaLigada(db))) return new Map();
   const [b, res] = await Promise.all([base(db), reservado(db)]);
   const comp = consumo(b, res), out = new Map();
-  for (const id of produtoIds) { const r = restam(b, id, comp); if (r != null) out.set(id, r); }
+  for (const id of produtoIds ?? b.req.keys()) { const r = restam(b, id, comp); if (r != null) out.set(id, r); }
   return out;
 }
 
