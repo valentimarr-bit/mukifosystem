@@ -6,6 +6,7 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },
+  "placement": { "mode": "smart" },
 
   // Todo minuto: busca pedidos do iFood/99Food (só faz algo se o canal estiver ligado em /canais.html).
   "triggers": { "crons": ["* * * * *"] },

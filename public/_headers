@@ -30,3 +30,9 @@
   Service-Worker-Allowed: /
 /manifest.webmanifest
   Content-Type: application/manifest+json
+/espera.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/ordenar.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+/chave.js
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
