@@ -1,9 +1,10 @@
 // Login do Mukifo: primeiro acesso cria o superadmin; ele pode trocar a senha e passar o cargo.
 import { json } from './api.js';
-import { modulosDe, MODULOS, IDS, PADRAO_GERENTE } from './dominio/modulos.js';
+import { modulosDe, MODULOS, IDS, PADRAO_GERENTE, PADRAO_ATENDENTE, papelDe, NOME_CARGO } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
 const DIAS_SESSAO = 30;
+const CARGOS = ['gerente', 'atendente'];   // cargo de quem não é o Dono (o Dono é o superadmin)
 // Login de demonstração: um botão que entra sem senha, só para ver as telas, e só de leitura.
 // Vem desligado; para ligar, crie LOGIN_DEMO = sim na Cloudflare.
 export const NOME_DEMO = 'Demonstração';
@@ -43,7 +44,7 @@ export async function usuarioLogado(request, env) {
   if (env.ADMIN_TOKEN && igual(token, env.ADMIN_TOKEN)) return { id: null, nome: 'chave-de-emergência', papel: 'superadmin', modulos: modulosDe({ papel: 'superadmin' }) };
   if (!env.DB) return null;
   const u = await env.DB.prepare(
-    `SELECT u.id, u.nome, u.papel, u.modulos FROM sessao s JOIN usuario u ON u.id = s.usuario_id
+    `SELECT u.id, u.nome, u.papel, u.cargo, u.trocar_senha, u.modulos FROM sessao s JOIN usuario u ON u.id = s.usuario_id
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
   if (!u) return null;
   // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
@@ -55,7 +56,8 @@ export async function usuarioLogado(request, env) {
     if (metodo !== 'GET' && metodo !== 'HEAD' && caminho !== '/api/auth/sair') return null;
     return { id: u.id, nome: u.nome, papel: u.papel, modulos: MODULOS_DEMO, demo: true };
   }
-  return { id: u.id, nome: u.nome, papel: u.papel, modulos: modulosDe(u) };
+  const papel = papelDe(u);
+  return { id: u.id, nome: u.nome, papel, cargo: NOME_CARGO[papel], modulos: modulosDe(u) };
 }
 
 const validarNovaSenha = (s) => (typeof s === 'string' && s.length >= 6 ? null : 'A senha precisa ter pelo menos 6 caracteres.');
@@ -106,7 +108,7 @@ export async function rotearAuth(request, env, url) {
     const u = await db.prepare('SELECT * FROM usuario WHERE nome = ? AND ativo = 1').bind(String(corpo.nome ?? '').trim()).first();
     const hash = await hashSenha(String(corpo.senha ?? ''), u?.senha_sal ?? 'x'); // gasta o mesmo tempo mesmo se o nome não existir
     if (!u || !igual(hash, u.senha_hash)) return erro('Nome ou senha incorretos.', 401);
-    return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: u.papel } });
+    return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: papelDe(u) } });
   }
 
   // Daqui para baixo precisa estar logado.
@@ -138,14 +140,14 @@ export async function rotearAuth(request, env, url) {
   let km;
   if (p === '/api/modulos' && m === 'GET') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
-    return json({ modulos: MODULOS, padrao_gerente: PADRAO_GERENTE });
+    return json({ modulos: MODULOS, padrao_gerente: PADRAO_GERENTE, padrao_atendente: PADRAO_ATENDENTE });
   }
   if (m === 'PUT' && (km = p.match(/^\/api\/usuarios\/(\d+)\/modulos$/))) {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
-    const alvo = await db.prepare('SELECT id, papel FROM usuario WHERE id = ? AND nome <> ?').bind(Number(km[1]), NOME_DEMO).first();
+    const alvo = await db.prepare('SELECT id, papel, cargo FROM usuario WHERE id = ? AND nome <> ?').bind(Number(km[1]), NOME_DEMO).first();
     if (!alvo) return erro('Pessoa não encontrada.', 404);
     if (alvo.papel === 'superadmin') return erro('O superadmin sempre enxerga tudo.', 409);
-    if (corpo.padrao === true) { await db.prepare('UPDATE usuario SET modulos = NULL WHERE id = ?').bind(alvo.id).run(); return json({ ok: true, modulos: PADRAO_GERENTE }); }
+    if (corpo.padrao === true) { await db.prepare('UPDATE usuario SET modulos = NULL WHERE id = ?').bind(alvo.id).run(); return json({ ok: true, modulos: modulosDe({ papel: alvo.papel, cargo: alvo.cargo, modulos: null }) }); }
     const lista = Array.isArray(corpo.modulos) ? [...new Set(corpo.modulos.map(String))] : null;
     if (!lista || lista.some((x) => !IDS.includes(x))) return erro('Lista de módulos inválida.');
     await db.prepare('UPDATE usuario SET modulos = ? WHERE id = ?').bind(JSON.stringify(lista), alvo.id).run();
@@ -153,22 +155,45 @@ export async function rotearAuth(request, env, url) {
   }
 
   // ---- só o superadmin ----
+  // Editar um login (ativar/desativar, cargo, senha nova). Gerente que tenta: 403.
+  if (m === 'PUT' && (km = p.match(/^\/api\/usuarios\/(\d+)$/))) {
+    if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
+    const alvo = await db.prepare('SELECT id, nome, papel FROM usuario WHERE id = ?').bind(Number(km[1])).first();
+    if (!alvo) return erro('Pessoa não encontrada.', 404);
+    if (alvo.papel === 'superadmin' || alvo.nome === NOME_DEMO) return erro('Este login não pode ser alterado aqui.', 409);
+    if (corpo.cargo !== undefined && !CARGOS.includes(corpo.cargo)) return erro('Cargo inválido.');
+    if (corpo.senha !== undefined) { const e = validarNovaSenha(corpo.senha); if (e) return erro(e); }
+    const campos = [], valores = [];
+    if (typeof corpo.ativo === 'boolean') { campos.push('ativo = ?'); valores.push(corpo.ativo ? 1 : 0); }
+    if (corpo.cargo !== undefined) { campos.push('cargo = ?'); valores.push(corpo.cargo === 'atendente' ? 'atendente' : null); }
+    let sal = null;
+    if (corpo.senha !== undefined) { sal = aleatorio(16); campos.push('senha_hash = ?', 'senha_sal = ?', 'trocar_senha = 1'); valores.push(await hashSenha(corpo.senha, sal), sal); }
+    if (!campos.length) return erro('Nada para mudar.');
+    const stmts = [db.prepare(`UPDATE usuario SET ${campos.join(', ')} WHERE id = ?`).bind(...valores, alvo.id)];
+    // Desativou ou trocou a senha: derruba as sessões dele na hora.
+    if (corpo.ativo === false || sal) stmts.push(db.prepare('DELETE FROM sessao WHERE usuario_id = ?').bind(alvo.id));
+    await db.batch(stmts);
+    return json({ ok: true });
+  }
+
   if (p === '/api/usuarios' || p === '/api/auth/passar-cargo') {
     if (eu.papel !== 'superadmin') return erro('Só o superadmin pode fazer isso.', 403);
 
     if (m === 'GET' && p === '/api/usuarios') {
-      const { results } = await db.prepare('SELECT id, nome, papel, ativo, criado_em, modulos FROM usuario WHERE nome <> ? ORDER BY id').bind(NOME_DEMO).all();
-      return json(results.map((u) => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo, criado_em: u.criado_em, modulos: modulosDe(u), personalizado: u.modulos != null })));
+      const { results } = await db.prepare('SELECT id, nome, papel, cargo, ativo, criado_em, modulos FROM usuario WHERE nome <> ? ORDER BY id').bind(NOME_DEMO).all();
+      return json(results.map((u) => ({ id: u.id, nome: u.nome, papel: papelDe(u), ativo: u.ativo, criado_em: u.criado_em, modulos: modulosDe(u), personalizado: u.modulos != null })));
     }
     if (m === 'POST' && p === '/api/usuarios') {
       const nome = String(corpo.nome ?? '').trim();
       if (nome.length < 2) return erro('Digite o nome.');
       if (nome.toLowerCase() === NOME_DEMO.toLowerCase()) return erro('Esse nome é reservado para o login de demonstração.');
       const e = validarNovaSenha(corpo.senha); if (e) return erro(e);
+      const cargo = corpo.cargo === undefined ? 'gerente' : corpo.cargo;
+      if (!CARGOS.includes(cargo)) return erro('Cargo inválido.');
       const sal = aleatorio(16);
       try {
-        await db.prepare(`INSERT INTO usuario (nome, senha_hash, senha_sal, papel) VALUES (?, ?, ?, 'gerente')`)
-          .bind(nome, await hashSenha(corpo.senha, sal), sal).run();
+        await db.prepare(`INSERT INTO usuario (nome, senha_hash, senha_sal, papel, cargo, trocar_senha) VALUES (?, ?, ?, 'gerente', ?, 1)`)
+          .bind(nome, await hashSenha(corpo.senha, sal), sal, cargo === 'atendente' ? 'atendente' : null).run();
       } catch { return erro('Já existe alguém com esse nome.', 409); }
       return json({ ok: true });
     }
