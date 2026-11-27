@@ -30,8 +30,10 @@ test('cria um gerente e um atendente, e um cliente para os testes', async () => 
   const cad = await chamar('/api/conta/cadastro', { nome: 'Cliente Teste', celular: '51999991234', senha: 'senha-cliente', aceite: true });
   assert.equal(cad.status, 201);
   idCliente = cad.corpo.cliente.id;
-  tokenGerente = (await chamar('/api/auth/entrar', { nome: 'Gil', senha: 'senha-do-gil' })).corpo.token;
-  tokenAtendente = (await chamar('/api/auth/entrar', { nome: 'Ari', senha: 'senha-da-ari' })).corpo.token;
+  const entrar = async (nome, senha) => { const t = (await chamar('/api/auth/entrar', { nome, senha })).corpo.token;   // login criado pelo dono: troca a senha provisória antes
+    assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: senha, senhaNova: senha + '-Nova9' }, t)).status, 200); return t; };
+  tokenGerente = await entrar('Gil', 'senha-do-gil');
+  tokenAtendente = await entrar('Ari', 'senha-da-ari');
   assert.ok(tokenGerente && tokenAtendente);
 });
 
@@ -45,7 +47,7 @@ test('ADMIN_TOKEN continua mexendo em saldo e em senha do cliente', async () => 
   assert.equal((await chamar(`/api/clientes/${idCliente}/codigo-senha`, null, 'segredo-teste', 'POST')).status, 200);
 });
 
-test('atendente não mexe em saldo nem em senha do cliente', { todo: 'depende do cargo no login (B1a)' }, async () => {
+test('atendente não mexe em saldo nem em senha do cliente', async () => {
   assert.equal((await chamar(`/api/clientes/${idCliente}/saldo`, { valor: 10, obs: 'tentativa' }, tokenAtendente)).status, 403);
   assert.equal((await chamar(`/api/clientes/${idCliente}/codigo-senha`, null, tokenAtendente, 'POST')).status, 403);
 });

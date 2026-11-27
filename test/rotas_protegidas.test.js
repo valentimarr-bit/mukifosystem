@@ -37,6 +37,7 @@ test('gerente só com o módulo venda não altera produtos nem contagem → 403'
   assert.equal((await chamar(`/api/usuarios/${id}/modulos`, { modulos: ['venda'] }, 'segredo-teste', 'PUT')).status, 200);
   const token = (await chamar('/api/auth/entrar', { nome: 'Gerente', senha: 'senha-gerente' })).corpo.token;
   assert.ok(token, 'gerente entra');
+  assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: 'senha-gerente', senhaNova: 'Gerente#Forte9' }, token)).status, 200);   // senha provisória
   assert.equal((await chamar('/api/produtos/1', { preco: 1 }, token, 'PUT')).status, 403);
   assert.equal((await chamar('/api/contagem', { itens: [] }, token)).status, 403);
 });
