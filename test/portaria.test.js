@@ -66,9 +66,11 @@ test('atendente sem o módulo financeiro: volta para o início com aviso', async
   assert.equal(r.location, '/inicio.html?sem=1');
 });
 
-test('páginas de uso livre para quem está logado', async () => {
-  const r = await chamar('/gestao.html', { cookie: `mk_equipe=${tokenAtendente}` });
-  assert.equal(r.status, 200);
+test('início e manual abrem para qualquer pessoa da equipe; gestão vazia não abre para o atendente', async () => {
+  assert.equal((await chamar('/inicio.html', { cookie: `mk_equipe=${tokenAtendente}` })).status, 200);
+  assert.equal((await chamar('/manual.html', { cookie: `mk_equipe=${tokenAtendente}` })).status, 200);
+  const g = await chamar('/gestao.html', { cookie: `mk_equipe=${tokenAtendente}` });
+  assert.equal(g.status, 302); assert.equal(g.location, '/inicio.html?sem=1');
 });
 
 test('/compras sem o módulo vai para o início; /compras/ com o módulo abre', async () => {

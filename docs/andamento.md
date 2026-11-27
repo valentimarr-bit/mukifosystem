@@ -2,6 +2,21 @@
 
 Atualize no fim de cada sessão. Mais recente em cima.
 
+## 2026-11-26 — segurança, acessos e desempenho
+Plano feito por Opus (segurança e desempenho) e executado por Haiku em lotes paralelos (branches `seg-*`, `perf-*`, `r-*` juntadas em `seguranca`).
+**Feito**
+- Demonstração desligada/somente leitura; XSS da Venda; erro 500 sem detalhe; cabeçalhos de segurança (CSP etc.) em `public/_headers`.
+- Migração 0035 (`usuario.cargo`, `usuario.trocar_senha`, tabela `tentativa`); cargos Dono/Gerente/Atendente (`src/dominio/modulos.js`: `papelDe`, `PADRAO_ATENDENTE`, `moduloDaRota(p, m)` com lista); rotas de gestão exigem login e módulo.
+- Login: troca obrigatória de senha provisória, limite de tentativas, `POST /api/auth/recuperar` (dono pelo código), cookie `mk_equipe`, `PUT /api/usuarios/:id` (ativo/cargo/senha).
+- Portaria das páginas (`src/portaria.js` + `run_worker_first`, que precisa incluir `/api/*`). `/` → `/entrar.html` ou `/inicio.html`.
+- Telas: `/entrar.html`, `/inicio.html`, `public/menu.js` (barra única em todas as páginas), aba Conta com cargos, "Criar logins iniciais", redefinir senha, desativar.
+- Desempenho: smart placement, memo do login por requisição, status do pedido do app (~10 → ~3 idas ao banco), produção só lê, cron expira vencidos, trava/visual/cardápio com menos consultas, índice das fotos (0036), produção não redesenha sem mudança.
+**Próximo / em aberto**
+- Depois do deploy: medir `/api/cliente/pedidos/:id` em produção e conferir `cf-placement` no cabeçalho; ver a região do D1.
+- Plano de desempenho, lote "depois" (`public/cliente.html`): fotos.js fora do `<head>`, polling com setTimeout encadeado, links sem `.html` (evitar 307).
+- Decidir se o gerente vê o celular completo dos clientes (hoje vê).
+- Devolução automática pelo gateway no cancelamento.
+
 ## 2026-11-26 — cancelar pedido
 **Feito**
 - `src/cancelamento.js`: `POST /api/pedidos/:id/cancelar` { motivo, estorno: saldo|por_fora|nenhum, devolver_estoque } e `GET /api/cancelamentos?dias=`; tabela `cancelamento` (migração 0034); módulo `cancelar` (padrão ligado). Estorna saldo (carteira_mov 'estorno'), devolve estoque (movimento 'ajuste' ao contrário da baixa), tira os pontos. Cliente recebe `cancelado_pelo_bar`.

@@ -6,7 +6,8 @@ const QUALQUER_EQUIPE = '*';
 // Página → quem pode ver: '*' = qualquer pessoa da equipe logada; lista = precisa de um dos módulos.
 const MAPA = {
   '/inicio.html': QUALQUER_EQUIPE,
-  '/gestao.html': QUALQUER_EQUIPE,
+  // Gestão: só quem tem pelo menos uma das abas (o atendente padrão não tem nenhuma).
+  '/gestao.html': ['estoque', 'recomendado', 'produtos', 'combos', 'fotos', 'niveis', 'registrar', 'fornecedores', 'caixa', 'clientes', 'campeonato', 'desempenho', 'financeiro', 'excel'],
   '/manual.html': QUALQUER_EQUIPE,
   '/venda.html': ['venda'],
   '/canais.html': ['venda'],

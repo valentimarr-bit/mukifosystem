@@ -19,11 +19,11 @@ Estado em 2026-11-24: tudo commitado e enviado a `main` (https://github.com/vale
 ## Segredos / variáveis (Cloudflare → Worker → Configurações; nunca no código)
 | Nome | Para quê | Obrigatório |
 |---|---|---|
-| `CODIGO_PRIMEIRO_ACESSO` | cria o primeiro superadmin | sim, no começo |
-| `ADMIN_TOKEN` | acesso técnico | opcional |
+| `CODIGO_PRIMEIRO_ACESSO` | cria o primeiro dono e serve para o dono recuperar o acesso ("Sou o dono e perdi a senha"); troque depois de usar | sim |
+| `ADMIN_TOKEN` | acesso técnico de emergência (só por cabeçalho `Authorization: Bearer`); use 32+ caracteres aleatórios ou apague | opcional |
 | `PAGAMENTO_WEBHOOK_SECRET` | assinatura do webhook de pagamento (Pix automático) | quando houver gateway |
 | `VAPID_PUBLICA`, `VAPID_PRIVADA`, `VAPID_CONTATO` | avisos push no celular | para push |
-| `LOGIN_DEMO` | `nao` desliga o botão "Só quero ver" (login de demonstração, ligado por padrão) | opcional |
+| `LOGIN_DEMO` | `sim` liga o "Só quero ver" (demonstração somente leitura). **Desligado por padrão** | opcional |
 | `GOOGLE_CLIENT_ID` | entrar com Google | opcional |
 | `RESEND_API_KEY`, `EMAIL_REMETENTE` | e-mail de recuperar senha | opcional |
 | `NAVI_API_URL`, `NAVI_TOKEN` | integração Navi | pendente |
