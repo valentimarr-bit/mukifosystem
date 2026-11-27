@@ -9,6 +9,7 @@ window.Cadastros = (() => {
     const r = await fetch(url, { method: m, body: ['POST', 'PUT'].includes(m) ? JSON.stringify(corpo || {}) : undefined, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + Mukifo.token() } });
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
   };
+  const CARGO = { gerente: 'Gerente', atendente: 'Atendente' };
   const aviso = (el, t, ruim) => { el.innerHTML = t ? `<p class="${ruim ? 'neg' : 'pos'}">${esc(t)}</p>` : ''; };
   const dlgCss = 'max-width:94vw;width:480px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:18px';
 
@@ -24,11 +25,11 @@ window.Cadastros = (() => {
     if (atual?.hidden && vis[0]) vis[0].click();
   }
   async function carregarPermissoes() {
-    const cfg = await api('/api/modulos'), us = (await api('/api/usuarios')).filter((u) => u.papel === 'gerente');
+    const cfg = await api('/api/modulos'), us = (await api('/api/usuarios')).filter((u) => u.papel !== 'superadmin');
     const box = $('#permissoes');
-    box.innerHTML = us.length ? us.map((u) => `<div class="card" data-u="${u.id}" style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px"><b>${esc(u.nome)}</b> <span class="mut">${u.personalizado ? '(personalizado)' : '(padrão de gerente)'}</span>
+    box.innerHTML = us.length ? us.map((u) => `<div class="card" data-u="${u.id}" style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px"><b>${esc(u.nome)}</b> <span class="mut">· ${esc(CARGO[u.papel] ?? u.papel)} ${u.personalizado ? '(personalizado)' : '(padrão do cargo)'}</span>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px;margin:8px 0">${cfg.modulos.map((m) => `<label class="chk"><input type="checkbox" value="${m.id}" ${u.modulos.includes(m.id) ? 'checked' : ''}> ${esc(m.nome)}</label>`).join('')}</div>
-      <div class="bar"><button class="btn prim" data-salvar>Salvar</button><button class="btn" data-padrao>Voltar ao padrão</button></div></div>`).join('') : '<p class="mut">Adicione um gerente acima para escolher o que ele enxerga.</p>';
+      <div class="bar"><button class="btn prim" data-salvar>Salvar</button><button class="btn" data-padrao>Voltar ao padrão do cargo</button></div></div>`).join('') : '<p class="mut">Adicione uma pessoa acima para escolher o que ela enxerga.</p>';
     box.onclick = async (e) => {
       const card = e.target.closest('[data-u]'); if (!card) return; const id = card.dataset.u;
       try {
@@ -71,7 +72,7 @@ window.Cadastros = (() => {
         <b>Últimos pedidos</b><div class="mut">${j.pedidos.map((p) => `${esc(p.numero)} · ${dBr(p.dia)} · ${brl(p.total)} · ${esc(p.status)}`).join('<br>') || 'Nenhum.'}</div>
         <h4>Esqueceu a senha?</h4><div class="bar"><button class="btn" id="clCodigo">Gerar código de recuperação</button><b id="clCodigoVal" style="font-size:1.6em;letter-spacing:.2em"></b></div><p class="mut" id="clCodigoMsg">O cliente digita o código em “Esqueci minha senha” no app e cria uma senha nova. Vale 15 minutos e só funciona uma vez.</p>
         <h4>💳 Carteira: R$ ${Number(c.saldo ?? 0).toFixed(2).replace('.', ',')}</h4><div class="bar"><input id="swVal" inputmode="decimal" placeholder="+50 (recarga em dinheiro) ou -20" style="width:190px"><input id="swMot" placeholder="Motivo (obrigatório)" style="flex:1"><button class="btn" id="swOk">Lançar</button></div>
-        <h4>Ajustar pontos (superadmin)</h4><div class="bar"><input id="ajPts" inputmode="numeric" placeholder="+50 ou -20" style="width:110px"><input id="ajMot" placeholder="Motivo" style="flex:1"><button class="btn" id="ajOk">Ajustar</button></div>
+        <h4>Ajustar pontos (só o dono)</h4><div class="bar"><input id="ajPts" inputmode="numeric" placeholder="+50 ou -20" style="width:110px"><input id="ajMot" placeholder="Motivo" style="flex:1"><button class="btn" id="ajOk">Ajustar</button></div>
         <label class="chk"><input type="checkbox" id="clAtivo" ${j.ativo ? 'checked' : ''}> Conta ativa</label><p class="neg" id="clErr"></p>
         <div class="bar"><button class="btn" id="clFecha" style="flex:1">Fechar</button><button class="btn prim" id="clSalva" style="flex:1">Salvar</button></div>`;
       d.showModal(); $('#clFecha').onclick = () => d.close();
