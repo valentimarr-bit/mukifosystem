@@ -16,9 +16,9 @@ main{max-width:760px;margin:0 auto;padding:0 12px 90px}.card{background:var(--ca
 select,input{width:100%;min-height:50px;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--txt)}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;z-index:9}
 .erro{color:var(--bad)}.pixbox{text-align:center}.pixbox img{width:min(260px,70vw);border-radius:12px;background:#fff;padding:8px}.pixbox code{display:block;word-break:break-all;font-size:12px;margin:8px 0;color:var(--mut);max-height:64px;overflow:hidden}
 .big{font-size:46px;font-weight:900;text-align:center;margin:6px 0}.mesa{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding:10px 0}.mesa:first-of-type{border-top:0}.st{border-radius:999px;padding:3px 12px;font-size:14px;font-weight:700;background:var(--input);border:1px solid var(--line)}.st.livre{color:var(--ok,#3ddc84)}.st.ocupada,.st.liberando{color:var(--warn,#ffb347)}.st.chamando{color:var(--acc)}.btn.pq{min-height:44px;font-size:16px;width:auto;padding:0 16px;margin:0}.btn.ruim{background:var(--bad,#e5484d);color:#fff}</style></head><body data-sem-botao-visual>
-<header><h1>🧾 Notas fiscais</h1><a href="/gestao.html">Gestão</a></header>
+<header><h1>🧾 Notas fiscais</h1></header>
 <main id="m" style="padding-top:12px"><div class="card mut">Carregando…</div></main><div id="msg" hidden></div>
-<script src="/entrar.js"></script>
+<script src="/entrar.js"></script><script src="/menu.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -50,7 +50,7 @@ function desenhar() {
   const prods = `<div class="card"><h3>Dados fiscais dos produtos${d.sem_ncm ? ` <span class="chip">${d.sem_ncm} sem NCM</span>` : ''}</h3><div class="mut">Em branco = usa o padrão. NCM de bebidas e porções você confirma com o contador.</div>${d.produtos.map((p) => `<div class="pos" data-prod="${p.id}" style="flex-wrap:wrap"><span class="p" style="flex-basis:100%">${esc(p.nome)}</span><input data-f="ncm" placeholder="NCM" inputmode="numeric" maxlength="8" value="${esc(p.ncm)}" style="flex:2;min-width:100px"><input data-f="cfop" placeholder="CFOP" inputmode="numeric" maxlength="4" value="${esc(p.cfop)}" style="flex:1;min-width:70px"><input data-f="csosn" placeholder="CSOSN" inputmode="numeric" maxlength="3" value="${esc(p.csosn)}" style="flex:1;min-width:70px"><button class="btn sec pq" data-a="prod">Salvar</button></div>`).join('')}</div>`;
   $('#m').innerHTML = passos + cfg + emitir + notas + prods;
 }
-async function carregar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); try { d = await api('/api/fiscal'); desenhar(); } catch (e) { if (!d) $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
+async function carregar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); carregar(); }); window.Menu && Menu.barra(); try { d = await api('/api/fiscal'); desenhar(); } catch (e) { if (!d) $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; } }
 document.addEventListener('click', async (e) => {
   const t = e.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a; t.disabled = true;
   try {

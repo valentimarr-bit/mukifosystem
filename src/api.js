@@ -18,6 +18,7 @@ import { rotearCanais } from './canais.js';
 import { rotearPagamentos } from './pagamentos/aviso.js';
 import { rotearAuditoria } from './auditoria.js';
 import { rotearProducao } from './producao.js';
+import { rotearCancelamento } from './cancelamento.js';
 import { moduloDaRota } from './dominio/modulos.js';
 import {
   normalizarNome, painelEstoque, consumoPorVendas, cmv, produtosSemFicha, sugestaoCompra,
@@ -414,9 +415,10 @@ import { modoTeste } from './trava.js';
 const TEMAS_OK = ['escuro', 'claro', 'vinho', 'chimarrao', 'oceano', 'grafite', 'areia', 'contraste'];
 async function visualDaCasa(request, env, db) {
   if (request.method === 'GET') {
-    const r = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'visual'").first();
-    let v = null; try { v = r ? JSON.parse(r.valor) : null; } catch { /* vazio */ }
-    return json({ visual: v, teste: await modoTeste(db) });
+    const { results } = await db.prepare("SELECT chave, valor FROM configuracao WHERE chave IN ('visual', 'modo_teste')").all();
+    const c = Object.fromEntries(results.map((r) => [r.chave, r.valor]));
+    let v = null; try { v = c.visual ? JSON.parse(c.visual) : null; } catch { /* vazio */ }
+    return json({ visual: v, teste: c.modo_teste === 'sim' });
   }
   if (request.method !== 'PUT') return erro('Método não permitido', 405);
   const eu = await usuarioLogado(request, env);
@@ -476,10 +478,11 @@ export async function rotearApi(request, env, url) {
     const r = await db.batch(passos.map(([, sql]) => db.prepare(sql)));
     return json({ ok: true, apagado: Object.fromEntries(passos.map(([nome], i) => [nome, r[i]?.meta?.changes ?? 0])) });
   }
-  const modulo = moduloDaRota(p);
+  const modulo = moduloDaRota(p, request.method);
   if (modulo) {   // painel de permissões: o servidor também barra, não só esconde o botão
     const eu = await usuarioLogado(request, env);
-    if (eu && !eu.modulos.includes(modulo)) return erro('Seu login não tem acesso a esta parte. Peça ao superadmin.', 403);
+    if (!eu) return erro('Entre com seu nome e senha', 401);
+    if (![].concat(modulo).some((x) => eu.modulos.includes(x))) return erro('Seu login não tem acesso a esta parte. Peça ao dono.', 403);
   }
   if (p.startsWith('/api/fotos')) return rotearFotos(request, env, url);
   if (p.startsWith('/api/venda/')) return rotearVenda(request, env, url);
@@ -494,6 +497,7 @@ export async function rotearApi(request, env, url) {
   if (p.startsWith('/api/conta/')) return rotearConta(request, env, url);
   if (p === '/api/clientes' || p.startsWith('/api/clientes/')) return rotearClientes(request, env, url);
   if (p === '/api/producao' || p.startsWith('/api/producao/')) return rotearProducao(request, env, url);
+  if (p === '/api/cancelamentos' || /^\/api\/pedidos\/[\w-]+\/cancelar$/.test(p)) return rotearCancelamento(request, env, url);
   if (p === '/api/fornecedores' || p.startsWith('/api/fornecedores/')) return rotearFornecedores(request, env, url);
   if (p === '/api/planilhas' || p.startsWith('/api/planilhas/')) return rotearPlanilhas(request, env, url);
   if (p === '/api/desempenho' && request.method === 'GET') return getDesempenho(request, env, url);

@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo', '0033_sinuca_resultado'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo', '0033_sinuca_resultado', '0035_seguranca'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const req = (caminho, opcoes = {}) => worker.fetch(new Request('https://mukifo.test' + caminho, opcoes), env);
@@ -16,9 +16,9 @@ const put = (caminho, corpo, token = 'segredo-teste', tipo = 'image/jpeg') =>
   req(caminho, { method: 'PUT', body: corpo, headers: { 'content-type': tipo, ...(token ? { authorization: `Bearer ${token}` } : {}) } });
 
 test('os ids de produtos e insumos aparecem nas respostas (a tela precisa deles)', async () => {
-  const prods = await (await req('/api/produtos')).json();
+  const prods = await (await req('/api/produtos', { headers: { authorization: 'Bearer segredo-teste' } })).json();
   assert.ok(prods.every((p) => Number.isInteger(p.id)));
-  const est = await (await req('/api/estoque?dia=quinta')).json();
+  const est = await (await req('/api/estoque?dia=quinta', { headers: { authorization: 'Bearer segredo-teste' } })).json();
   assert.ok(est.itens.every((i) => Number.isInteger(i.insumo_id)));
 });
 

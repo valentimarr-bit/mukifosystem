@@ -1,5 +1,5 @@
 // Contas de cliente: cadastro, login (celular/e-mail + senha, ou Google), pontos e níveis; e a área de clientes da gestão.
-import { registrarConsentimento } from './whatsapp.js';
+import { registrarConsentimento, configurado as whatsLigado, numeroWhats, enviarTexto } from './whatsapp.js';
 import { json } from './api.js';
 import { hashSenha, hashToken, aleatorio, igual, usuarioLogado } from './auth.js';
 import { celularValido } from './cliente.js';
@@ -21,9 +21,16 @@ async function abrirSessao(db, clienteId) {
   await db.prepare(`INSERT INTO cliente_sessao (token_hash, cliente_id, expira_em) VALUES (?, ?, datetime('now', '+${DIAS} days'))`).bind(await hashToken(token), clienteId).run();
   return token;
 }
-export async function clienteLogado(request, env) {
+async function buscarCliente(request, env) {
   const t = request.headers.get('X-Sessao-Cliente'); if (!t) return null;
   return env.DB.prepare(`SELECT c.* FROM cliente_sessao s JOIN cliente c ON c.id = s.cliente_id WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND c.ativo = 1`).bind(await hashToken(t)).first();
+}
+
+// Cada requisição consulta a conta do cliente só uma vez.
+const memoCliente = new WeakMap();
+export function clienteLogado(request, env) {
+  if (!memoCliente.has(request)) memoCliente.set(request, buscarCliente(request, env));
+  return memoCliente.get(request);
 }
 
 /** 1 ponto por real pago, uma única vez por pedido. Só conta depois que o pedido está pago. */
@@ -99,14 +106,22 @@ async function acharConta(db, login) {
   const l = String(login ?? '').trim().toLowerCase(), cel = celularValido(l);
   return db.prepare('SELECT * FROM cliente WHERE ativo = 1 AND ((? IS NOT NULL AND celular = ?) OR email = ?)').bind(cel, cel, l).first();
 }
+/** Esqueci a senha: manda o código de 6 dígitos pelo WhatsApp do bar (izapia) e/ou por e-mail (Resend), o que estiver configurado.
+ * É mensagem que a própria pessoa pediu (não é propaganda), então não depende do aceite de convites. */
 async function esqueci(db, env, c) {
   const cli = await acharConta(db, c?.login);
-  const resposta = { ok: true, email: !!(env.RESEND_API_KEY && env.EMAIL_REMETENTE), mensagem: 'Se existir uma conta com esses dados, o código foi enviado por e-mail. Se não chegar, peça um código no balcão do bar.' };
-  if (!cli || !cli.email || !resposta.email) return json(resposta);   // mesma resposta para quem não existe: ninguém descobre quem tem conta
+  const porWhats = whatsLigado(env), porEmail = !!(env.RESEND_API_KEY && env.EMAIL_REMETENTE);
+  const meios = [porWhats && 'WhatsApp', porEmail && 'e-mail'].filter(Boolean).join(' ou ');
+  const mensagem = meios ? `Se existir uma conta com esses dados, mandamos um código por ${meios}. Se não chegar em 2 minutos, peça um código no balcão do bar.` : 'Peça o código no balcão do bar.';
+  const resposta = { ok: true, email: porEmail, whats: porWhats, mensagem };
+  if (!cli) return json(resposta);   // mesma resposta para quem não existe: ninguém descobre quem tem conta
+  const para = porWhats ? numeroWhats(cli.celular) : null, mail = porEmail ? cli.email : null;
+  if (!para && !mail) return json(resposta);
   const recente = await db.prepare("SELECT 1 AS x FROM cliente WHERE id = ? AND reset_ate > datetime('now', '+14 minutes')").bind(cli.id).first();
   if (recente) return json(resposta);   // no máximo 1 envio por minuto
   const codigo = await gravarCodigo(db, cli.id);
-  await enviarEmail(env, cli.email, 'Seu código do Mukifo', `Seu código para criar uma nova senha: ${codigo}\n\nValem ${RESET_MIN} minutos. Se não foi você, ignore este e-mail.`);
+  const texto = `Mukifo: seu código para criar uma nova senha é ${codigo}. Vale ${RESET_MIN} minutos. Se não foi você, ignore.`;
+  await Promise.all([para && enviarTexto(env, para, texto), mail && enviarEmail(env, mail, 'Seu código do Mukifo', texto)]);
   return json(resposta);
 }
 async function redefinir(db, c) {
@@ -174,6 +189,7 @@ export async function rotearConta(request, env, url) {
 export async function rotearClientes(request, env, url) {
   const eu = await usuarioLogado(request, env); if (!eu) return erro('Entre com seu nome e senha', 401);
   const db = env.DB, m = request.method, p = url.pathname;
+  const atendente = eu?.papel === 'atendente' || eu?.cargo === 'Atendente';   // atendente não mexe em saldo nem senha do cliente
   if (m === 'GET' && p === '/api/clientes') {
     const q = `%${(url.searchParams.get('q') ?? '').trim().toLowerCase().replace(/[%_]/g, '')}%`;
     const { results } = await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM pedido p WHERE p.cliente_id = c.id AND p.status IN ('recebido','preparando','pronto','entregue')) AS pedidos,
@@ -183,6 +199,7 @@ export async function rotearClientes(request, env, url) {
     return json({ total: results.length, por_nivel: porNivel, clientes: results.map((x) => ({ id: x.id, nome: x.nome, celular: x.celular, email: x.email, pontos: x.pontos, pontos_total: x.pontos_total, nivel: nivelDe(x.pontos_total).nome, emoji: nivelDe(x.pontos_total).emoji, pedidos: x.pedidos, ultima_visita: x.ultima_visita, ativo: !!x.ativo, criado_em: x.criado_em })) });
   }
   const k = p.match(/^\/api\/clientes\/([\w-]+)(\/pontos|\/codigo-senha|\/saldo)?$/); if (!k) return null;
+  if (m === 'POST' && (k[2] === '/saldo' || k[2] === '/codigo-senha') && atendente) return erro('Só gerente ou dono pode fazer isso.', 403);
   const cli = await db.prepare('SELECT * FROM cliente WHERE id = ?').bind(k[1]).first(); if (!cli) return erro('Cliente não encontrado.', 404);
   if (m === 'GET' && !k[2]) {
     const [{ results: pedidos }, { results: pontos }] = await Promise.all([

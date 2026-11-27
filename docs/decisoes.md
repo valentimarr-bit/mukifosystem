@@ -38,3 +38,10 @@
 - Pontos só depois de pago e únicos por pedido (índice único); nível usa pontos acumulados, saldo usa pontos atuais (para trocas futuras).
 - Aviso de preparo é preso ao pedido (push por pedido), então funciona também para quem não tem conta.
 - Permissões por módulo, aplicadas no servidor por prefixo de rota (`src/dominio/modulos.js`) e refletidas nas abas.
+| 2026-11-26 | Atendente é `usuario.cargo = 'atendente'` com `papel = 'gerente'` (o CHECK de `papel` impede papel novo sem reconstruir a tabela). Padrão do atendente: Venda e Produção. |
+| 2026-11-26 | Sessão da equipe: token Bearer para a API (como antes) + cookie HttpOnly `mk_equipe` só para a portaria das páginas (`src/portaria.js`, `run_worker_first`). A API não aceita o cookie (sem CSRF). |
+| 2026-11-26 | Senha provisória (criada/redefinida pelo dono) obriga troca no primeiro acesso; senhas fracas (123456 etc.) recusadas como definitivas. Bloqueio de 15 min após 5 erros por nome ou 20 por IP. |
+| 2026-11-26 | Demonstração desligada por padrão e somente leitura quando ligada. |
+| 2026-11-26 | Desempenho: o D1 fica longe do Worker; `placement: smart` para rodar o Worker perto do banco; consultas em paralelo; GETs de polling não escrevem mais (pedidos vencidos expiram no cron e na hora de ler). Confirmar a região do D1 no painel (D1 → mukifo → Location); se o smart placement não ativar por pouco tráfego, trocar por `placement.region`. |
+| 2026-11-26 | Cancelamento de pedido: histórico próprio (`cancelamento`), nunca apagado; módulo `cancelar` (não vem para atendente). |
+| 2026-11-26 | "Pix recebido ✓" e confirmar recarga continuam no módulo Venda (o atendente usa no balcão); ficam na auditoria. |

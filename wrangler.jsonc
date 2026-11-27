@@ -6,6 +6,7 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },
+  "placement": { "mode": "smart" },
 
   // Todo minuto: busca pedidos do iFood/99Food (só faz algo se o canal estiver ligado em /canais.html).
   "triggers": { "crons": ["* * * * *"] },
@@ -15,7 +16,9 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Páginas de gestão passam pelo Worker (portaria em src/portaria.js). O resto continua estático.
+    "run_worker_first": ["/api/*", "/", "/index.html", "/inicio*", "/gestao*", "/manual*", "/venda*", "/canais*", "/producao*", "/pix*", "/pagamentos*", "/fiscal*", "/mesas*", "/torneio*", "/compras", "/compras/", "/compras/index.html"]
   },
 
   // Banco D1. Sem database_id, o deploy (inclusive o automático pelo GitHub) cria o banco "mukifo"

@@ -83,10 +83,15 @@ export async function esperaDoDia(db) {
   return { media_min: mins.length ? Math.round((mins.reduce((a, b) => a + b, 0) / mins.length) * 10) / 10 : null, amostra: mins.length, padrao_min: padrao };
 }
 
+// Micro-cache do cardápio por isolate, só no Cloudflare (fora dele, como nos testes, não guarda nada).
+const NO_WORKER = typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+let cacheCardapio = null;
+
 async function getCardapio(db) {
-  const { results } = await db.prepare(
-    `SELECT id, nome, categoria, preco_venda AS preco, tempo_preparo_min AS tempo FROM produto WHERE ativo = 1 AND preco_venda IS NOT NULL ORDER BY nome`).all();
-  const [disp, espera] = await Promise.all([disponibilidade(db, results.map((p) => p.id)), esperaDoDia(db)]);
+  const [{ results }, disp, espera] = await Promise.all([
+    db.prepare(`SELECT id, nome, categoria, preco_venda AS preco, tempo_preparo_min AS tempo FROM produto WHERE ativo = 1 AND preco_venda IS NOT NULL ORDER BY nome`).all(),
+    disponibilidade(db, null),
+    esperaDoDia(db)]);
   const porCat = new Map();
   for (const p of results) {
     const c = p.categoria ?? 'Outros';
@@ -95,7 +100,7 @@ async function getCardapio(db) {
     porCat.get(c).push({ id: p.id, nome: p.nome, preco: p.preco, tempo: p.tempo, restam: r != null && r <= 20 ? r : null });
   }
   const r = json({ categorias: ordenarCategorias(porCat.keys()).map((nome) => ({ nome, produtos: porCat.get(nome) })), espera });
-  r.headers.set('cache-control', 'public, max-age=5, s-maxage=10');   // o cardápio é lido por todo cliente; 5 s alivia o banco (a trava no servidor continua valendo)
+  r.headers.set('cache-control', 'public, max-age=5');   // o cardápio é lido por todo cliente; 5 s alivia o banco (a trava no servidor continua valendo)
   return r;
 }
 
@@ -248,7 +253,12 @@ async function configurarMaquininha(db, id, corpo) {
 
 export async function rotearVenda(request, env, url) {
   const db = env.DB, m = request.method, p = url.pathname;
-  if (m === 'GET' && p === '/api/venda/cardapio') return getCardapio(db);
+  if (m === 'GET' && p === '/api/venda/cardapio') {
+    if (NO_WORKER && cacheCardapio && cacheCardapio.ate > Date.now()) return new Response(cacheCardapio.corpo, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=5' } });
+    const r = await getCardapio(db);
+    if (NO_WORKER && r.ok) cacheCardapio = { ate: Date.now() + 5000, corpo: await r.clone().text() };
+    return r;
+  }
   const eu = await usuarioLogado(request, env);
   if (!eu) return erro('Entre com seu nome e senha', 401);
   let corpo = {};

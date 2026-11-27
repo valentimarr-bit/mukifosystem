@@ -1,6 +1,6 @@
 // App do cliente: o pedido só entra na fila DEPOIS de pago. A retirada é feita por QR de uso único, conferido no balcão.
 import { json } from './api.js';
-import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
+import { diaDoTurno, conferirQuitacao, id8, r2, erro } from './venda.js';
 import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
@@ -49,12 +49,9 @@ export async function expirarPendentes(db) {
 export const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return /^\d{10,11}$/.test(d) ? d : null; };
 
 async function criarPedido(db, request, corpo, env) {
-  await expirarPendentes(db);
-  const teste = await modoTeste(db);
-  const pix = await lerPix(db);
+  const [, teste, pix, conta] = await Promise.all([expirarPendentes(db), modoTeste(db), lerPix(db), clienteLogado(request, { DB: db })]);   // quem tem conta não precisa digitar de novo e ganha pontos
   if (teste && !pix.chave) pix.chave = 'teste@mukifo.app';
   if (!pix.chave) return erro('Os pedidos pelo celular ainda não foram liberados. Peça no balcão.', 503);
-  const conta = await clienteLogado(request, { DB: db });   // quem tem conta não precisa digitar de novo e ganha pontos
   const nome = String(conta?.nome ?? corpo?.nome ?? '').trim().slice(0, 40);
   if (nome.length < 2) return erro('Digite seu nome.');
   const celular = celularValido(conta?.celular ?? corpo?.celular);
@@ -69,7 +66,12 @@ async function criarPedido(db, request, corpo, env) {
     agregado.set(id, (agregado.get(id) ?? 0) + q);
   }
   const ids = [...agregado.keys()];
-  const { results: achados } = await db.prepare(`SELECT id, nome, preco_venda FROM produto WHERE ativo = 1 AND id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all();
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'sem-ip';
+  const origemHash = await sha256(`mukifo|${ip}`);
+  const [{ results: achados }, pc, po] = await Promise.all([
+    db.prepare(`SELECT id, nome, preco_venda FROM produto WHERE ativo = 1 AND id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all(),
+    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND celular = ?").bind(celular).first(),
+    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
   const porId = new Map(achados.map((p) => [p.id, p]));
   const itens = [];
   for (const [id, q] of agregado) {
@@ -83,11 +85,6 @@ async function criarPedido(db, request, corpo, env) {
   const total = r2(itens.reduce((s, i) => s + i.q * i.preco_venda, 0));
   if (total <= 0 || total > MAX_TOTAL) return erro('Valor do pedido fora do permitido.');
 
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'sem-ip';
-  const origemHash = await sha256(`mukifo|${ip}`);
-  const [pc, po] = await Promise.all([
-    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND celular = ?").bind(celular).first(),
-    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
   if (!teste && (pc.n >= MAX_PENDENTES_CELULAR || po.n >= MAX_PENDENTES_ORIGEM)) return erro('Você já tem pedidos esperando pagamento. Pague ou aguarde alguns minutos.', 429);
 
   const comSaldo = corpo?.pagar_com_saldo === true;
@@ -133,21 +130,29 @@ async function pixDoPedido(db, pedidoId) {
 }
 
 async function verStatus(db, request, id) {
-  await expirarPendentes(db);
   const chave = request.headers.get('X-Chave-Pedido') ?? '';
-  const p = await db.prepare("SELECT id, token_hash FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  let p = await db.prepare(`SELECT id, token_hash, numero, dia, status, total, nome_cliente, remessa, pago_em, preparo_em,
+    (status = 'aguardando_pagamento' AND expira_em < datetime('now')) AS vencido FROM pedido WHERE id = ? AND origem = 'celular'`).bind(id).first();
   // mesma resposta para "não existe" e "chave errada": ninguém consegue descobrir pedidos dos outros
   if (!p || !chave || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('Pedido não encontrado.', 404);
-  const c = await lerComanda(db, id);
-  const pago = ['recebido', 'preparando', 'pronto', 'entregue'].includes(c.status);
-  const pix = c.status === 'aguardando_pagamento' ? await lerPix(db) : null;
+  if (p.vencido) { await expirarPendentes(db); p = { ...p, status: 'cancelado' }; }   // só mexe no banco quando o pedido venceu
+  const pago = ['recebido', 'preparando', 'pronto', 'entregue'].includes(p.status);
+  const [{ results: linhas }, fila, espera, pix, cancelamento] = await Promise.all([
+    db.prepare(`SELECT i.nome, i.quantidade, i.entregue_qtd AS entregue, COALESCE(pr.pronta_entrega, 0) AS pronta FROM item_pedido i
+                LEFT JOIN produto pr ON pr.id = i.produto_id WHERE i.pedido_id = ? ORDER BY i.id`).bind(id).all(),
+    ['recebido', 'preparando'].includes(p.status) ? filaDoPedido(db, id, p) : null,
+    esperaDoDia(db),
+    p.status === 'aguardando_pagamento' ? Promise.all([lerPix(db), pixDoPedido(db, id)]).then(([pixBar, viaGateway]) =>
+      viaGateway ?? gerarPix({ ...pixBar, valor: p.total, txid: `MKF${p.dia.replaceAll('-', '')}${p.numero}` })) : null,
+    p.status === 'cancelado' ? db.prepare('SELECT 1 AS x FROM cancelamento WHERE pedido_id = ?').bind(id).first() : null]);
   return json({
-    id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
-    remessa: (await db.prepare('SELECT remessa FROM pedido WHERE id = ?').bind(id).first())?.remessa ?? 0,
-    fila: ['recebido', 'preparando'].includes(c.status) ? await filaDoPedido(db, id) : null, espera: await esperaDoDia(db),
-    itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,
-    textos: textosPedido(await itensComPronta(db, id), c.numero),
-    pix: pix ? ((await pixDoPedido(db, id)) ?? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` })) : null,
+    id: p.id, numero: p.numero, status: p.status, total: p.total, pago, nome: p.nome_cliente, retirado: p.status === 'entregue',
+    cancelado_pelo_bar: p.status === 'cancelado' && !!cancelamento,
+    remessa: p.remessa ?? 0,
+    fila, espera,
+    itens: linhas.map((l) => ({ nome: l.nome, quantidade: l.quantidade, entregue: l.entregue })),
+    textos: textosPedido(linhas.map((l) => ({ nome: l.nome, quantidade: l.quantidade, pronta: !!l.pronta })), p.numero),
+    pix,
   });
 }
 
@@ -195,13 +200,11 @@ export async function rotearCliente(request, env, url) {
 
 // ---- balcão: conferir o QR do cliente ----
 export async function listarRetiradas(db) {
-  await expirarPendentes(db);
-  const { results } = await db.prepare(
-    `SELECT id, numero, nome_cliente, status, total, pago_em FROM pedido
-     WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all();
-  const { results: aguardando } = await db.prepare(
-    `SELECT p.id, p.numero, p.nome_cliente, p.total, p.expira_em, c.id AS cobranca_id FROM pedido p JOIN cobranca c ON c.pedido_id = p.id AND c.status = 'pendente'
-     WHERE p.origem = 'celular' AND p.status = 'aguardando_pagamento' ORDER BY p.criado_em`).all();
+  const [{ results }, { results: aguardando }] = await Promise.all([
+    db.prepare(`SELECT id, numero, nome_cliente, status, total, pago_em FROM pedido
+     WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all(),
+    db.prepare(`SELECT p.id, p.numero, p.nome_cliente, p.total, p.expira_em, c.id AS cobranca_id FROM pedido p JOIN cobranca c ON c.pedido_id = p.id AND c.status = 'pendente'
+     WHERE p.origem = 'celular' AND p.status = 'aguardando_pagamento' AND p.expira_em >= datetime('now') ORDER BY p.criado_em`).all()]);
   return json({ pedidos: results, aguardando });
 }
 
@@ -209,18 +212,22 @@ export async function validarRetirada(db, corpo, eu) {
   const partes = String(corpo?.codigo ?? '').trim().split('.');
   if ((partes.length !== 3 && partes.length !== 4) || partes[0] !== 'MKF1') return erro('Esse QR não é do Mukifo.', 400);
   const [, id, chave] = partes, remessaQr = Number(partes[3] ?? 0);
-  const p = await db.prepare("SELECT id, dia, status, token_hash, retirado_em, remessa FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  // Uma ida só ao banco (o pedido e os itens juntos): o balcão espera essa resposta com o cliente na frente.
+  const [p, { results: its }] = await Promise.all([
+    db.prepare("SELECT id, numero, nome_cliente, total, dia, status, token_hash, retirado_em, remessa FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first(),
+    db.prepare('SELECT id, nome, quantidade, entregue_qtd FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()]);
   if (!p || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('QR inválido. NÃO entregue nada.', 400);
   if (p.status === 'entregue') return erro(`QR já usado${p.retirado_em ? ` em ${p.retirado_em} (UTC)` : ''}. NÃO entregue de novo.`, 409);
   if (p.status === 'aguardando_pagamento') return erro('Pedido ainda NÃO foi pago. Não entregue.', 402);
   if (p.status === 'cancelado') return erro('Pedido cancelado ou vencido. Não entregue.', 409);
   if (p.dia !== diaDoTurno()) return erro('Esse pedido é de outro dia. Chame o gerente.', 409);
   if (remessaQr !== p.remessa) return erro('QR antigo: já houve entrega parcial deste pedido. O cliente deve mostrar o QR NOVO que aparece no app.', 409);
-  const c = await lerComanda(db, id);
-  const { results: its } = await db.prepare('SELECT id, nome, quantidade, entregue_qtd FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all();
   const itens = its.map((i) => ({ id: i.id, nome: i.nome, quantidade: i.quantidade, entregue: i.entregue_qtd, falta: i.quantidade - i.entregue_qtd }));
-  const resumo = (lista, remessa = p.remessa) => ({ numero: c.numero, nome: c.nome_cliente, total: c.total, remessa, itens: lista });
-  if (corpo?.confirmar !== true) return json({ ok: true, entregue: false, pedido: resumo(itens) });
+  const resumo = (lista, remessa = p.remessa) => ({ numero: p.numero, nome: p.nome_cliente, total: p.total, remessa, itens: lista });
+  // auto: pedido de um item só (1 unidade) já sai na mesma ida, sem a segunda chamada de confirmação
+  const faltam = itens.filter((i) => i.falta > 0);
+  const auto = corpo?.auto === true && faltam.length === 1 && faltam[0].falta === 1;
+  if (corpo?.confirmar !== true && !auto) return json({ ok: true, entregue: false, pedido: resumo(itens) });
   // o que está saindo agora: a lista marcada pelo vendedor; sem lista = tudo que ainda falta
   let sai = new Map(itens.filter((i) => i.falta > 0).map((i) => [i.id, i.falta]));
   if (Array.isArray(corpo?.entrega)) {
@@ -241,9 +248,9 @@ export async function validarRetirada(db, corpo, eu) {
     const novos = itens.map((i) => ({ ...i, entregue: i.entregue + (sai.get(i.id) ?? 0), falta: i.falta - (sai.get(i.id) ?? 0) }));
     return json({ ok: true, entregue: false, parcial: true, pedido: resumo(novos, p.remessa + 1) });
   }
-  const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id, p.remessa).run();
+  // entrega total: pedido e itens num lote só (uma ida ao banco). Os itens nunca passam da quantidade, então um QR lido duas vezes não entrega em dobro.
+  const [r] = await db.batch([db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id, p.remessa), ...atualizaItens]);
   if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
-  await db.batch(atualizaItens);
   return json({ ok: true, entregue: true, pedido: resumo(itens.map((i) => ({ ...i, entregue: i.quantidade, falta: 0 }))) });
 }
 
@@ -254,13 +261,12 @@ export async function itensComPronta(db, pedidoId) {
 }
 
 /** Posição do pedido na fila de produção de hoje (pedidos pagos que ainda não ficaram prontos, do app e do balcão), por ordem de pagamento. */
-async function filaDoPedido(db, id) {
-  const eu = await db.prepare('SELECT pago_em, dia FROM pedido WHERE id = ?').bind(id).first();
+async function filaDoPedido(db, id, eu = null) {
+  eu ??= await db.prepare('SELECT pago_em, dia, preparo_em FROM pedido WHERE id = ?').bind(id).first();
   if (!eu?.pago_em) return null;
   const abertos = "dia = ? AND pago_em IS NOT NULL AND pronto_em IS NULL AND ((origem = 'celular' AND status IN ('recebido', 'preparando')) OR (origem = 'balcao' AND status = 'entregue'))";
-  const [a, t, p] = await Promise.all([
+  const [a, t] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos} AND id <> ? AND (pago_em < ? OR (pago_em = ? AND id < ?))`).bind(eu.dia, id, eu.pago_em, eu.pago_em, id).first(),
-    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos}`).bind(eu.dia).first(),
-    db.prepare("SELECT preparo_em FROM pedido WHERE id = ?").bind(id).first()]);
-  return { a_frente: a.n, na_fila: t.n, posicao: a.n + 1, em_preparo: !!p?.preparo_em };
+    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos}`).bind(eu.dia).first()]);
+  return { a_frente: a.n, na_fila: t.n, posicao: a.n + 1, em_preparo: !!eu.preparo_em };
 }

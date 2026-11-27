@@ -20,14 +20,33 @@ main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1
 .mut{color:var(--mut);font-size:14px}.btn{min-height:64px;border-radius:14px;border:0;font-size:20px;font-weight:800;cursor:pointer;background:var(--acc);color:var(--on-acc);width:100%}.btn.ok{background:var(--ok,#4caf50);color:#000}
 .vazio{grid-column:1/-1;text-align:center;color:var(--mut);padding:60px 10px;font-size:22px}#msg{position:fixed;left:12px;right:12px;bottom:12px;background:var(--hdr);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.cancelar{min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--bad,#ff8a80);font:inherit;font-size:15px;cursor:pointer}
+dialog{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:16px;padding:18px;width:min(94vw,520px)}dialog::backdrop{background:#000a}
+dialog label{display:flex;gap:10px;align-items:center;min-height:48px;font-size:16px}dialog textarea{width:100%;min-height:80px;font:inherit;background:var(--input);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px}
+dialog input[type=radio],dialog input[type=checkbox]{width:24px;height:24px}.linha{border-top:1px solid var(--line);padding:10px 0;font-size:15px}
 </style></head><body data-sem-botao-visual>
-<header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select><a href="/venda.html">Venda</a><a href="/gestao.html">Gestão</a></header>
+<header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="bHist" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">📜 Cancelados</button><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select></header>
+<dialog id="dCancelar"><h2 style="margin-top:0">Cancelar pedido <span id="cNum"></span></h2>
+  <p class="mut" style="margin-top:0">Fica salvo no histórico com seu nome, a hora e o motivo.</p>
+  <textarea id="cMotivo" maxlength="200" placeholder="Motivo (obrigatório). Ex.: cliente desistiu, pedido errado, acabou o produto"></textarea>
+  <b style="display:block;margin-top:10px">O dinheiro, se já foi pago:</b>
+  <label><input type="radio" name="est" value="saldo"> Volta para o saldo do cliente (só se ele tem conta)</label>
+  <label><input type="radio" name="est" value="por_fora"> Devolvi no balcão (dinheiro ou Pix)</label>
+  <label><input type="radio" name="est" value="nenhum"> Sem devolução</label>
+  <label style="margin-top:6px"><input type="checkbox" id="cEstoque"> Os itens voltam para o estoque (não foram feitos)</label>
+  <div class="erro" id="cErro" style="color:var(--bad,#ff8a80);min-height:22px"></div>
+  <button class="btn" id="cConfirmar" style="background:var(--bad,#e53935);color:#fff">✖ Cancelar o pedido</button>
+  <button class="btn" id="cFechar" style="background:transparent;border:1px solid var(--line);color:var(--txt);margin-top:8px;min-height:52px">Voltar sem cancelar</button></dialog>
+<dialog id="dHist"><h2 style="margin-top:0">📜 Pedidos cancelados <span class="mut">(30 dias)</span></h2><div id="hResumo" class="mut"></div><div id="hLista"></div>
+  <button class="btn" id="hFechar" style="margin-top:10px">Fechar</button></dialog>
 <main id="fila"><div class="vazio">Carregando…</div></main><div id="msg" hidden></div>
 <script src="/entrar.js"></script>
+<script src="/menu.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 let token = Mukifo.token(), vistos = null, som = true, timer;
+let ultimoHtml = '', emVoo = false, deNovo = false;
 async function api(url, corpo) {
   const r = await fetch(url, { method: corpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token }, body: corpo ? JSON.stringify(corpo) : undefined });
   const j = await r.json().catch(() => ({})); if (r.status === 401) { Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); throw new Error(j.erro); } if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j;
@@ -36,7 +55,7 @@ const aviso = (t) => { const m = $('#msg'); m.textContent = t; m.hidden = false;
 function bipe() { if (!som) return; try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .2; o.start(); o.stop(c.currentTime + .25); } catch {} if (navigator.vibrate) navigator.vibrate(200); }
 const rec = (l) => l.length ? `<ul class="rec">${l.map((r) => `<li><span class="q">${fmt(r.quantidade)} ${esc(r.unidade)}</span> ${esc(r.insumo)}${r.observacao ? ` <span class="mut">(${esc(r.observacao)})</span>` : ''}</li>`).join('')}</ul>` : '<p class="mut" style="margin:0">Sem ficha técnica cadastrada para este item.</p>';
 const hora = (t) => t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
-function cartao(p, novo) {
+function cartao0(p, novo) {
   if (p.status === 'entregue') return `<section class="ped entregue"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}</span><span class="tempo">${esc(p.nome_cliente || '')} · ${hora(p.entregue_em)}</span></div><ul>${p.itens.map((i) => `<li>${i.quantidade}× ${esc(i.nome)}</li>`).join('')}</ul></section>`;
   const podeItem = p.status === 'recebido' || p.status === 'preparando';
   const btnItem = (i) => !podeItem ? '' : i.pronta ? '<div class="mut">🍺 pronta entrega — entregar no balcão</div>' : i.pronto ? `<button class="btn sec" data-id="${p.id}" data-item="${i.id}" data-pronto="0">✓ Pronto — desfazer</button>` : `<button class="btn ok" data-id="${p.id}" data-item="${i.id}" data-pronto="1">✔ Item pronto</button>`;
@@ -45,24 +64,51 @@ function cartao(p, novo) {
   const botao = p.status === 'recebido' ? `<button class="btn" data-id="${p.id}" data-acao="preparando">▶ Começar a preparar</button>` : p.status === 'preparando' ? `<button class="btn ok" data-id="${p.id}" data-acao="pronto">✔ Pronto</button>` : '<div class="mut" style="text-align:center">Pronto · esperando o cliente mostrar o QR no balcão</div>';
   return `<section class="ped ${p.status}${novo ? ' novo' : ''}"><div class="topo"><span class="num">${p.origem === 'balcao' ? '🍸 ' : '📱 '}${esc(p.numero)}${p.remessa ? ` <b style="color:#f59e0b">REP ${p.remessa}</b>` : ''}</span><span class="tempo${atraso ? ' atraso' : ''}">${esc(p.nome_cliente || '')} · ${p.minutos ?? 0} min</span></div>${itens}${botao}</section>`;
 }
+// Cancelar (gerente/superadmin com o módulo): botão pequeno no fim de cada cartão; o motivo é obrigatório e vai para o histórico.
+const podeCancelar = () => Mukifo.usuario?.()?.modulos?.includes?.('cancelar') ?? true;
+const cartao = (p, novo) => { const h = cartao0(p, novo); return podeCancelar() ? h.replace(/<\/section>\s*$/, `<button class="cancelar" data-cancelar="${p.id}" data-num="${esc(p.numero)}" data-st="${p.status}">✖ Cancelar pedido</button></section>`) : h; };
 async function atualizar() {
+  if (emVoo) { deNovo = true; return; }
+  emVoo = true;
   try {
     const j = await api('/api/producao'), ids = new Set(j.pedidos.map((p) => p.id));
     const novos = vistos ? j.pedidos.filter((p) => !vistos.has(p.id)) : []; if (novos.length) bipe(); vistos = ids;
     $('#cont').textContent = j.pedidos.length ? `· ${j.pedidos.length} na fila` : '';
     const rec = j.pedidos.filter((p) => p.status === 'recebido'), prod = j.pedidos.filter((p) => p.status === 'preparando' || p.status === 'pronto'), ent = (j.entregues ?? []).map((e) => ({ ...e, status: 'entregue' }));
     const col = (cls, titulo, lista, vazio) => `<div class="col ${cls}"><h2>${titulo} <span class="n">${lista.length}</span></h2>${lista.map((p) => cartao(p, novos.includes(p))).join('') || `<div class="mut" style="text-align:center;padding:20px">${vazio}</div>`}</div>`;
-    $('#fila').innerHTML = col('c1', '📥 RECEBIDO', rec, 'Nada esperando') + col('c2', '🔥 EM PRODUÇÃO', prod, 'Nada em preparo') + col('c3', '✅ ENTREGUE', ent, 'Nenhuma entrega hoje');
+    const html = col('c1', '📥 RECEBIDO', rec, 'Nada esperando') + col('c2', '🔥 EM PRODUÇÃO', prod, 'Nada em preparo') + col('c3', '✅ ENTREGUE', ent, 'Nenhuma entrega hoje');
+    if (html !== ultimoHtml) { $('#fila').innerHTML = html; ultimoHtml = html; }
   } catch (e) { if (!/Entre/.test(e.message)) aviso(e.message); }
+  finally { emVoo = false; if (deNovo) { deNovo = false; atualizar(); } }
 }
-$('#fila').onclick = async (e) => { const bi = e.target.closest('[data-item]');
+$('#fila').onclick = async (e) => { const bc = e.target.closest('[data-cancelar]'); if (bc) return abrirCancelar(bc.dataset);
+  const bi = e.target.closest('[data-item]');
   if (bi) { bi.disabled = true; try { const r = await api(`/api/producao/${bi.dataset.id}/item/${bi.dataset.item}/pronto`, { pronto: bi.dataset.pronto === '1' }); aviso(r.pedido_pronto ? 'Pedido todo pronto — cliente avisado.' : bi.dataset.pronto === '1' ? 'Item pronto.' : 'Item desmarcado.'); } catch (er) { aviso(er.message); } return atualizar(); }
   const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
   try { const r = await api(`/api/producao/${b.dataset.id}/preparo`, { acao: b.dataset.acao }); aviso(b.dataset.acao === 'preparando' ? 'Cliente avisado: começou o preparo.' : 'Cliente avisado: pedido pronto.'); await atualizar(); } catch (er) { aviso(er.message); atualizar(); } };
 $('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
-function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
+function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); window.Menu && Menu.barra(); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) atualizar(); });
 const puxarCanais = () => { if (token && !document.hidden) fetch('/api/canais/sincronizar', { method: 'POST', headers: { authorization: 'Bearer ' + token } }).catch(() => {}); };
 setInterval(puxarCanais, 30000);
+let cancelando = null;
+function abrirCancelar(d) { cancelando = d.cancelar; $('#cNum').textContent = d.num; $('#cMotivo').value = ''; $('#cErro').textContent = '';
+  document.querySelectorAll('[name=est]').forEach((r) => r.checked = false); $('#cEstoque').checked = d.st === 'recebido'; $('#dCancelar').showModal(); $('#cMotivo').focus(); }
+$('#cFechar').onclick = () => $('#dCancelar').close();
+$('#cConfirmar').onclick = async () => { const b = $('#cConfirmar'); $('#cErro').textContent = '';
+  if ($('#cMotivo').value.trim().length < 3) { $('#cErro').textContent = 'Escreva o motivo.'; return $('#cMotivo').focus(); }
+  const est = document.querySelector('[name=est]:checked')?.value; b.disabled = true;
+  try { const r = await api(`/api/pedidos/${cancelando}/cancelar`, { motivo: $('#cMotivo').value, ...(est ? { estorno: est } : {}), devolver_estoque: $('#cEstoque').checked });
+    $('#dCancelar').close(); aviso(`Pedido ${r.numero} cancelado.` + (r.estorno === 'saldo' ? ` R$ ${r.valor_estorno.toFixed(2).replace('.', ',')} voltou para o saldo do cliente.` : r.estorno === 'por_fora' ? ` Devolva R$ ${r.valor_estorno.toFixed(2).replace('.', ',')} no balcão.` : '')); atualizar();
+  } catch (er) { $('#cErro').textContent = er.message; } b.disabled = false; };
+const R$ = (v) => 'R$ ' + Number(v ?? 0).toFixed(2).replace('.', ',');
+const EST = { saldo: 'voltou para o saldo', por_fora: 'devolvido no balcão', nenhum: 'sem devolução' };
+$('#bHist').onclick = async () => { $('#hLista').innerHTML = 'Carregando…'; $('#hResumo').textContent = ''; $('#dHist').showModal();
+  try { const j = await api('/api/cancelamentos?dias=30');
+    $('#hResumo').textContent = j.cancelamentos.length ? `${j.cancelamentos.length} cancelado(s) · ${R$(j.total)} em pedidos · ${R$(j.devolvido)} devolvido` : '';
+    $('#hLista').innerHTML = j.cancelamentos.map((c) => `<div class="linha"><b>${esc(c.numero)}</b> · ${R$(c.total)} · ${new Date(c.criado_em.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}<br>
+      <span class="mut">${esc(c.itens)}${c.cliente ? ' · ' + esc(c.cliente) : ''}</span><br>Motivo: <b>${esc(c.motivo)}</b><br><span class="mut">Por ${esc(c.operador)} · ${c.pago > 0 ? `pago ${R$(c.pago)}, ${EST[c.estorno]}` : 'não estava pago'}${c.estoque_devolvido ? ' · estoque devolvido' : ''}</span></div>`).join('') || '<p class="mut">Nenhum pedido cancelado nos últimos 30 dias.</p>';
+  } catch (er) { $('#hLista').textContent = er.message; } };
+$('#hFechar').onclick = () => $('#dHist').close();
 iniciar();
 </script></body></html>

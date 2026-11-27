@@ -24,12 +24,12 @@ label{display:block;margin:10px 0 4px;color:var(--mut);font-size:14px}input,sele
 @keyframes sobe{from{transform:translateY(40px);opacity:0}}
 .nivel{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);vertical-align:2px}
 </style></head><body data-sem-botao-visual>
-<header><h1>🎱 Mesa do campeonato</h1><a href="/mesas.html">Mesas e fila</a><a href="/campeonato.html" target="_blank">Ver como jogador</a><a href="/gestao.html">Gestão</a></header>
+<header><h1>🎱 Mesa do campeonato</h1><a href="/campeonato.html" target="_blank">Ver como jogador</a></header>
 <main id="m"><div class="card mut">Carregando…</div></main>
 <div id="folha" hidden><div class="fundo" data-fechar></div><div class="painel" role="dialog" aria-modal="true" aria-label="Placar do jogo"><div class="pega"></div><div id="folhaC"></div><button class="btn sec" data-fechar>Fechar</button></div></div>
 <div id="msg" hidden></div>
 <script src="/chave.js"></script>
-<script src="/entrar.js"></script>
+<script src="/entrar.js"></script><script src="/menu.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const R$ = (n) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -125,6 +125,7 @@ async function modalidade() {
 }
 async function desenhar() {
   if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); desenhar(); });
+  window.Menu && Menu.barra();
   if (Date.now() < trava) return;
   const foco = document.activeElement, guarda = foco && foco.matches?.('input') && foco.value ? { chave: foco.id || foco.dataset.mesa, v: foco.value } : null;
   try { MukifoChave.trocar($('#m'), modId ? await modalidade() : await lista()); if (aberta) desenharFolha(); } catch (e) { if (!$('#m').children.length || $('#m').textContent === 'Carregando…') $('#m').innerHTML = `<div class="card erro">${esc(e.message)}</div>`; }

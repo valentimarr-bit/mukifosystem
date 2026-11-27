@@ -18,7 +18,7 @@ input{width:100%;min-height:52px;font-size:18px;padding:8px 12px;border-radius:1
 #cardapio>.busca{margin:10px 12px 0;width:calc(100% - 24px)}.cabset{padding:0 12px}.chips{display:none!important}
 button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style></head><body data-sem-botao-visual>
-<header style="display:flex;gap:10px;align-items:center;justify-content:space-between"><div><h1><span data-marca-emoji>🍸</span> <span data-marca-nome>Mukifo</span></h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></div><span style="display:flex;gap:8px"><a href="/campeonato.html" style="min-height:48px;padding:0 12px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);display:inline-flex;align-items:center;text-decoration:none;font-weight:700;white-space:nowrap" aria-label="Campeonato de sinuca">🏆</a><a href="/sinuca.html" style="min-height:48px;padding:0 12px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);display:inline-flex;align-items:center;text-decoration:none;font-weight:700;white-space:nowrap" aria-label="Fila da sinuca">🎱</a><button id="bConta" class="chip" style="min-height:48px;padding:0 14px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button></span></header>
+<header style="display:flex;gap:10px;align-items:center;justify-content:space-between"><div><h1><span data-marca-emoji>🍸</span> <span data-marca-nome>Mukifo</span></h1><p>Peça pelo celular · pague no Pix · retire no balcão com o QR</p></div><span style="display:flex;gap:8px"><a href="/campeonato.html" style="min-height:48px;padding:0 12px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);display:inline-flex;align-items:center;text-decoration:none;font-weight:700;white-space:nowrap" aria-label="Campeonato de sinuca">🏆</a><a href="/sinuca.html" style="min-height:48px;padding:0 12px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);display:inline-flex;align-items:center;text-decoration:none;font-weight:700;white-space:nowrap" aria-label="Fila da sinuca">🎱</a><button id="bPedidos" hidden style="min-height:48px;padding:0 12px;border-radius:24px;border:2px solid var(--acc);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap" aria-label="Meus pedidos">🧾 <span id="bPedidosN"></span></button><button id="bConta" class="chip" style="min-height:48px;padding:0 14px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button></span></header>
 
 <div id="cardapio"><input class="busca" id="busca" type="search" placeholder="🔎 Buscar produto" autocomplete="off" enterkeyhint="search"><div class="cabset" id="cabset" hidden></div><div class="lista" id="lista"></div>
   <div class="barra"><div id="esperaBarra" style="text-align:center;font-size:14px;color:var(--mut,#999);margin-bottom:6px"></div><button class="grande" id="bCarrinho" disabled>Toque nos produtos para pedir</button></div><div id="aviso" hidden></div></div>
@@ -32,7 +32,7 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
     <label>Senha (mínimo 6)</label><input id="cSenha" type="password" autocomplete="current-password">
     <label id="cAceiteBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cAceite" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>Li e aceito os termos e a política de privacidade. Usamos seus dados só para o pedido, o nível e avisos do Mukifo.</span></label>
     <label id="cWhatsBox" style="display:flex;gap:10px;align-items:flex-start;color:var(--txt)"><input id="cWhats" type="checkbox" style="width:28px;min-height:28px;margin:0"> <span>(Opcional) Quero receber convites de campeonato e novidades do Mukifo por WhatsApp. Posso desativar quando quiser.</span></label>
-    <div id="cRecBox" hidden><label>Código de 6 dígitos</label><input id="cCodigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><p class="mut" id="cRecDica"></p></div>
+    <div id="cRecBox" hidden><button class="grande sec" id="cMandar" type="button">📲 Mandar código</button><label>Código de 6 dígitos</label><input id="cCodigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><p class="mut" id="cRecDica"></p></div>
     <div class="erro" id="cErro"></div><button class="grande" id="cOk">Continuar</button><p style="text-align:center"><a href="#" id="cEsqueci">Esqueci minha senha</a></p><div id="cGoogle" style="margin-top:12px;display:flex;justify-content:center"></div>
   </div>
   <div id="cLogado" hidden>
@@ -66,13 +66,15 @@ button,.setor,.p{touch-action:manipulation;-webkit-tap-highlight-color:transpare
     <p class="mut">Ou use o Pix copia e cola:</p><div class="cola" id="pCola"></div>
     <button class="grande sec" id="bCopiar">Copiar código Pix</button>
     <p class="mut" id="pTempo"></p></div>
-  <p class="mut">Assim que o pagamento chegar, seu QR de retirada aparece aqui. Não feche esta página.</p></div>
+  <p class="mut">Assim que o pagamento chegar, seu QR de retirada aparece aqui. Pode olhar o cardápio enquanto isso: o pedido fica no botão 🧾 lá em cima.</p><button class="grande sec" data-cardapio>🍸 Ver cardápio / pedir mais</button></div>
 
 <div id="telaQr" class="tela centro" hidden>
   <div class="card" id="qFila" hidden style="text-align:center"></div>
   <div class="card"><h2 class="bom" style="margin-top:0" id="qEtapa">✔ Pago! Aguardando o preparo</h2><button class="grande sec" id="bAviso" hidden>🔔 Avisar no celular quando começar</button><p>Pedido <b id="qNum"></b> · mostre este QR no balcão</p>
     <div class="qr"><img id="qrRet" alt="QR de retirada"></div>
-    <p class="mut">Vale uma vez só. Não mostre para outras pessoas.</p><div id="qItens" class="mut"></div></div></div>
+    <p class="mut">Vale uma vez só. Não mostre para outras pessoas.</p><div id="qItens" class="mut"></div></div><div id="qOutros"></div><button class="grande sec" data-cardapio>🍸 Ver cardápio / pedir mais</button></div>
+
+<div id="telaPedidos" class="tela centro" hidden><div class="card"><h2 style="margin-top:0">🧾 Meus pedidos</h2><div id="listaPedidos"></div></div><button class="grande sec" data-cardapio>🍸 Ver cardápio</button></div>
 
 <div id="telaFim" class="tela centro" hidden><div class="card"><h2 id="fTitulo"></h2><p id="fTexto" class="mut"></p><button class="grande" id="bNovo">Fazer outro pedido</button></div></div>
 
@@ -82,11 +84,27 @@ const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixe
 const CH = 'mukifo_pedido_app';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let aba = 0;   // aba escondida: consulta 1 a cada 5 ticks (o aviso de preparo já vai por push)
-document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) consultar(); if (!document.hidden && alertaPend) { const s = alertaPend; alertaPend = null; chamarAtencao(s); } if (document.hidden) pararAlerta(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) consultarTodos(); if (!document.hidden && alertaPend) { const s = alertaPend; alertaPend = null; chamarAtencao(s); } if (document.hidden) pararAlerta(); });
 let espera = null, cardapio = [], cat = -1, cart = new Map(), prods = new Map(), pedido = null, timer = null;
+// Vários pedidos ao mesmo tempo: `pedidos` são todos os abertos (guardados no aparelho); `pedido` é o que está na tela (ou null no cardápio).
+let pedidos = [], vendo = null; const estado = new Map();   // estado: última resposta do servidor de cada pedido
 const qrImg = (txt) => { const q = qrcode(0, 'M'); q.addData(txt); q.make(); return q.createDataURL(8, 2); };
-const tela = (id) => ['cardapio', 'telaConta', 'telaDados', 'telaPix', 'telaQr', 'telaFim'].forEach((t) => $('#' + t).hidden = t !== id);
-const guardar = (p) => { try { p ? localStorage.setItem(CH, JSON.stringify(p)) : localStorage.removeItem(CH); } catch {} };
+const TELAS = ['cardapio', 'telaConta', 'telaDados', 'telaPix', 'telaQr', 'telaPedidos', 'telaFim'];
+// Botão "voltar" do celular: cada passo para dentro (setor, carrinho, conta, pedido) guarda um degrau no histórico; o voltar sobe um degrau em vez de sair do app.
+let degraus = 0; const descer = () => { degraus++; history.pushState({ mk: degraus }, ''); };
+const telaAtual = () => TELAS.find((t) => !$('#' + t).hidden);
+const tela = (id) => { if (id !== 'cardapio' && telaAtual() === 'cardapio') descer(); TELAS.forEach((t) => $('#' + t).hidden = t !== id); };
+addEventListener('popstate', () => {
+  degraus = Math.max(0, degraus - 1);
+  if ($('#alertaTela')) { pararAlerta(); return descer(); }
+  const t = telaAtual();
+  if (t === 'telaConta' && primeiroLogin) { history.back(); return; }   // login obrigatório da primeira vez: voltar sai do app, não pula o login
+  if (t === 'telaDados' || t === 'telaConta' || t === 'telaPedidos' || t === 'telaFim' || t === 'telaPix' || t === 'telaQr') { verCardapio(); return; }
+  if (busca) { busca = ''; $('#busca').value = ''; desenhar(); return; }
+  if (cat >= 0) { cat = -1; desenhar(); scrollTo(0, 0); return; }
+  if (degraus === 0) history.back();   // já no começo do cardápio: aí sim sai
+});
+const guardar = () => { try { pedidos.length ? localStorage.setItem(CH, JSON.stringify(pedidos)) : localStorage.removeItem(CH); } catch {} botaoPedidos(); };
 
 const EMOJI = { 'Promoções e kits': '🎉', Drinks: '🍹', Doses: '🥃', 'Cervejas e long necks': '🍺', Energéticos: '⚡', 'Refrigerantes e águas': '🥤', Porções: '🍟', 'Pratos e lanches': '🍔' };
 const sem = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -106,14 +124,14 @@ function desenhar() {
 const esperaTxt = () => Espera.texto(Espera.estimar(espera, [...cart].map(([id, q]) => ({ tempo: prods.get(id)?.tempo, q }))));
 function barra() { const n = [...cart.values()].reduce((a, b) => a + b, 0), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0);
   $('#bCarrinho').disabled = !n; $('#bCarrinho').textContent = n ? `🛒 Ver pedido · ${n} ${n > 1 ? 'itens' : 'item'} · ${R$(t)}` : 'Toque nos produtos para pedir'; $('#esperaBarra').textContent = n ? esperaTxt() : ''; }
-$('#cabset').onclick = (e) => { if (e.target.closest('#bSetores')) { cat = -1; desenhar(); scrollTo(0, 0); } };
+$('#cabset').onclick = (e) => { if (e.target.closest('#bSetores')) { if (degraus) history.back(); else { cat = -1; desenhar(); scrollTo(0, 0); } } };
 $('#busca').oninput = (e) => { busca = e.target.value; desenhar(); };
-$('#lista').onclick = (e) => { const st = e.target.closest('.setor'); if (st) { cat = +st.dataset.i; desenhar(); scrollTo(0, 0); return; } const b = e.target.closest('.p'); if (!b || b.disabled) return; const id = +b.dataset.id, lim = Math.min(prods.get(id).restam ?? 20, 20), q = cart.get(id) ?? 0;
+$('#lista').onclick = (e) => { const st = e.target.closest('.setor'); if (st) { if (cat < 0) descer(); cat = +st.dataset.i; desenhar(); scrollTo(0, 0); return; } const b = e.target.closest('.p'); if (!b || b.disabled) return; const id = +b.dataset.id, lim = Math.min(prods.get(id).restam ?? 20, 20), q = cart.get(id) ?? 0;
   if (q >= lim) { b.classList.add('fim'); setTimeout(() => b.classList.remove('fim'), 400); return aviso(lim >= 20 ? 'Máximo de 20 por item.' : `Só temos mais ${lim} desse.`); }
   cart.set(id, q + 1); b.classList.add('ok'); setTimeout(() => b.classList.remove('ok'), 180); if (navigator.vibrate) navigator.vibrate(15); barra(); };
 function aviso(t) { const a = $('#aviso'); a.textContent = t; a.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(() => a.hidden = true, 2200); }
 function desenharCarrinho() {
-  if (!cart.size) { tela('cardapio'); desenhar(); return; }
+  if (!cart.size) { irCardapio(); return; }
   $('#resumo').innerHTML = [...cart].map(([id, q]) => `<div class="cl"><span class="cn">${esc(prods.get(id).nome)}<br><span class="mut">${R$(prods.get(id).preco)}</span></span>
     <span class="q"><button data-id="${id}" data-d="-1" aria-label="Tirar um">−</button><span>${q}</span><button data-id="${id}" data-d="1" aria-label="Pôr mais um">+</button></span></div>`).join('')
     + `<h3>Total ${R$([...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0))}</h3>`; }
@@ -122,37 +140,59 @@ $('#resumo').onclick = (e) => { const b = e.target.closest('button'); if (!b) re
 $('#bCarrinho').onclick = async () => { $('#erro').textContent = ''; desenharCarrinho(); tela('telaDados'); $('#bSaldo').hidden = true;
   if (!conta) return; try { const w = await api('/api/conta/carteira'), t = [...cart].reduce((s, [id, q]) => s + q * prods.get(id).preco, 0); saldoAtual = w.saldo;
     if (w.saldo >= t - 0.001 && cart.size) { $('#bSaldo').hidden = false; $('#bSaldo').textContent = `💳 Pagar com saldo (${R$(w.saldo)})`; } else if (w.saldo > 0) { $('#erro').textContent = `Seu saldo (${R$(w.saldo)}) não cobre este pedido. Adicione saldo na sua conta ou pague com Pix.`; } } catch {} };
-$('#bVoltar').onclick = () => { tela('cardapio'); desenhar(); };
+$('#bVoltar').onclick = irCardapio;
 
 const pagar = async (comSaldo) => { $('#bPagar').disabled = true; $('#bSaldo').disabled = true; $('#erro').textContent = ''; pedirAviso();
   try { const r = await fetch('/api/cliente/pedidos', { method: 'POST', headers: { 'content-type': 'application/json', ...cabConta() }, body: JSON.stringify({ nome: $('#nome').value, celular: $('#cel').value, pagar_com_saldo: comSaldo, itens: [...cart].map(([produto_id, quantidade]) => ({ produto_id, quantidade })) }) });
     const j = await r.json(); if (!r.ok) throw new Error(j.erro); pedido = { id: j.id, numero: j.numero, total: j.total, chave: j.chave_qr, pix: j.pix, ate: Date.now() + j.validade_min * 60000 };
-    guardar(pedido); cart.clear(); acompanhar(); assinarPush(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; $('#bSaldo').disabled = false; };
+    pedidos.push(pedido); guardar(); cart.clear(); abrirPedido(pedido.id); assinarPush(); } catch (e) { $('#erro').textContent = e.message; recarregar(); } $('#bPagar').disabled = false; $('#bSaldo').disabled = false; };
 $('#bPagar').onclick = () => pagar(false); $('#bSaldo').onclick = () => pagar(true);
 async function recarregar() { try { { const d = await (await fetch('/api/venda/cardapio')).json(); cardapio = d.categorias; espera = d.espera; } prods.clear(); cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); [...cart.keys()].forEach((id) => { if (!prods.has(id) || prods.get(id).restam === 0) cart.delete(id); else if (prods.get(id).restam != null) cart.set(id, Math.min(cart.get(id), prods.get(id).restam)); }); desenhar(); } catch {} }
 
-function acompanhar() { clearInterval(timer); mostrarPix(); consultar(); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 3000); }
-function mostrarPix() { $('#pNum').textContent = pedido.numero; $('#pTotal').textContent = R$(pedido.total); $('#pCola').textContent = pedido.pix; $('#qrPix').src = qrImg(pedido.pix); tela('telaPix'); }
+// Acompanha todos os pedidos abertos; só desenha o que está na tela. Com a aba escondida, consulta 1 a cada 5 ticks.
+function acompanhar() { clearInterval(timer); consultarTodos(); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultarTodos(); }, 3500); }
+const consultarTodos = () => Promise.all(pedidos.map(consultar));
+const qual = (id) => pedidos.find((p) => p.id === id);
+function abrirPedido(id) { pedido = qual(id); vendo = id; if (!pedido) return verCardapio(); const s = estado.get(id); if (s?.pago) desenharQr(s); else mostrarPix(); if (!timer) acompanhar(); else consultar(pedido); }
+function verCardapio() { vendo = null; pedido = null; tela('cardapio'); desenhar(); }
+// Botões da tela que voltam ao cardápio usam o mesmo degrau do voltar do celular (senão o voltar precisaria de toques a mais).
+function irCardapio() { if (degraus && telaAtual() !== 'cardapio') history.back(); else verCardapio(); }
+document.addEventListener('click', (e) => { if (e.target.closest('[data-cardapio]')) { e.preventDefault(); irCardapio(); scrollTo(0, 0); } });
+const rotulo = (s) => !s ? 'Consultando…' : !s.pago ? '⏳ Esperando o Pix' : s.status === 'pronto' ? '🎉 Pronto! Retire no balcão' : s.status === 'preparando' ? '🍹 Preparando' : '✔ Pago · na fila';
+function botaoPedidos() { const n = pedidos.length, b = $('#bPedidos'); b.hidden = !n; $('#bPedidosN').textContent = n > 1 ? n : '';
+  const pronto = pedidos.some((p) => estado.get(p.id)?.status === 'pronto'); b.style.background = pronto ? '#16a34a' : 'var(--card)'; b.style.color = pronto ? '#fff' : 'var(--txt)';
+  const outros = pedidos.filter((p) => p.id !== vendo); $('#qOutros').innerHTML = outros.length ? `<div class="card"><b>Seus outros pedidos</b>${outros.map(itemLista).join('')}</div>` : '';
+  if (!$('#telaPedidos').hidden) $('#listaPedidos').innerHTML = pedidos.map(itemLista).join('') || '<p class="mut">Nenhum pedido aberto.</p>'; }
+const itemLista = (p) => `<button class="grande sec" data-pedido="${p.id}" style="text-align:left;display:flex;justify-content:space-between;gap:8px"><span>Pedido <b>${esc(p.numero)}</b> · ${R$(p.total)}</span><span>${rotulo(estado.get(p.id))}</span></button>`;
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-pedido]'); if (b) abrirPedido(+b.dataset.pedido || b.dataset.pedido); });
+$('#bPedidos').onclick = () => { if (pedidos.length === 1) return abrirPedido(pedidos[0].id); vendo = null; pedido = null; tela('telaPedidos'); botaoPedidos(); };
+function mostrarPix() { $('#pNum').textContent = pedido.numero; $('#pTotal').textContent = R$(pedido.total); $('#pCola').textContent = pedido.pix; $('#qrPix').src = qrImg(pedido.pix); $('#bCopiar').textContent = 'Copiar código Pix'; tela('telaPix'); }
 $('#bCopiar').onclick = async () => { try { await navigator.clipboard.writeText(pedido.pix); $('#bCopiar').textContent = 'Copiado ✓'; } catch { $('#pCola').focus(); } };
-async function consultar() {
-  if (!pedido) return;
-  const r = await fetch('/api/cliente/pedidos/' + pedido.id, { headers: { 'X-Chave-Pedido': pedido.chave } }).catch(() => null); if (!r) return;
-  if (r.status === 404) return fim('Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
-  const s = await r.json();
-  if (s.retirado) return fim('Pedido entregue ✓', 'Obrigado e boa noite!');
-  if (s.pago) { clearInterval(timer); timer = setInterval(() => { if (!document.hidden || (aba = (aba + 1) % 5) === 0) consultar(); }, 4000); textos = s.textos; filaTela(s); etapa(s.status); $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${pedido.id}.${pedido.chave}.${s.remessa || 0}`);
-    $('#qItens').innerHTML = (s.remessa ? `<b style="color:#f59e0b">REP ${s.remessa}</b> · entrega parcial — mostre este QR NOVO para receber o que falta<br>` : '') + s.itens.map((i) => (i.entregue >= i.quantidade ? `<s style="opacity:.55">${i.quantidade}× ${i.nome}</s> ✓ entregue` : i.entregue > 0 ? `${i.quantidade - i.entregue}× ${i.nome} <small>(falta; ${i.entregue} já entregue)</small>` : `${i.quantidade}× ${i.nome}`)).join('<br>'); return tela('telaQr'); }
-  if (s.status === 'cancelado') return fim('Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
-  const falta = Math.max(0, Math.ceil((pedido.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`;
+function desenharQr(s) { const p = qual(s.id ?? vendo) ?? pedido; textos = s.textos; filaTela(s); $('#qEtapa').textContent = TEXTO[s.status] ?? TEXTO.recebido; $('#qNum').textContent = s.numero; $('#qrRet').src = qrImg(`MKF1.${p.id}.${p.chave}.${s.remessa || 0}`);
+  $('#qItens').innerHTML = (s.remessa ? `<b style="color:#f59e0b">REP ${s.remessa}</b> · entrega parcial — mostre este QR NOVO para receber o que falta<br>` : '') + s.itens.map((i) => (i.entregue >= i.quantidade ? `<s style="opacity:.55">${i.quantidade}× ${i.nome}</s> ✓ entregue` : i.entregue > 0 ? `${i.quantidade - i.entregue}× ${i.nome} <small>(falta; ${i.entregue} já entregue)</small>` : `${i.quantidade}× ${i.nome}`)).join('<br>'); tela('telaQr'); botaoPedidos(); }
+async function consultar(p) {
+  if (!p) return;
+  const r = await fetch('/api/cliente/pedidos/' + p.id, { headers: { 'X-Chave-Pedido': p.chave } }).catch(() => null); if (!r || !qual(p.id)) return;
+  if (r.status === 404) return fim(p, 'Pedido não encontrado', 'Se você já pagou, fale com o balcão e mostre o comprovante do Pix.');
+  const s = await r.json(); s.id = p.id;
+  if (s.retirado) return fim(p, 'Pedido entregue ✓', 'Obrigado e boa noite!');
+  if (s.status === 'cancelado' && s.cancelado_pelo_bar) return fim(p, 'Pedido cancelado pelo bar', 'Se você já tinha pago, fale com o balcão sobre a devolução.');
+  if (s.status === 'cancelado') return fim(p, 'Pedido vencido', 'O Pix não foi pago a tempo e o pedido foi cancelado. Se você pagou, fale com o balcão e mostre o comprovante.');
+  const antes = estado.get(p.id); estado.set(p.id, s);
+  if (s.pago) { textos = s.textos; avisarEtapa(p, antes?.pago ? antes.status : null, s.status); if (vendo === p.id) desenharQr(s); }
+  else if (vendo === p.id) { const falta = Math.max(0, Math.ceil((p.ate - Date.now()) / 1000)); $('#pTempo').textContent = `Vale por mais ${Math.floor(falta / 60)}:${String(falta % 60).padStart(2, '0')}`; }
+  botaoPedidos();
 }
-function fim(t, x) { clearInterval(timer); pedido = null; guardar(null); $('#fTitulo').textContent = t; $('#fTexto').textContent = x; tela('telaFim'); }
-$('#bNovo').onclick = () => tela('cardapio');
+function fim(p, t, x) { pedidos = pedidos.filter((o) => o.id !== p.id); estado.delete(p.id); guardar(); if (!pedidos.length) { clearInterval(timer); timer = null; }
+  if (vendo === p.id) { vendo = null; pedido = null; $('#fTitulo').textContent = t; $('#fTexto').textContent = x; tela('telaFim'); } else if (!$('#cardapio').hidden || !$('#telaPedidos').hidden) aviso(`Pedido ${p.numero}: ${t}`); }
+$('#bNovo').onclick = () => { irCardapio(); botaoPedidos(); };
 
 (async () => {
   const fotos = Fotos.carregar();   // as fotos vêm do cache do aparelho; a lista nova chega em paralelo e só redesenha depois
   { const d = await (await fetch('/api/venda/cardapio')).json(); cardapio = d.categorias; espera = d.espera; } cardapio.forEach((c) => c.produtos.forEach((p) => prods.set(p.id, p))); desenhar();
   fotos.then(() => { if (!$('#cardapio').hidden) desenhar(); });
-  try { pedido = JSON.parse(localStorage.getItem(CH) || 'null'); } catch {} if (pedido) acompanhar(); else if (!conta) { primeiroLogin = true; abrirConta(); }
+  try { const g = JSON.parse(localStorage.getItem(CH) || 'null'); pedidos = Array.isArray(g) ? g : g ? [g] : []; } catch {}   // aparelhos antigos guardavam um pedido só
+  botaoPedidos(); if (pedidos.length) { acompanhar(); abrirPedido(pedidos.at(-1).id); } else if (!conta) { primeiroLogin = true; abrirConta(); }
 })();
 
 // ---------- conta e níveis (o cliente nunca vê pontos nem valores acumulados) ----------
@@ -185,19 +225,22 @@ function desenharCarteira(w) { saldoAtual = w.saldo; $('#wSaldo').textContent = 
 async function carteira() { try { desenharCarteira(await api('/api/conta/carteira')); } catch {} }
 $('#wAdd').onclick = async () => { $('#wErro').textContent = ''; const v = parseFloat(String($('#wValor').value).replace(',', '.')); try { desenharCarteira(await api('/api/conta/carteira/recarga', { valor: v })); $('#wValor').value = ''; } catch (e) { $('#wErro').textContent = e.message; } };
 $('#wCola').onclick = () => navigator.clipboard?.writeText($('#wCola').textContent);
-$('#bConta').onclick = abrirConta; $('#cVoltar').onclick = () => { tela('cardapio'); desenhar(); };
+$('#bConta').onclick = abrirConta; $('#cVoltar').onclick = irCardapio;
 $('#aEntrar').onclick = () => { modo = 'entrar'; formaConta(); }; $('#aCriar').onclick = () => { modo = 'criar'; formaConta(); };
-$('#cEsqueci').onclick = async (e) => { e.preventDefault(); modo = 'recuperar'; formaConta();
-  $('#cRecDica').textContent = 'Digite seu celular ou e-mail acima. Pedindo o código por e-mail ou no balcão do bar, você cria uma nova senha.';
-  if (!$('#cLogin').value.trim()) return;
-  try { const j = await api('/api/conta/esqueci', { login: $('#cLogin').value }); $('#cRecDica').textContent = j.mensagem; } catch (er) { $('#cErro').textContent = er.message; } };
+async function mandarCodigo() { $('#cErro').textContent = '';
+  if (!$('#cLogin').value.trim()) { $('#cErro').textContent = 'Digite seu celular ou e-mail acima.'; $('#cLogin').focus(); return; }
+  try { const j = await api('/api/conta/esqueci', { login: $('#cLogin').value }); $('#cRecDica').textContent = j.mensagem; } catch (er) { $('#cErro').textContent = er.message; } }
+$('#cEsqueci').onclick = (e) => { e.preventDefault(); modo = 'recuperar'; formaConta();
+  $('#cRecDica').textContent = 'Digite seu celular ou e-mail acima e toque em “Mandar código”. O código chega no WhatsApp ou no e-mail (ou peça no balcão do bar).';
+  if ($('#cLogin').value.trim()) mandarCodigo(); };
+$('#cMandar').onclick = mandarCodigo;
 $('#criarAqui').onclick = (e) => { e.preventDefault(); modo = 'criar'; abrirConta(); };
 $('#cOk').onclick = async () => { $('#cErro').textContent = ''; $('#cOk').disabled = true;
   try { const j = modo === 'recuperar' ? await api('/api/conta/redefinir', { login: $('#cLogin').value, codigo: $('#cCodigo').value, senha: $('#cSenha').value }) : modo === 'criar' ? await api('/api/conta/cadastro', { nome: $('#cNome').value, celular: $('#cLogin').value, email: $('#cEmail').value, senha: $('#cSenha').value, aceite: $('#cAceite').checked, whats: $('#cWhats').checked })
-      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; if (primeiroLogin) { primeiroLogin = false; tela('cardapio'); desenhar(); } else abrirConta(); }
+      : await api('/api/conta/entrar', { login: $('#cLogin').value, senha: $('#cSenha').value }); salvarConta({ token: j.token, cliente: j.cliente }); $('#cSenha').value = ''; $('#cCodigo').value = ''; modo = 'entrar'; if (primeiroLogin) { primeiroLogin = false; irCardapio(); } else abrirConta(); }
   catch (e) { $('#cErro').textContent = e.message; } $('#cOk').disabled = false; };
 $('#wZapBtn').onclick = async () => { $('#wZapErro').textContent = ''; const quer = !$('#wZapBtn').dataset.on; try { const r = await api('/api/conta/whats', { aceita: quer }, 'PUT'); desenharZap(r.whats); } catch (e) { $('#wZapErro').textContent = e.message; } };
-$('#lSair').onclick = async () => { try { await api('/api/conta/sair', {}); } catch {} salvarConta(null); tela('cardapio'); desenhar(); };
+$('#lSair').onclick = async () => { try { await api('/api/conta/sair', {}); } catch {} salvarConta(null); irCardapio(); };
 function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGoogle').dataset.ok) return; $('#cGoogle').dataset.ok = 1;
   const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = () => { google.accounts.id.initialize({ client_id: id, callback: async (r) => { try { const j = await api('/api/conta/google', { credential: r.credential, aceite: true }); salvarConta({ token: j.token, cliente: j.cliente }); abrirConta(); } catch (e) { $('#cErro').textContent = e.message; } } }); google.accounts.id.renderButton($('#cGoogle'), { theme: 'filled_black', size: 'large', text: 'continue_with', locale: 'pt-BR' }); }; document.head.appendChild(s); }
 
@@ -205,15 +248,15 @@ function botaoGoogle() { const id = niveis?.google_client_id; if (!id || $('#cGo
 const PADRAO = { preparando: [300, 120, 300, 120, 600], pronto: [600, 150, 600, 150, 600, 150, 900] };
 const TEXTO = { recebido: '✔ Pago! Aguardando o preparo', preparando: '🍹 Estamos preparando o seu pedido!', pronto: '🎉 Pronto! Retire no balcão com este QR' };
 // ---- chamar a atenção: tela piscando + vibração repetida + bipe, até o cliente tocar (ou 25 s) ----
-let textos = null, alertaT = null, trava = null, alertaPend = null;   // alertaPend: a etapa mudou com a tela apagada; pisca assim que o cliente voltar
+let textos = null, alertaT = null, trava = null, alertaPend = null, alertaNum = '', alertaId = null;   // alertaPend: a etapa mudou com a tela apagada; pisca assim que o cliente voltar
 function pararAlerta() { clearInterval(alertaT); alertaT = null; $('#alertaTela')?.remove(); navigator.vibrate?.(0); try { trava?.release(); } catch {} trava = null; }
 function chamarAtencao(st) {
   pararAlerta();
   const T = textos?.[st], cor = st === 'pronto' ? ['#16a34a', '#ffffff'] : ['#f59e0b', '#ffffff'], txt = st === 'pronto' ? ['🎉', T?.manchete ?? 'SEU PEDIDO ESTÁ PRONTO!', T?.curto ?? 'Retire no balcão mostrando o QR.'] : ['🍹', T?.manchete ?? 'SEU PEDIDO COMEÇOU A SER PREPARADO!', T?.curto ?? 'Já já fica pronto.'];
   const d = document.createElement('div'); d.id = 'alertaTela';
   d.style.cssText = `position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;color:#111;font:800 28px system-ui;animation:piscaTela .5s steps(1) infinite;--c1:${cor[0]};--c2:${cor[1]}`;
-  d.innerHTML = `<style>@keyframes piscaTela{0%{background:var(--c1)}50%{background:var(--c2)}}</style><div style="font-size:90px">${txt[0]}</div><div>${txt[1]}</div><div style="font:600 18px system-ui">Pedido ${esc(pedido?.numero ?? '')} · ${txt[2]}</div><button style="margin-top:20px;min-height:64px;padding:0 40px;border-radius:16px;border:3px solid #111;background:#111;color:#fff;font:800 22px system-ui">Entendi</button>`;
-  d.querySelector('button').onclick = pararAlerta; document.body.appendChild(d);
+  d.innerHTML = `<style>@keyframes piscaTela{0%{background:var(--c1)}50%{background:var(--c2)}}</style><div style="font-size:90px">${txt[0]}</div><div>${txt[1]}</div><div style="font:600 18px system-ui">Pedido ${esc(alertaNum || pedido?.numero || '')} · ${txt[2]}</div><button style="margin-top:20px;min-height:64px;padding:0 40px;border-radius:16px;border:3px solid #111;background:#111;color:#fff;font:800 22px system-ui">Entendi</button>`;
+  d.querySelector('button').onclick = () => { pararAlerta(); if (alertaId != null && qual(alertaId) && vendo !== alertaId) abrirPedido(alertaId); }; document.body.appendChild(d);
   const padrao = PADRAO[st] ?? [400, 150, 400]; const ciclo = () => { navigator.vibrate?.(padrao); bipar(); }; ciclo(); alertaT = setInterval(ciclo, 2200); setTimeout(pararAlerta, 25000);
   try { navigator.wakeLock?.request('screen').then((w) => { trava = w; }).catch(() => {}); } catch {}
 }
@@ -224,10 +267,9 @@ function filaTela(s) {
   const dica = f.a_frente === 0 ? '<b class="bom" style="font-size:20px">🔥 É o seu! Estamos preparando agora</b>' : `<div style="font-size:30px;font-weight:800">${f.posicao}º da fila</div><div>${f.a_frente === 1 ? '1 pedido' : f.a_frente + ' pedidos'} na sua frente</div>`;
   box.innerHTML = `📋 <b>Fila de pedidos</b><div style="margin:8px 0">${dica}</div><div class="mut">${f.na_fila} ${f.na_fila === 1 ? 'pedido' : 'pedidos'} em produção agora</div>${tempo}`; box.hidden = false;
 }
-function etapa(st) { $('#qEtapa').textContent = TEXTO[st] ?? TEXTO.recebido;
-  if (etapaAtual !== null && etapaAtual !== st && PADRAO[st]) { if (!document.hidden) chamarAtencao(st); else { alertaPend = st; if (navigator.vibrate) navigator.vibrate(PADRAO[st]); }
-    try { if (Notification.permission === 'granted' && document.hidden) navigator.serviceWorker?.ready.then((r) => r.showNotification('Mukifo · ' + TEXTO[st].replace(/^\S+\s/, ''), { body: 'Pedido ' + pedido?.numero, vibrate: PADRAO[st], tag: 'pedido', renotify: true, requireInteraction: true })); } catch {} }
-  etapaAtual = st; }
+function avisarEtapa(p, antes, st) {   // primeira leitura (antes = null) não apita: só mudança de etapa
+  if (antes !== null && antes !== st && PADRAO[st]) { alertaNum = p.numero; alertaId = p.id; if (!document.hidden) chamarAtencao(st); else { alertaPend = st; if (navigator.vibrate) navigator.vibrate(PADRAO[st]); }
+    try { if (Notification.permission === 'granted' && document.hidden) navigator.serviceWorker?.ready.then((r) => r.showNotification('Mukifo · ' + TEXTO[st].replace(/^\S+\s/, ''), { body: 'Pedido ' + p.numero, vibrate: PADRAO[st], tag: 'pedido-' + p.id, renotify: true, requireInteraction: true })); } catch {} } }
 async function pedirAviso() { try { if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); } catch {} }
 async function assinarPush() { try {
   if (!pedido || !('serviceWorker' in navigator) || !('PushManager' in window) || Notification.permission !== 'granted') return;

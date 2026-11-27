@@ -7,7 +7,7 @@ import { criarD1 } from './d1-falso.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../migrations/0005_alerta_estoque.sql'), arq('../migrations/0006_venda.sql'), arq('../migrations/0007_cliente.sql'), arq('../migrations/0008_combos.sql'), arq('../migrations/0009_trava_estoque.sql'), arq('../migrations/0010_estoque_recomendado.sql'), arq('../migrations/0011_indices.sql'), arq('../migrations/0012_financeiro.sql'), arq('../migrations/0013_clientes_e_dias.sql'), arq('../migrations/0014_indices_estoque.sql'), arq('../migrations/0015_recuperar_senha.sql'), arq('../migrations/0016_auditoria.sql'), arq('../migrations/0017_tempo_preparo.sql'), arq('../migrations/0018_pronta_entrega.sql'), arq('../migrations/0019_entrega_parcial.sql'), arq('../migrations/0020_carteira.sql'), arq('../migrations/0021_item_pronto.sql'), arq('../migrations/0022_campeonato.sql'), arq('../migrations/0023_gateway.sql'), arq('../migrations/0024_sinuca.sql'), arq('../migrations/0025_nota_fiscal.sql'), arq('../migrations/0026_fiscal.sql'), arq('../migrations/0027_pix_monitor.sql'), arq('../migrations/0028_canais.sql'), arq('../migrations/0029_whatsapp.sql'), arq('../migrations/0030_consentimento_whats.sql'), arq('../migrations/0031_campeonato_nivel.sql'), arq('../migrations/0032_jogador_titulo.sql'), arq('../migrations/0033_sinuca_resultado.sql'), arq('../seed/seed.sql')]),
+  DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0004_fotos.sql'), arq('../migrations/0005_alerta_estoque.sql'), arq('../migrations/0006_venda.sql'), arq('../migrations/0007_cliente.sql'), arq('../migrations/0008_combos.sql'), arq('../migrations/0009_trava_estoque.sql'), arq('../migrations/0010_estoque_recomendado.sql'), arq('../migrations/0011_indices.sql'), arq('../migrations/0012_financeiro.sql'), arq('../migrations/0013_clientes_e_dias.sql'), arq('../migrations/0014_indices_estoque.sql'), arq('../migrations/0015_recuperar_senha.sql'), arq('../migrations/0016_auditoria.sql'), arq('../migrations/0017_tempo_preparo.sql'), arq('../migrations/0018_pronta_entrega.sql'), arq('../migrations/0019_entrega_parcial.sql'), arq('../migrations/0020_carteira.sql'), arq('../migrations/0021_item_pronto.sql'), arq('../migrations/0022_campeonato.sql'), arq('../migrations/0023_gateway.sql'), arq('../migrations/0024_sinuca.sql'), arq('../migrations/0025_nota_fiscal.sql'), arq('../migrations/0026_fiscal.sql'), arq('../migrations/0027_pix_monitor.sql'), arq('../migrations/0028_canais.sql'), arq('../migrations/0029_whatsapp.sql'), arq('../migrations/0030_consentimento_whats.sql'), arq('../migrations/0031_campeonato_nivel.sql'), arq('../migrations/0032_jogador_titulo.sql'), arq('../migrations/0033_sinuca_resultado.sql'), arq('../migrations/0035_seguranca.sql'), arq('../seed/seed.sql')]),
   ASSETS: { fetch: () => new Response('estatico') },
   CODIGO_PRIMEIRO_ACESSO: 'codigo-teste',
 };
@@ -48,6 +48,7 @@ test('superadmin cria gerente; gerente não cria ninguém', async () => {
   const lista = (await chamar('/api/usuarios', null, tokenA)).corpo;
   idB = lista.find((u) => u.nome === 'Beto').id;
   tokenB = (await chamar('/api/auth/entrar', { nome: 'Beto', senha: 'senha-do-beto' })).corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', { senhaAtual: 'senha-do-beto', senhaNova: 'beto-nova-2026' }, tokenB)).status, 200); // senha nova obrigatória no primeiro acesso
   assert.equal((await chamar('/api/usuarios', { nome: 'X', senha: 'xxxxxxx' }, tokenB)).status, 403);
 });
 
@@ -69,7 +70,7 @@ test('passar o cargo: exige a senha; quem passa vira gerente e o novo vira super
 });
 
 test('código de primeiro acesso é obrigatório', async () => {
-  const env2 = { ...env, DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql')]), CODIGO_PRIMEIRO_ACESSO: 'abc123' };
+  const env2 = { ...env, DB: criarD1([arq('../migrations/0001_inicial.sql'), arq('../migrations/0002_lista_compras.sql'), arq('../migrations/0003_usuarios.sql'), arq('../migrations/0035_seguranca.sql')]), CODIGO_PRIMEIRO_ACESSO: 'abc123' }; // 0035: tabela de tentativas
   const t = (corpo) => worker.fetch(new Request('https://x.test/api/auth/primeiro-acesso', { method: 'POST', body: JSON.stringify(corpo) }), env2);
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa' })).status, 403);
   const semCodigo = { ...env2, CODIGO_PRIMEIRO_ACESSO: undefined };
@@ -78,29 +79,31 @@ test('código de primeiro acesso é obrigatório', async () => {
   assert.equal((await t({ nome: 'Ana', senha: 'senha-longa', codigo: 'abc123' })).status, 200);
 });
 
-test('login de demonstração: vem ligado, libera as telas, não aparece na lista nem recebe o cargo, e dá para desligar', async () => {
-  assert.equal((await chamar('/api/auth/estado')).corpo.demo, true);
-  const d = await chamar('/api/auth/demo', {});
-  assert.equal(d.status, 200);
-  assert.equal(d.corpo.usuario.demo, true);
-  const t = d.corpo.token;
-  assert.equal((await chamar('/api/auth/eu', null, t)).corpo.usuario.demo, true);
-  assert.notEqual((await chamar('/api/listas/atual', null, t)).status, 401);
-  assert.notEqual((await chamar('/api/clientes', null, t)).status, 403);          // vê tudo
-  assert.notEqual((await chamar('/api/financeiro/resultado', null, t)).status, 403);
-  assert.equal((await chamar('/api/usuarios', { nome: 'Fulano', senha: 'senha-longa' }, t)).status, 403); // mas não gerencia gente
-  assert.equal((await chamar('/api/auth/entrar', { nome: 'Demonstração', senha: 'qualquer-coisa' })).status, 401);
-  const lista = (await chamar('/api/usuarios', null, tokenB)).corpo;
-  assert.ok(!lista.some((u) => u.nome === 'Demonstração'));
-  assert.equal((await chamar('/api/usuarios', { nome: 'demonstração', senha: 'senha-longa' }, tokenB)).status, 400);
-  assert.equal((await chamar('/api/auth/sair', {}, t)).status, 200);
-  assert.equal((await chamar('/api/auth/eu', null, t)).status, 401);
-  const t2 = (await chamar('/api/auth/demo', {})).corpo.token;
-  env.LOGIN_DEMO = 'nao';
+test('login de demonstração: vem desligado; ligado, é só de leitura e não recebe o cargo nem aparece na lista', async () => {
+  // Desligado por padrão
+  assert.equal((await chamar('/api/auth/estado')).corpo.demo, false);
+  assert.equal((await chamar('/api/auth/demo', {})).status, 403);
+
+  // Ligado com LOGIN_DEMO = sim
+  env.LOGIN_DEMO = 'sim';
   try {
-    assert.equal((await chamar('/api/auth/eu', null, t2)).status, 401);
-    assert.equal((await chamar('/api/auth/demo', {})).status, 403);
-    assert.equal((await chamar('/api/auth/estado')).corpo.demo, false);
+    assert.equal((await chamar('/api/auth/estado')).corpo.demo, true);
+    const d = await chamar('/api/auth/demo', {});
+    assert.equal(d.status, 200);
+    assert.equal(d.corpo.usuario.demo, true);
+    const t = d.corpo.token;
+    assert.equal((await chamar('/api/auth/eu', null, t)).corpo.usuario.demo, true);
+    assert.notEqual((await chamar('/api/listas/atual', null, t)).status, 401);     // lê as telas liberadas
+    assert.equal((await chamar('/api/clientes', null, t)).status, 403);            // telas fora da lista ficam fechadas
+    assert.equal((await chamar('/api/financeiro/resultado', null, t)).status, 403);
+    assert.equal((await chamar('/api/venda/comandas', { mesa: 1 }, t)).status, 401); // escrita recusada
+    assert.equal((await chamar('/api/usuarios', { nome: 'Fulano', senha: 'senha-longa' }, t)).status, 401);
+    assert.equal((await chamar('/api/auth/entrar', { nome: 'Demonstração', senha: 'qualquer-coisa' })).status, 401);
+    const lista = (await chamar('/api/usuarios', null, tokenB)).corpo;
+    assert.ok(!lista.some((u) => u.nome === 'Demonstração'));
+    assert.equal((await chamar('/api/usuarios', { nome: 'demonstração', senha: 'senha-longa' }, tokenB)).status, 400);
+    assert.equal((await chamar('/api/auth/sair', {}, t)).status, 200);
+    assert.equal((await chamar('/api/auth/eu', null, t)).status, 401);
   } finally { delete env.LOGIN_DEMO; }
 });
 

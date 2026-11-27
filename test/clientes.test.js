@@ -11,7 +11,7 @@ import { verificarGoogle } from '../src/clientes.js';
 
 const arq = (p) => fileURLToPath(new URL(p, import.meta.url));
 const env = {
-  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo', '0033_sinuca_resultado'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
+  DB: criarD1(['0001_inicial', '0002_lista_compras', '0003_usuarios', '0004_fotos', '0005_alerta_estoque', '0006_venda', '0007_cliente', '0008_combos', '0009_trava_estoque', '0010_estoque_recomendado', '0011_indices', '0012_financeiro', '0013_clientes_e_dias', '0014_indices_estoque', '0015_recuperar_senha', '0016_auditoria', '0017_tempo_preparo', '0018_pronta_entrega', '0019_entrega_parcial', '0020_carteira', '0021_item_pronto', '0022_campeonato', '0023_gateway', '0024_sinuca', '0025_nota_fiscal', '0026_fiscal', '0027_pix_monitor', '0028_canais', '0029_whatsapp', '0030_consentimento_whats', '0031_campeonato_nivel', '0032_jogador_titulo', '0033_sinuca_resultado', '0035_seguranca'].map((m) => arq(`../migrations/${m}.sql`)).concat(arq('../seed/seed.sql'))),
   ADMIN_TOKEN: 'segredo-teste', ASSETS: { fetch: () => new Response('x') },
 };
 const chamar = async (caminho, metodo = 'GET', corpo, cab = {}, token = 'segredo-teste') => {
@@ -155,6 +155,7 @@ test('painel de permissões: o superadmin escolhe os módulos de cada login e o 
   const lista = (await chamar('/api/usuarios')).corpo, g = lista.find((u) => u.nome === 'Gerente Teste');
   assert.ok(g.modulos.includes('venda') && !g.modulos.includes('financeiro'));                       // padrão do gerente
   const login = (await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Teste', senha: 'gerente-123' }, {}, null)).corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', 'POST', { senhaAtual: 'gerente-123', senhaNova: 'gerente-nova-456' }, {}, login)).status, 200);   // troca obrigatória antes de usar
   assert.equal((await chamar('/api/financeiro/resumo', 'GET', null, {}, login)).status, 403);
   assert.equal((await chamar('/api/planilhas', 'GET', null, {}, login)).status, 403);
   assert.equal((await chamar('/api/producao', 'GET', null, {}, login)).status, 200);
@@ -233,6 +234,7 @@ test('auditoria: registra quem fez o quê (sem senhas), só o superadmin lê, e 
   assert.ok([200, 201].includes(ger.status));
   const lg = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'senha-gerente-1' }, {}, null);
   assert.equal(lg.status, 200);
+  assert.equal((await chamar('/api/auth/trocar-senha', 'POST', { senhaAtual: 'senha-gerente-1', senhaNova: 'senha-gerente-2' }, {}, lg.corpo.token)).status, 200);   // troca obrigatória antes de usar
   const errado = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'errada-errada' }, {}, null); assert.equal(errado.status, 401);
   const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
   const com = await chamar('/api/venda/comandas', 'POST', {}, {}, lg.corpo.token);
@@ -315,4 +317,23 @@ test('fila do cliente: mostra quantos pedidos estão na frente e some quando fic
   assert.equal((await ver(b)).fila.a_frente, sb.fila.a_frente - 1);
   assert.equal((await ver(a)).fila, null);
   await chamar('/api/teste', 'PUT', { ativo: false });
+});
+
+test('esqueci a senha pelo WhatsApp: o código vai para o celular da conta e serve para criar a senha nova', async () => {
+  const cad = await chamar('/api/conta/cadastro', 'POST', { nome: 'Zap Teste', celular: '51977776666', senha: 'senha-velha-1', aceite: true }, {}, null);
+  assert.equal(cad.status, 201);
+  const fetchOriginal = globalThis.fetch, envios = [];
+  globalThis.fetch = async (url, op) => { envios.push({ url: String(url), corpo: JSON.parse(op.body) }); return new Response('{}', { status: 200 }); };
+  Object.assign(env, { IZAPIA_API_KEY: 'chave', IZAPIA_SID: 'sessao-1' });
+  try {
+    const r = await chamar('/api/conta/esqueci', 'POST', { login: '(51) 97777-6666' }, {}, null);
+    assert.equal(r.status, 200); assert.match(r.corpo.mensagem, /WhatsApp/);
+    assert.equal(envios.length, 1); assert.equal(envios[0].corpo.to, '5551977776666');
+    const codigo = envios[0].corpo.text.match(/(\d{6})/)[1];
+    await chamar('/api/conta/esqueci', 'POST', { login: '51977776666' }, {}, null);
+    assert.equal(envios.length, 1);   // no máximo 1 envio por minuto
+    const ok = await chamar('/api/conta/redefinir', 'POST', { login: '51977776666', codigo, senha: 'senha-nova-1' }, {}, null);
+    assert.equal(ok.status, 200);
+    assert.equal((await chamar('/api/conta/entrar', 'POST', { login: '51977776666', senha: 'senha-nova-1' }, {}, null)).status, 200);
+  } finally { globalThis.fetch = fetchOriginal; delete env.IZAPIA_API_KEY; delete env.IZAPIA_SID; }
 });

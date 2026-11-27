@@ -5,12 +5,17 @@ Este manual é para quem opera o bar: balcão, cozinha, gerência e dono. Ele é
 ## 1. Primeiros passos
 
 ### Entrar e quem vê o quê
-- Quem trabalha entra com **nome e senha**. O primeiro acesso cria o **superadmin** (o dono), usando o código de primeiro acesso guardado na Cloudflare.
-- O superadmin vê tudo e, na aba **Conta**, escolhe o que cada gerente pode ver (painel de permissões). O sistema também bloqueia no servidor: esconder o botão não é o único cuidado.
+- **Sem login, ninguém entra na gestão.** Abrindo o endereço do sistema, aparece a tela **Entrar** (`/entrar.html`): nome e senha. Quem é cliente toca em **"📱 Sou cliente: fazer pedido"** e vai para o app do cliente.
+- **Três cargos:** **Dono** (vê tudo), **Gerente** (o que o dono liberar; por padrão quase tudo, menos Desempenho, Financeiro e Excel) e **Atendente** (por padrão só **Venda** e **Produção**). O servidor também bloqueia: esconder o botão não é o único cuidado.
+- Depois de entrar, cada um cai na **tela inicial** (`/inicio.html`) com botões grandes só do que pode usar.
+- **Senha provisória:** login criado pelo dono (ou senha redefinida por ele) obriga a pessoa a criar a própria senha no primeiro acesso. Senhas fáceis como 123456 não são aceitas como senha definitiva.
+- **5 senhas erradas seguidas** bloqueiam aquele nome por 15 minutos.
+- **Dono perdeu a senha:** na tela Entrar, toque em **"Sou o dono e perdi a senha"** e use o código de primeiro acesso guardado na Cloudflare (`CODIGO_PRIMEIRO_ACESSO`). Depois de usar, troque esse código na Cloudflare.
+- O primeiro acesso cria o **Dono**, usando o mesmo código. Na aba **Conta**, o dono cria os logins (**Criar logins iniciais** faz Gerente e Atendente de uma vez), escolhe o cargo, redefine senha, desativa e escolhe o que cada um vê (painel de permissões).
 - **Zerar testes** (aba Conta, só superadmin): apaga pedidos, cobranças, carteira dos clientes, caixa e pontos dos clientes (volta tudo a zero) e devolve ao estoque o que as vendas tiraram. Mantém produtos, estoque, fotos, clientes, pessoas e o histórico importado. Não dá para desfazer.
-- **Login de demonstração** (botão "Só quero ver" na tela de entrada): entra sem senha, com todas as telas liberadas, para mostrar o sistema (7 dias). Só não gerencia pessoas nem passa o cargo. **Vem ligado**: para desligar, crie `LOGIN_DEMO` = `nao` na Cloudflare (Settings → Variables and Secrets).
+- **Login de demonstração** ("Só quero ver"): **vem desligado**. Para ligar, crie `LOGIN_DEMO` = `sim` na Cloudflare. Ligado, só deixa olhar: não altera nada e não vê clientes, financeiro, caixa nem cancelamentos.
 - Módulos que podem ser liberados ou escondidos: Venda, Produção, Caixa, Estoque, Recomendado, Produtos e lucro, Combos, Níveis, Fotos, Registrar, Fornecedores, Clientes, Campeonato, Desempenho, Financeiro e Excel. **Desempenho, Financeiro e Excel** vêm desligados para gerentes novos.
-- A sessão fica salva no aparelho. Para trocar de pessoa, use **Conta → Sair**.
+- A sessão fica salva no aparelho por 14 dias. Para trocar de pessoa, use **Sair** na barra do topo.
 
 ### Visual e modo teste
 - O visual (Escuro, Claro, Vinho, Alto contraste) é escolhido na gestão e fica salvo no aparelho.
@@ -93,14 +98,18 @@ Qualquer pessoa logada lança **sangria** (tirar dinheiro do caixa) e **suprimen
 - A **trava de estoque** impede vender o que não tem (pode ser desligada).
 
 ## 5. Produção
+- **Cancelar pedido:** botão "✖ Cancelar pedido" no fim de cada cartão (para quem tem a permissão **Cancelar pedidos**; vem ligada para gerentes). O motivo é obrigatório. Se o pedido já foi pago, escolha como o dinheiro volta: no **saldo do cliente** (só quem tem conta; pago com saldo volta sozinho), **devolvido no balcão** ou **sem devolução**. Marque se os itens voltam para o estoque (vem marcado quando ainda não começou o preparo). Os pontos do cliente daquele pedido saem. O cliente vê "Pedido cancelado pelo bar".
+- **📜 Cancelados:** histórico dos últimos 30 dias — número, itens, cliente, motivo, quem cancelou, quando, quanto tinha entrado e como voltou. Não dá para apagar.
 - Quadro com três colunas: **Recebido**, **Em produção** e **Entregue**.
 - Cada pedido mostra o tempo de espera. É possível marcar **pronto por item** e fazer **entrega parcial** (REP 1, REP 2…), quando só parte do pedido ficou pronta.
 - O cliente é avisado quando o pedido fica pronto: vibração e som na tela, e notificação no celular quando os avisos push estão configurados.
 - No balcão, a entrega confere o **QR** do cliente. Pedido do app que ainda não foi pago aparece como **não pago**: não entregue.
 
 ## 6. App do cliente
-- **A primeira tela é o login.** A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há "esqueci a senha" por e-mail, quando o envio de e-mail está configurado.
+- **A primeira tela é o login.** A conta fica salva no aparelho e define o que a pessoa vê. Dá para entrar com celular e senha (e com Google, quando configurado). Há "esqueci a senha": o código de 6 dígitos chega pelo WhatsApp do bar (quando a izapia está ligada) e/ou por e-mail (quando o Resend está configurado); sem nenhum dos dois, o código sai no balcão.
 - **Pedir:** o cliente escolhe os itens, paga no Pix ou com saldo e **só então** o pedido é aceito. O QR do pedido é validado no balcão.
+- **Vários pedidos:** com um pedido feito, o cliente continua no cardápio e pode fazer outros. O botão 🧾 no topo mostra os pedidos abertos (fica verde quando algum está pronto); tocando, volta para o QR. O aviso de "pronto" toca mesmo com o cliente olhando o cardápio.
+- **Botão voltar do celular:** volta um passo (do carrinho ou do pedido para o cardápio, do setor para a lista de setores). Só sai do app quando já está no começo do cardápio.
 - **Carteira:** saldo pré-pago por recarga via Pix. O saldo pode ser usado nos pedidos e na inscrição de campeonatos.
 - **Níveis de cliente:** não aparecem mais no app do cliente (cartão de convite, nível no botão e tela de níveis). O cálculo continua por trás e o painel Clientes ainda mostra. Nunca aparecem pontos ou valores gastos.
 - Atalhos no topo: 🏆 campeonato e 🎱 fila da sinuca.
