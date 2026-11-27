@@ -49,12 +49,9 @@ export async function expirarPendentes(db) {
 export const celularValido = (s) => { const d = String(s ?? '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return /^\d{10,11}$/.test(d) ? d : null; };
 
 async function criarPedido(db, request, corpo, env) {
-  await expirarPendentes(db);
-  const teste = await modoTeste(db);
-  const pix = await lerPix(db);
+  const [, teste, pix, conta] = await Promise.all([expirarPendentes(db), modoTeste(db), lerPix(db), clienteLogado(request, { DB: db })]);   // quem tem conta não precisa digitar de novo e ganha pontos
   if (teste && !pix.chave) pix.chave = 'teste@mukifo.app';
   if (!pix.chave) return erro('Os pedidos pelo celular ainda não foram liberados. Peça no balcão.', 503);
-  const conta = await clienteLogado(request, { DB: db });   // quem tem conta não precisa digitar de novo e ganha pontos
   const nome = String(conta?.nome ?? corpo?.nome ?? '').trim().slice(0, 40);
   if (nome.length < 2) return erro('Digite seu nome.');
   const celular = celularValido(conta?.celular ?? corpo?.celular);
@@ -69,7 +66,12 @@ async function criarPedido(db, request, corpo, env) {
     agregado.set(id, (agregado.get(id) ?? 0) + q);
   }
   const ids = [...agregado.keys()];
-  const { results: achados } = await db.prepare(`SELECT id, nome, preco_venda FROM produto WHERE ativo = 1 AND id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all();
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'sem-ip';
+  const origemHash = await sha256(`mukifo|${ip}`);
+  const [{ results: achados }, pc, po] = await Promise.all([
+    db.prepare(`SELECT id, nome, preco_venda FROM produto WHERE ativo = 1 AND id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all(),
+    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND celular = ?").bind(celular).first(),
+    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
   const porId = new Map(achados.map((p) => [p.id, p]));
   const itens = [];
   for (const [id, q] of agregado) {
@@ -83,11 +85,6 @@ async function criarPedido(db, request, corpo, env) {
   const total = r2(itens.reduce((s, i) => s + i.q * i.preco_venda, 0));
   if (total <= 0 || total > MAX_TOTAL) return erro('Valor do pedido fora do permitido.');
 
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'sem-ip';
-  const origemHash = await sha256(`mukifo|${ip}`);
-  const [pc, po] = await Promise.all([
-    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND celular = ?").bind(celular).first(),
-    db.prepare("SELECT COUNT(*) AS n FROM pedido WHERE origem = 'celular' AND status = 'aguardando_pagamento' AND origem_hash = ?").bind(origemHash).first()]);
   if (!teste && (pc.n >= MAX_PENDENTES_CELULAR || po.n >= MAX_PENDENTES_ORIGEM)) return erro('Você já tem pedidos esperando pagamento. Pague ou aguarde alguns minutos.', 429);
 
   const comSaldo = corpo?.pagar_com_saldo === true;
