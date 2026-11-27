@@ -68,11 +68,18 @@ async function novaSessao(db, usuarioId, dias = DIAS_SESSAO) {
 }
 
 /** Quem está logado? Aceita o token de sessão ou, como chave de emergência, o ADMIN_TOKEN. */
-export async function usuarioLogado(request, env) {
+async function buscarUsuario(request, env) {
   const h = request.headers.get('authorization') ?? '';
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!token) return null;
   return usuarioDoToken(token, env, request.method, new URL(request.url).pathname);
+}
+
+// Cada requisição consulta o login só uma vez (cada consulta ao banco leva ~120 ms).
+const memoUsuario = new WeakMap();
+export function usuarioLogado(request, env) {
+  if (!memoUsuario.has(request)) memoUsuario.set(request, buscarUsuario(request, env));
+  return memoUsuario.get(request);
 }
 
 /** Quem é o dono de um token de sessão (ou da chave de emergência)? Usado pela API (Bearer) e pelo cookie das páginas. */

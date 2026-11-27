@@ -21,9 +21,16 @@ async function abrirSessao(db, clienteId) {
   await db.prepare(`INSERT INTO cliente_sessao (token_hash, cliente_id, expira_em) VALUES (?, ?, datetime('now', '+${DIAS} days'))`).bind(await hashToken(token), clienteId).run();
   return token;
 }
-export async function clienteLogado(request, env) {
+async function buscarCliente(request, env) {
   const t = request.headers.get('X-Sessao-Cliente'); if (!t) return null;
   return env.DB.prepare(`SELECT c.* FROM cliente_sessao s JOIN cliente c ON c.id = s.cliente_id WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND c.ativo = 1`).bind(await hashToken(t)).first();
+}
+
+// Cada requisição consulta a conta do cliente só uma vez.
+const memoCliente = new WeakMap();
+export function clienteLogado(request, env) {
+  if (!memoCliente.has(request)) memoCliente.set(request, buscarCliente(request, env));
+  return memoCliente.get(request);
 }
 
 /** 1 ponto por real pago, uma única vez por pedido. Só conta depois que o pedido está pago. */
