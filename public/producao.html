@@ -25,7 +25,7 @@ dialog{background:var(--card);color:var(--txt);border:1px solid var(--line);bord
 dialog label{display:flex;gap:10px;align-items:center;min-height:48px;font-size:16px}dialog textarea{width:100%;min-height:80px;font:inherit;background:var(--input);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px}
 dialog input[type=radio],dialog input[type=checkbox]{width:24px;height:24px}.linha{border-top:1px solid var(--line);padding:10px 0;font-size:15px}
 </style></head><body data-sem-botao-visual>
-<header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="bHist" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">📜 Cancelados</button><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select><a href="/venda.html">Venda</a><a href="/gestao.html">Gestão</a></header>
+<header><h1>👨‍🍳 Produção <span class="mut" id="cont"></span></h1><button id="bHist" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">📜 Cancelados</button><button id="som" style="min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;padding:0 14px">🔔 Som: ligado</button><select id="tema" data-seletor-tema></select></header>
 <dialog id="dCancelar"><h2 style="margin-top:0">Cancelar pedido <span id="cNum"></span></h2>
   <p class="mut" style="margin-top:0">Fica salvo no histórico com seu nome, a hora e o motivo.</p>
   <textarea id="cMotivo" maxlength="200" placeholder="Motivo (obrigatório). Ex.: cliente desistiu, pedido errado, acabou o produto"></textarea>
@@ -41,6 +41,7 @@ dialog input[type=radio],dialog input[type=checkbox]{width:24px;height:24px}.lin
   <button class="btn" id="hFechar" style="margin-top:10px">Fechar</button></dialog>
 <main id="fila"><div class="vazio">Carregando…</div></main><div id="msg" hidden></div>
 <script src="/entrar.js"></script>
+<script src="/menu.js"></script>
 <script>
 const $ = (s) => document.querySelector(s), esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmt = (n) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
@@ -81,7 +82,7 @@ $('#fila').onclick = async (e) => { const bc = e.target.closest('[data-cancelar]
   const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true;
   try { const r = await api(`/api/producao/${b.dataset.id}/preparo`, { acao: b.dataset.acao }); aviso(b.dataset.acao === 'preparando' ? 'Cliente avisado: começou o preparo.' : 'Cliente avisado: pedido pronto.'); await atualizar(); } catch (er) { aviso(er.message); atualizar(); } };
 $('#som').onclick = () => { som = !som; $('#som').textContent = '🔔 Som: ' + (som ? 'ligado' : 'desligado'); if (som) bipe(); };
-function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
+function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); window.Menu && Menu.barra(); clearInterval(timer); atualizar(); timer = setInterval(() => { if (!document.hidden) atualizar(); }, 4000); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) atualizar(); });
 const puxarCanais = () => { if (token && !document.hidden) fetch('/api/canais/sincronizar', { method: 'POST', headers: { authorization: 'Bearer ' + token } }).catch(() => {}); };
 setInterval(puxarCanais, 30000);
