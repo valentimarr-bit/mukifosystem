@@ -133,22 +133,29 @@ async function pixDoPedido(db, pedidoId) {
 }
 
 async function verStatus(db, request, id) {
-  await expirarPendentes(db);
   const chave = request.headers.get('X-Chave-Pedido') ?? '';
-  const p = await db.prepare("SELECT id, token_hash FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  let p = await db.prepare(`SELECT id, token_hash, numero, dia, status, total, nome_cliente, remessa, pago_em, preparo_em,
+    (status = 'aguardando_pagamento' AND expira_em < datetime('now')) AS vencido FROM pedido WHERE id = ? AND origem = 'celular'`).bind(id).first();
   // mesma resposta para "não existe" e "chave errada": ninguém consegue descobrir pedidos dos outros
   if (!p || !chave || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('Pedido não encontrado.', 404);
-  const c = await lerComanda(db, id);
-  const pago = ['recebido', 'preparando', 'pronto', 'entregue'].includes(c.status);
-  const pix = c.status === 'aguardando_pagamento' ? await lerPix(db) : null;
+  if (p.vencido) { await expirarPendentes(db); p = { ...p, status: 'cancelado' }; }   // só mexe no banco quando o pedido venceu
+  const pago = ['recebido', 'preparando', 'pronto', 'entregue'].includes(p.status);
+  const [{ results: linhas }, fila, espera, pix, cancelamento] = await Promise.all([
+    db.prepare(`SELECT i.nome, i.quantidade, i.entregue_qtd AS entregue, COALESCE(pr.pronta_entrega, 0) AS pronta FROM item_pedido i
+                LEFT JOIN produto pr ON pr.id = i.produto_id WHERE i.pedido_id = ? ORDER BY i.id`).bind(id).all(),
+    ['recebido', 'preparando'].includes(p.status) ? filaDoPedido(db, id, p) : null,
+    esperaDoDia(db),
+    p.status === 'aguardando_pagamento' ? Promise.all([lerPix(db), pixDoPedido(db, id)]).then(([pixBar, viaGateway]) =>
+      viaGateway ?? gerarPix({ ...pixBar, valor: p.total, txid: `MKF${p.dia.replaceAll('-', '')}${p.numero}` })) : null,
+    p.status === 'cancelado' ? db.prepare('SELECT 1 AS x FROM cancelamento WHERE pedido_id = ?').bind(id).first() : null]);
   return json({
-    id: c.id, numero: c.numero, status: c.status, total: c.total, pago, nome: c.nome_cliente, retirado: c.status === 'entregue',
-    cancelado_pelo_bar: c.status === 'cancelado' && !!(await db.prepare('SELECT 1 AS x FROM cancelamento WHERE pedido_id = ?').bind(id).first()),
-    remessa: (await db.prepare('SELECT remessa FROM pedido WHERE id = ?').bind(id).first())?.remessa ?? 0,
-    fila: ['recebido', 'preparando'].includes(c.status) ? await filaDoPedido(db, id) : null, espera: await esperaDoDia(db),
-    itens: (await db.prepare('SELECT nome, quantidade, entregue_qtd AS entregue FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()).results,
-    textos: textosPedido(await itensComPronta(db, id), c.numero),
-    pix: pix ? ((await pixDoPedido(db, id)) ?? gerarPix({ ...pix, valor: c.total, txid: `MKF${c.dia.replaceAll('-', '')}${c.numero}` })) : null,
+    id: p.id, numero: p.numero, status: p.status, total: p.total, pago, nome: p.nome_cliente, retirado: p.status === 'entregue',
+    cancelado_pelo_bar: p.status === 'cancelado' && !!cancelamento,
+    remessa: p.remessa ?? 0,
+    fila, espera,
+    itens: linhas.map((l) => ({ nome: l.nome, quantidade: l.quantidade, entregue: l.entregue })),
+    textos: textosPedido(linhas.map((l) => ({ nome: l.nome, quantidade: l.quantidade, pronta: !!l.pronta })), p.numero),
+    pix,
   });
 }
 
@@ -196,13 +203,11 @@ export async function rotearCliente(request, env, url) {
 
 // ---- balcão: conferir o QR do cliente ----
 export async function listarRetiradas(db) {
-  await expirarPendentes(db);
-  const { results } = await db.prepare(
-    `SELECT id, numero, nome_cliente, status, total, pago_em FROM pedido
-     WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all();
-  const { results: aguardando } = await db.prepare(
-    `SELECT p.id, p.numero, p.nome_cliente, p.total, p.expira_em, c.id AS cobranca_id FROM pedido p JOIN cobranca c ON c.pedido_id = p.id AND c.status = 'pendente'
-     WHERE p.origem = 'celular' AND p.status = 'aguardando_pagamento' ORDER BY p.criado_em`).all();
+  const [{ results }, { results: aguardando }] = await Promise.all([
+    db.prepare(`SELECT id, numero, nome_cliente, status, total, pago_em FROM pedido
+     WHERE origem = 'celular' AND status IN ('recebido', 'preparando', 'pronto') ORDER BY pago_em, id`).all(),
+    db.prepare(`SELECT p.id, p.numero, p.nome_cliente, p.total, p.expira_em, c.id AS cobranca_id FROM pedido p JOIN cobranca c ON c.pedido_id = p.id AND c.status = 'pendente'
+     WHERE p.origem = 'celular' AND p.status = 'aguardando_pagamento' AND p.expira_em >= datetime('now') ORDER BY p.criado_em`).all()]);
   return json({ pedidos: results, aguardando });
 }
 
@@ -255,13 +260,12 @@ export async function itensComPronta(db, pedidoId) {
 }
 
 /** Posição do pedido na fila de produção de hoje (pedidos pagos que ainda não ficaram prontos, do app e do balcão), por ordem de pagamento. */
-async function filaDoPedido(db, id) {
-  const eu = await db.prepare('SELECT pago_em, dia FROM pedido WHERE id = ?').bind(id).first();
+async function filaDoPedido(db, id, eu = null) {
+  eu ??= await db.prepare('SELECT pago_em, dia, preparo_em FROM pedido WHERE id = ?').bind(id).first();
   if (!eu?.pago_em) return null;
   const abertos = "dia = ? AND pago_em IS NOT NULL AND pronto_em IS NULL AND ((origem = 'celular' AND status IN ('recebido', 'preparando')) OR (origem = 'balcao' AND status = 'entregue'))";
-  const [a, t, p] = await Promise.all([
+  const [a, t] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos} AND id <> ? AND (pago_em < ? OR (pago_em = ? AND id < ?))`).bind(eu.dia, id, eu.pago_em, eu.pago_em, id).first(),
-    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos}`).bind(eu.dia).first(),
-    db.prepare("SELECT preparo_em FROM pedido WHERE id = ?").bind(id).first()]);
-  return { a_frente: a.n, na_fila: t.n, posicao: a.n + 1, em_preparo: !!p?.preparo_em };
+    db.prepare(`SELECT COUNT(*) AS n FROM pedido WHERE ${abertos}`).bind(eu.dia).first()]);
+  return { a_frente: a.n, na_fila: t.n, posicao: a.n + 1, em_preparo: !!eu.preparo_em };
 }
