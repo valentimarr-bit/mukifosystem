@@ -29,44 +29,78 @@ window.Mukifo = (() => {
       <label for="mkNome">Seu nome</label><input id="mkNome" autocomplete="username">
       <label for="mkSenha">Senha</label><input id="mkSenha" type="password" autocomplete="current-password">
       <div id="mkCodigoBox" hidden><label for="mkCodigo">Código de primeiro acesso</label><input id="mkCodigo" autocomplete="off"></div>
-      <div class="erro" id="mkErro"></div><button id="mkOk"></button>
-      <button id="mkDemo" class="sec" hidden>👀 Só quero ver (demonstração)</button>`;
+      <div id="mkTrocaBox" hidden>
+        <p>Por segurança, crie sua senha (não use 123456)</p>
+        <label for="mkSenhaNova">Senha nova</label><input id="mkSenhaNova" type="password" autocomplete="new-password">
+        <label for="mkSenhaNova2">Repita a senha nova</label><input id="mkSenhaNova2" type="password" autocomplete="new-password">
+      </div>
+      <div class="erro" id="mkErro"></div><button id="mkOk"></button>`;
     d.addEventListener('cancel', (e) => e.preventDefault()); // só fecha entrando
     document.body.appendChild(d);
   }
+
+  // Grava a sessão neste aparelho e avisa o servidor para gravar o cookie da página (erro ignorado).
+  const cookie = () => post('/api/auth/cookie', {}, sessao?.token).catch(() => {});
 
   async function pedir(aoEntrar) {
     montar();
     const $ = (s) => document.querySelector(s);
     const est = await fetch('/api/auth/estado').then((r) => r.json()).catch(() => ({}));
     const primeiro = !!est.primeiroAcesso;
-    $('#mkTitulo').textContent = primeiro ? 'Primeiro acesso' : 'Entrar';
-    $('#mkAjuda').textContent = primeiro
-      ? 'Quem entrar agora vira o superadmin (o chefe do sistema). Use o código que você criou na Cloudflare. Depois dá para trocar a senha e passar o cargo para outra pessoa.'
-      : 'Digite seu nome e sua senha.';
-    $('#mkOk').textContent = primeiro ? 'Criar e entrar' : 'Entrar';
-    $('#mkCodigoBox').hidden = !est.pedeCodigo;
-    $('#mkSenha').autocomplete = primeiro ? 'new-password' : 'current-password';
+    let pendente = null; // { token, usuario, senhaAtual } enquanto falta trocar a senha provisória
+    const mostrarEntrada = () => {
+      pendente = null;
+      $('#mkTitulo').textContent = primeiro ? 'Primeiro acesso' : 'Entrar';
+      $('#mkAjuda').textContent = primeiro
+        ? 'Quem entrar agora vira o superadmin (o chefe do sistema). Use o código que você criou na Cloudflare. Depois dá para trocar a senha e passar o cargo para outra pessoa.'
+        : 'Digite seu nome e sua senha.';
+      $('#mkOk').textContent = primeiro ? 'Criar e entrar' : 'Entrar';
+      $('#mkNome').hidden = $('#mkSenha').hidden = false;
+      $('#mkNome').previousElementSibling.hidden = $('#mkSenha').previousElementSibling.hidden = false;
+      $('#mkCodigoBox').hidden = !est.pedeCodigo;
+      $('#mkTrocaBox').hidden = true;
+      $('#mkSenha').autocomplete = primeiro ? 'new-password' : 'current-password';
+    };
+    mostrarEntrada();
     $('#mkErro').textContent = est.faltaCodigo
       ? 'Antes do primeiro acesso, crie o segredo CODIGO_PRIMEIRO_ACESSO na Cloudflare (Settings → Variables and Secrets) e recarregue a página.' : '';
     $('#mkOk').disabled = !!est.faltaCodigo;
     const d = $('#mkLogin'); if (!d.open) d.showModal();
-    $('#mkDemo').hidden = !est.demo;
-    $('#mkDemo').onclick = async () => {
-      $('#mkDemo').disabled = true; $('#mkErro').textContent = '';
-      try { const r = await post('/api/auth/demo', {}); salvar({ token: r.token, usuario: r.usuario }); d.close(); aoEntrar && aoEntrar(r.usuario); if (!aoEntrar) location.reload(); }
-      catch (e) { $('#mkErro').textContent = e.message; }
-      $('#mkDemo').disabled = false;
+
+    // Passo de troca da senha provisória: mesmo diálogo, sem fechar.
+    const pedirTroca = (r, senhaAtual) => {
+      pendente = { token: r.token, usuario: r.usuario, senhaAtual };
+      $('#mkTitulo').textContent = 'Crie sua senha';
+      $('#mkAjuda').textContent = 'Sua senha atual é provisória. Escolha uma senha sua.';
+      $('#mkNome').hidden = $('#mkSenha').hidden = true;
+      $('#mkNome').previousElementSibling.hidden = $('#mkSenha').previousElementSibling.hidden = true;
+      $('#mkCodigoBox').hidden = true;
+      $('#mkTrocaBox').hidden = false;
+      $('#mkSenhaNova').value = ''; $('#mkSenhaNova2').value = '';
+      $('#mkOk').textContent = 'Salvar senha e entrar';
     };
+    const concluir = (r) => {
+      salvar({ token: r.token, usuario: r.usuario });
+      cookie();
+      $('#mkSenha').value = ''; pendente = null; d.close(); aoEntrar && aoEntrar(r.usuario);
+    };
+
     $('#mkOk').onclick = async () => {
       $('#mkOk').disabled = true; $('#mkErro').textContent = '';
       try {
-        const corpo = { nome: $('#mkNome').value.trim(), senha: $('#mkSenha').value, codigo: $('#mkCodigo').value.trim() };
-        const r = await post(primeiro ? '/api/auth/primeiro-acesso' : '/api/auth/entrar', corpo);
-        salvar({ token: r.token, usuario: r.usuario });
-        $('#mkSenha').value = ''; d.close(); aoEntrar && aoEntrar(r.usuario);
+        if (pendente) {
+          const nova = $('#mkSenhaNova').value, repetida = $('#mkSenhaNova2').value;
+          if (nova !== repetida) throw new Error('As senhas não são iguais.');
+          await post('/api/auth/trocar-senha', { senhaAtual: pendente.senhaAtual, senhaNova: nova }, pendente.token);
+          concluir(pendente);
+        } else {
+          const corpo = { nome: $('#mkNome').value.trim(), senha: $('#mkSenha').value, codigo: $('#mkCodigo').value.trim() };
+          const r = await post(primeiro ? '/api/auth/primeiro-acesso' : '/api/auth/entrar', corpo);
+          if (r.trocarSenha) pedirTroca(r, corpo.senha);
+          else concluir(r);
+        }
       } catch (e) { $('#mkErro').textContent = e.message; }
-      $('#mkOk').disabled = !!est.faltaCodigo;
+      $('#mkOk').disabled = !!est.faltaCodigo && !pendente;
     };
   }
 
@@ -75,7 +109,10 @@ window.Mukifo = (() => {
     usuario: () => sessao?.usuario || null,
     pedir,
     post,
-    sair: async () => { try { await post('/api/auth/sair', {}, sessao?.token); } catch {} salvar(null); location.reload(); },
+    guardar: (r) => salvar({ token: r.token, usuario: r.usuario }),
+    limpar: () => salvar(null),
+    cookie,
+    sair: async () => { try { await post('/api/auth/sair', {}, sessao?.token); } catch {} salvar(null); location.href = '/entrar.html'; },
     atualizarUsuario: (u) => salvar({ ...sessao, usuario: u }),
   };
 })();

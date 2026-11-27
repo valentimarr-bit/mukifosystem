@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <title>Entrar · Mukifo</title>
+  <script src="/tema.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0; min-height: 100dvh; display: grid; place-items: center;
+      background: var(--bg, #111111); color: var(--txt, #f2f2f2);
+      font: 18px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+    }
+    main { max-width: 420px; width: 100%; }
+    h1 { font-size: 44px; letter-spacing: .06em; margin: 0 0 4px; text-align: center; }
+    h2 { font-size: 22px; margin: 0 0 8px; }
+    .sub { color: var(--mut, #a8a8a8); text-align: center; margin: 0 0 24px; }
+    .ajuda { color: var(--mut, #a8a8a8); margin: 0 0 8px; }
+    form { display: grid; gap: 4px; }
+    label { color: var(--mut, #a8a8a8); font-size: 16px; margin-top: 12px; }
+    input {
+      width: 100%; min-height: 56px; font-size: 20px; padding: 10px 14px;
+      border-radius: 12px; border: 1px solid var(--line, #2c2c2c);
+      background: var(--input, #111111); color: var(--txt, #f2f2f2);
+    }
+    .botao {
+      display: flex; align-items: center; justify-content: center; width: 100%;
+      min-height: 56px; margin-top: 18px; border-radius: 14px; border: 0;
+      background: var(--acc, #ffb347); color: var(--on-acc, #111111);
+      font: 700 20px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; cursor: pointer;
+    }
+    .botao:active { transform: scale(.98); }
+    .botao:disabled { opacity: .5; }
+    .botao.sec {
+      background: transparent; color: var(--txt, #f2f2f2);
+      border: 1px solid var(--line, #2c2c2c); font-weight: 500;
+    }
+    .link {
+      display: block; margin: 18px auto 0; min-height: 44px; padding: 8px 12px;
+      background: none; border: 0; color: var(--mut, #a8a8a8);
+      text-decoration: underline; font-size: 16px; cursor: pointer;
+    }
+    .cliente {
+      display: flex; align-items: center; justify-content: center; min-height: 64px;
+      margin-top: 32px; border-radius: 16px; border: 2px solid var(--acc, #ffb347);
+      color: var(--acc, #ffb347); font-size: 20px; font-weight: 700; text-decoration: none;
+    }
+    .erro { color: var(--bad, #ff8a80); min-height: 24px; margin-top: 12px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>MUKIFO</h1>
+    <p class="sub" id="subtitulo">Entre para usar o sistema do bar</p>
+    <p class="sub" id="carregando">Verificando…</p>
+
+    <section id="entrada" hidden>
+      <p class="ajuda" id="ajudaPrimeiro" hidden>Primeira vez: quem entrar agora vira o Dono.</p>
+      <form id="formEntrar">
+        <label for="nome">Seu nome</label>
+        <input id="nome" autocomplete="username" required>
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" autocomplete="current-password" required>
+        <div id="boxCodigo" hidden>
+          <label for="codigo">Código de primeiro acesso</label>
+          <input id="codigo" autocomplete="off">
+        </div>
+        <button class="botao" id="btnEntrar" type="submit">Entrar</button>
+      </form>
+      <button class="link" id="linkPerdi" type="button">Sou o dono e perdi a senha</button>
+    </section>
+
+    <section id="recuperar" hidden>
+      <h2>Recuperar a senha do Dono</h2>
+      <p class="ajuda">Digite o código de recuperação e a senha nova.</p>
+      <form id="formRecuperar">
+        <label for="recCodigo">Código de recuperação</label>
+        <input id="recCodigo" autocomplete="off" required>
+        <label for="recNome">Nome</label>
+        <input id="recNome" value="Dono" autocomplete="username" required>
+        <label for="recSenha">Senha nova</label>
+        <input id="recSenha" type="password" autocomplete="new-password" required>
+        <label for="recSenha2">Repita a senha nova</label>
+        <input id="recSenha2" type="password" autocomplete="new-password" required>
+        <button class="botao" id="btnRecuperar" type="submit">Trocar senha e entrar</button>
+      </form>
+      <button class="botao sec" id="voltarRecuperar" type="button">Voltar</button>
+    </section>
+
+    <section id="troca" hidden>
+      <h2>Crie sua senha</h2>
+      <p class="ajuda">Por segurança, crie sua senha (não use 123456)</p>
+      <form id="formTroca">
+        <div id="boxTrocaAtual" hidden>
+          <label for="trocaAtual">Senha atual</label>
+          <input id="trocaAtual" type="password" autocomplete="current-password">
+        </div>
+        <label for="trocaNova">Senha nova</label>
+        <input id="trocaNova" type="password" autocomplete="new-password" required>
+        <label for="trocaNova2">Repita a senha nova</label>
+        <input id="trocaNova2" type="password" autocomplete="new-password" required>
+        <button class="botao" id="btnTroca" type="submit">Salvar senha e entrar</button>
+      </form>
+    </section>
+
+    <div class="erro" id="erro" role="alert"></div>
+
+    <a class="cliente" href="/cliente.html">📱 Sou cliente: fazer pedido</a>
+  </main>
+
+  <script src="/entrar.js"></script>
+  <script>
+    (() => {
+      const $ = (s) => document.querySelector(s);
+      const params = new URLSearchParams(location.search);
+      const volta = params.get('volta') || '';
+      // Só aceita caminho interno: começa com '/' e não é '//' nem '/\' (que o navegador trata como endereço de outro site).
+      const seguro = volta.startsWith('/') && !volta.startsWith('//') && !volta.startsWith('/\\');
+      const destino = seguro ? volta : '/inicio.html';
+      const forcarTroca = params.get('trocar') === '1';
+      let primeiro = false;
+      let pendente = null; // { token, usuario, senhaAtual } enquanto falta trocar a senha
+
+      const mostrar = (id) => {
+        for (const s of ['entrada', 'recuperar', 'troca']) $('#' + s).hidden = s !== id;
+        $('#erro').textContent = '';
+      };
+      const erro = (msg) => { $('#erro').textContent = msg; };
+      const ocupado = (btn, on) => { btn.disabled = on; };
+
+      // Sessão confirmada: grava no aparelho, pede o cookie da página e segue.
+      async function concluir(r) {
+        Mukifo.guardar(r);
+        await Mukifo.cookie();
+        location.replace(destino);
+      }
+
+      function pedirTroca(r, senhaAtual) {
+        pendente = { token: r.token, usuario: r.usuario, senhaAtual };
+        $('#boxTrocaAtual').hidden = senhaAtual !== null;
+        $('#trocaNova').value = ''; $('#trocaNova2').value = ''; $('#trocaAtual').value = '';
+        mostrar('troca');
+      }
+
+      async function enviarEntrada(e) {
+        e.preventDefault();
+        const btn = $('#btnEntrar');
+        ocupado(btn, true); erro('');
+        try {
+          const corpo = { nome: $('#nome').value.trim(), senha: $('#senha').value };
+          if (primeiro) corpo.codigo = $('#codigo').value.trim();
+          const r = await Mukifo.post(primeiro ? '/api/auth/primeiro-acesso' : '/api/auth/entrar', corpo);
+          if (r.trocarSenha) return pedirTroca(r, corpo.senha);
+          await concluir(r);
+        } catch (err) { erro(err.message); }
+        ocupado(btn, false);
+      }
+
+      async function enviarRecuperar(e) {
+        e.preventDefault();
+        const btn = $('#btnRecuperar');
+        const senhaNova = $('#recSenha').value;
+        erro('');
+        if (senhaNova !== $('#recSenha2').value) return erro('As senhas não são iguais.');
+        ocupado(btn, true);
+        try {
+          const r = await Mukifo.post('/api/auth/recuperar', {
+            codigo: $('#recCodigo').value.trim(), senhaNova, nome: $('#recNome').value.trim(),
+          });
+          if (r.trocarSenha) return pedirTroca(r, senhaNova);
+          await concluir(r);
+        } catch (err) { erro(err.message); }
+        ocupado(btn, false);
+      }
+
+      async function enviarTroca(e) {
+        e.preventDefault();
+        const btn = $('#btnTroca');
+        const nova = $('#trocaNova').value;
+        erro('');
+        if (nova !== $('#trocaNova2').value) return erro('As senhas não são iguais.');
+        const atual = pendente.senhaAtual ?? $('#trocaAtual').value;
+        ocupado(btn, true);
+        try {
+          await Mukifo.post('/api/auth/trocar-senha', { senhaAtual: atual, senhaNova: nova }, pendente.token);
+          await concluir(pendente);
+        } catch (err) { erro(err.message); }
+        ocupado(btn, false);
+      }
+
+      $('#formEntrar').addEventListener('submit', enviarEntrada);
+      $('#formRecuperar').addEventListener('submit', enviarRecuperar);
+      $('#formTroca').addEventListener('submit', enviarTroca);
+      $('#linkPerdi').addEventListener('click', () => { mostrar('recuperar'); });
+      $('#voltarRecuperar').addEventListener('click', () => { mostrar('entrada'); });
+
+      (async () => {
+        // 1) Já tem sessão neste aparelho? Confere com o servidor e segue.
+        const tk = Mukifo.token();
+        if (tk) {
+          try {
+            const r = await fetch('/api/auth/cookie', { method: 'POST', headers: { authorization: 'Bearer ' + tk } });
+            if (r.ok) {
+              if (forcarTroca) return pedirTroca({ token: tk, usuario: Mukifo.usuario() }, null);
+              return location.replace(destino);
+            }
+            if (r.status === 401) Mukifo.limpar();
+          } catch {}
+        }
+        // 2) Mostra o formulário conforme o estado do sistema.
+        const est = await fetch('/api/auth/estado').then((r) => r.json()).catch(() => ({}));
+        primeiro = !!est.primeiroAcesso;
+        $('#carregando').hidden = true;
+        $('#subtitulo').hidden = false;
+        $('#ajudaPrimeiro').hidden = !primeiro;
+        $('#boxCodigo').hidden = !primeiro;
+        if (est.faltaCodigo) erro('Antes do primeiro acesso, crie o segredo CODIGO_PRIMEIRO_ACESSO na Cloudflare (Settings → Variables and Secrets) e recarregue a página.');
+        if (forcarTroca) { mostrar('entrada'); erro('Troque sua senha para continuar.'); }
+        else mostrar('entrada');
+      })();
+    })();
+  </script>
+</body>
+</html>
