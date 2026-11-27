@@ -3,7 +3,20 @@ import { json } from './api.js';
 import { modulosDe, MODULOS, IDS, PADRAO_GERENTE, PADRAO_ATENDENTE, papelDe, NOME_CARGO } from './dominio/modulos.js';
 
 const erro = (msg, status = 400) => json({ erro: msg }, status);
-const DIAS_SESSAO = 30;
+const DIAS_SESSAO = 14;
+// Cookie das páginas da equipe (gestão, compras...). A API não aceita o cookie: só o Bearer.
+export const COOKIE = 'mk_equipe';
+export function lerCookie(request, nome) {
+  for (const parte of (request.headers.get('cookie') ?? '').split(';')) {
+    const i = parte.indexOf('=');
+    if (i > 0 && parte.slice(0, i).trim() === nome) return parte.slice(i + 1).trim();
+  }
+  return null;
+}
+export function comCookie(resp, token, dias) {
+  resp.headers.append('set-cookie', `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${dias * 86400}`);
+  return resp;
+}
 const CARGOS = ['gerente', 'atendente'];   // cargo de quem não é o Dono (o Dono é o superadmin)
 // Senhas fracas demais: não são aceitas na troca (comparadas em minúsculas).
 export const FRACAS = ['123456', '1234567', '12345678', '123456789', '000000', '111111', '654321', 'mukifo', 'senha', 'senha123', 'abcdef'];
@@ -59,6 +72,11 @@ export async function usuarioLogado(request, env) {
   const h = request.headers.get('authorization') ?? '';
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
   if (!token) return null;
+  return usuarioDoToken(token, env, request.method, new URL(request.url).pathname);
+}
+
+/** Quem é o dono de um token de sessão (ou da chave de emergência)? Usado pela API (Bearer) e pelo cookie das páginas. */
+export async function usuarioDoToken(token, env, metodo = 'GET', caminhoAtual = '') {
   if (env.ADMIN_TOKEN && igual(token, env.ADMIN_TOKEN)) return { id: null, nome: 'chave-de-emergência', papel: 'superadmin', modulos: modulosDe({ papel: 'superadmin' }) };
   if (!env.DB) return null;
   const u = await env.DB.prepare(
@@ -66,15 +84,12 @@ export async function usuarioLogado(request, env) {
      WHERE s.token_hash = ? AND s.expira_em > datetime('now') AND u.ativo = 1`).bind(await hashToken(token)).first();
   if (!u) return null;
   // Quem ainda tem a senha de fábrica (ou a senha dada pelo Dono) só pode ver quem é, trocar a senha e sair.
-  const caminhoAtual = new URL(request.url).pathname;
   if (u.trocar_senha === 1 && !ROTAS_COM_SENHA_PENDENTE.includes(caminhoAtual)) return null;
   // Se o login de demonstração for desligado, as sessões dele param de valer na hora.
   if (u.nome === NOME_DEMO) {
     if (!demoLigado(env)) return null;
     // A demonstração só olha: qualquer pedido que escreve (exceto sair) é recusado.
-    const metodo = request.method;
-    const caminho = new URL(request.url).pathname;
-    if (metodo !== 'GET' && metodo !== 'HEAD' && caminho !== '/api/auth/sair') return null;
+    if (metodo !== 'GET' && metodo !== 'HEAD' && caminhoAtual !== '/api/auth/sair') return null;
     return { id: u.id, nome: u.nome, papel: u.papel, modulos: MODULOS_DEMO, demo: true };
   }
   const papel = papelDe(u);
@@ -105,7 +120,8 @@ export async function rotearAuth(request, env, url) {
     const u = await db.prepare('SELECT id FROM usuario WHERE nome = ? AND papel = ?').bind(NOME_DEMO, 'gerente').first();
     if (!u) return erro('Não foi possível criar a demonstração.', 500);
     await db.prepare(`DELETE FROM sessao WHERE usuario_id = ? AND expira_em <= datetime('now')`).bind(u.id).run();
-    return json({ ok: true, token: await novaSessao(db, u.id, 7), usuario: { id: u.id, nome: NOME_DEMO, papel: 'gerente', demo: true } });
+    const token = await novaSessao(db, u.id, 7);
+    return comCookie(json({ ok: true, token, usuario: { id: u.id, nome: NOME_DEMO, papel: 'gerente', demo: true } }), token, 7);
   }
 
   if (m === 'POST' && p === '/api/auth/primeiro-acesso') {
@@ -124,7 +140,8 @@ export async function rotearAuth(request, env, url) {
        SELECT ?, ?, ?, 'superadmin' WHERE NOT EXISTS (SELECT 1 FROM usuario) RETURNING id`)
       .bind(nome, await hashSenha(corpo.senha, sal), sal).first();
     if (!r) return erro('O sistema já tem um superadmin. Entre com seu nome e senha.', 409);
-    return json({ ok: true, token: await novaSessao(db, r.id), usuario: { id: r.id, nome, papel: 'superadmin' } });
+    const token = await novaSessao(db, r.id);
+    return comCookie(json({ ok: true, token, usuario: { id: r.id, nome, papel: 'superadmin' } }), token, DIAS_SESSAO);
   }
 
   // Dono esqueceu a senha: com o código de primeiro acesso, troca a senha e pode trocar o nome.
@@ -148,7 +165,8 @@ export async function rotearAuth(request, env, url) {
       db.prepare('UPDATE usuario SET nome = ?, senha_hash = ?, senha_sal = ?, ativo = 1, trocar_senha = ? WHERE id = ?').bind(nome, await hashSenha(corpo.senhaNova, sal), sal, trocar, dono.id),
       db.prepare('DELETE FROM sessao WHERE usuario_id = ?').bind(dono.id),   // derruba quem estava logado como dono
     ]);
-    return json({ ok: true, token: await novaSessao(db, dono.id), usuario: { id: dono.id, nome, papel: 'superadmin' }, trocarSenha: !!trocar });
+    const token = await novaSessao(db, dono.id);
+    return comCookie(json({ ok: true, token, usuario: { id: dono.id, nome, papel: 'superadmin' }, trocarSenha: !!trocar }), token, DIAS_SESSAO);
   }
 
   if (m === 'POST' && p === '/api/auth/entrar') {
@@ -164,7 +182,9 @@ export async function rotearAuth(request, env, url) {
       return erro('Nome ou senha incorretos.', 401);
     }
     await limpar(db, cNome);
-    return json({ ok: true, token: await novaSessao(db, u.id), usuario: { id: u.id, nome: u.nome, papel: papelDe(u) }, trocarSenha: !!u.trocar_senha });
+    await db.prepare(`DELETE FROM sessao WHERE usuario_id = ? AND expira_em <= datetime('now')`).bind(u.id).run();   // apaga as sessões vencidas
+    const token = await novaSessao(db, u.id);
+    return comCookie(json({ ok: true, token, usuario: { id: u.id, nome: u.nome, papel: papelDe(u) }, trocarSenha: !!u.trocar_senha }), token, DIAS_SESSAO);
   }
 
   // Daqui para baixo precisa estar logado.
@@ -176,8 +196,13 @@ export async function rotearAuth(request, env, url) {
 
   if (m === 'POST' && p === '/api/auth/sair') {
     await db.prepare('DELETE FROM sessao WHERE token_hash = ?').bind(await hashToken(token)).run();
-    return json({ ok: true });
+    const r = json({ ok: true });
+    r.headers.append('set-cookie', `${COOKIE}=; Path=/; Max-Age=0`);   // apaga o cookie da página
+    return r;
   }
+
+  // Quem entrou pelo login (Bearer) pede o cookie para abrir as páginas da equipe.
+  if (m === 'POST' && p === '/api/auth/cookie') return comCookie(json({ ok: true }), token, DIAS_SESSAO);
 
   if (m === 'POST' && p === '/api/auth/trocar-senha') {
     if (!eu.id || eu.demo) return erro('Este login não tem senha para trocar.');
