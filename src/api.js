@@ -415,9 +415,10 @@ import { modoTeste } from './trava.js';
 const TEMAS_OK = ['escuro', 'claro', 'vinho', 'chimarrao', 'oceano', 'grafite', 'areia', 'contraste'];
 async function visualDaCasa(request, env, db) {
   if (request.method === 'GET') {
-    const r = await db.prepare("SELECT valor FROM configuracao WHERE chave = 'visual'").first();
-    let v = null; try { v = r ? JSON.parse(r.valor) : null; } catch { /* vazio */ }
-    return json({ visual: v, teste: await modoTeste(db) });
+    const { results } = await db.prepare("SELECT chave, valor FROM configuracao WHERE chave IN ('visual', 'modo_teste')").all();
+    const c = Object.fromEntries(results.map((r) => [r.chave, r.valor]));
+    let v = null; try { v = c.visual ? JSON.parse(c.visual) : null; } catch { /* vazio */ }
+    return json({ visual: v, teste: c.modo_teste === 'sim' });
   }
   if (request.method !== 'PUT') return erro('Método não permitido', 405);
   const eu = await usuarioLogado(request, env);
