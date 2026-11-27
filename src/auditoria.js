@@ -8,7 +8,7 @@ const RETENCAO_DIAS = 180;
 // Rótulos em português por rota. Primeira que casar vence.
 const ROTULOS = [
   ['POST', /^\/api\/auth\/entrar$/, 'Entrou no sistema'], ['POST', /^\/api\/auth\/sair$/, 'Saiu do sistema'], ['POST', /^\/api\/auth\/primeiro-acesso$/, 'Primeiro acesso (criou o superadmin)'],
-  ['POST', /^\/api\/auth\/trocar-senha$/, 'Trocou a própria senha'], ['POST', /^\/api\/auth\/passar-cargo$/, 'Passou o cargo de superadmin'],
+  ['POST', /^\/api\/auth\/recuperar$/, 'Dono recuperou o acesso'], ['POST', /^\/api\/auth\/trocar-senha$/, 'Trocou a própria senha'], ['POST', /^\/api\/auth\/passar-cargo$/, 'Passou o cargo de superadmin'],
   ['POST', /^\/api\/usuarios$/, 'Criou um login'], ['PUT', /^\/api\/usuarios\/\d+\/modulos$/, 'Mudou as permissões de um login'], ['PUT', /^\/api\/usuarios\//, 'Alterou um login'], ['DELETE', /^\/api\/usuarios\//, 'Removeu um login'],
   ['POST', /^\/api\/venda\/comandas$/, 'Abriu uma venda'], ['POST', /^\/api\/venda\/comandas\/[\w-]+\/itens$/, 'Mexeu nos itens da venda'], ['POST', /^\/api\/venda\/comandas\/[\w-]+\/cobrar$/, 'Cobrou a venda'],
   ['POST', /^\/api\/venda\/comandas\/[\w-]+\/cliente$/, 'Ligou a venda a um cliente'], ['DELETE', /^\/api\/venda\/comandas\//, 'Descartou a venda'], ['POST', /^\/api\/venda\/comandas\/[\w-]+\/cancelar$/, 'Cancelou a venda'],

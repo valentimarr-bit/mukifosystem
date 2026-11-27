@@ -155,6 +155,7 @@ test('painel de permissões: o superadmin escolhe os módulos de cada login e o 
   const lista = (await chamar('/api/usuarios')).corpo, g = lista.find((u) => u.nome === 'Gerente Teste');
   assert.ok(g.modulos.includes('venda') && !g.modulos.includes('financeiro'));                       // padrão do gerente
   const login = (await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Teste', senha: 'gerente-123' }, {}, null)).corpo.token;
+  assert.equal((await chamar('/api/auth/trocar-senha', 'POST', { senhaAtual: 'gerente-123', senhaNova: 'gerente-nova-456' }, {}, login)).status, 200);   // troca obrigatória antes de usar
   assert.equal((await chamar('/api/financeiro/resumo', 'GET', null, {}, login)).status, 403);
   assert.equal((await chamar('/api/planilhas', 'GET', null, {}, login)).status, 403);
   assert.equal((await chamar('/api/producao', 'GET', null, {}, login)).status, 200);
@@ -233,6 +234,7 @@ test('auditoria: registra quem fez o quê (sem senhas), só o superadmin lê, e 
   assert.ok([200, 201].includes(ger.status));
   const lg = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'senha-gerente-1' }, {}, null);
   assert.equal(lg.status, 200);
+  assert.equal((await chamar('/api/auth/trocar-senha', 'POST', { senhaAtual: 'senha-gerente-1', senhaNova: 'senha-gerente-2' }, {}, lg.corpo.token)).status, 200);   // troca obrigatória antes de usar
   const errado = await chamar('/api/auth/entrar', 'POST', { nome: 'Gerente Auditado', senha: 'errada-errada' }, {}, null); assert.equal(errado.status, 401);
   const prod = (await env.DB.prepare('SELECT id FROM produto WHERE preco_venda IS NOT NULL AND ativo = 1 LIMIT 1').first()).id;
   const com = await chamar('/api/venda/comandas', 'POST', {}, {}, lg.corpo.token);
