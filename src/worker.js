@@ -2,6 +2,7 @@
 // Arquivos estáticos (public/) são servidos antes de chegar aqui; este código responde às rotas /api/*.
 import { sincronizar } from './canais.js';
 import { processarFila } from './whatsapp.js';
+import { expirarPendentes } from './cliente.js';
 import { json, rotearApi } from './api.js';
 import { prepararBanco } from './banco/preparar.js';
 import { identificarAtor, deveRegistrar, registrar } from './auditoria.js';
@@ -60,6 +61,6 @@ export default {
   /** Todo minuto: busca pedidos novos do iFood/99Food e manda alguns convites de WhatsApp da fila. */
   async scheduled(event, env, ctx) {
     if (!env.DB) return;
-    ctx.waitUntil((async () => { try { await prepararBanco(env.DB); await sincronizar(env.DB, env); } catch (e) { console.error('sincronizar canais:', e.message); } try { await processarFila(env.DB, env); } catch (e) { console.error('fila whatsapp:', e.message); } })());
+    ctx.waitUntil((async () => { try { await prepararBanco(env.DB); try { await expirarPendentes(env.DB); } catch (e) { console.error('expirar pedidos:', e.message); } await sincronizar(env.DB, env); } catch (e) { console.error('sincronizar canais:', e.message); } try { await processarFila(env.DB, env); } catch (e) { console.error('fila whatsapp:', e.message); } })());
   },
 };

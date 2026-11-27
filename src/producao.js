@@ -2,7 +2,6 @@
 // Saem da tela quando o cliente mostra o QR no balcão (status "entregue").
 import { json } from './api.js';
 import { usuarioLogado } from './auth.js';
-import { expirarPendentes } from './cliente.js';
 import { diaDoTurno } from './venda.js';
 import { avisarPedido, pushLigado } from './push.js';
 import { textosPedido } from './textos.js';
@@ -13,7 +12,6 @@ const erro = (m, s = 400) => json({ erro: m }, s);
 const r3 = (x) => Math.round(x * 1000) / 1000;
 
 export async function listarProducao(db) {
-  await expirarPendentes(db);
   // App: sai da tela quando o QR é lido (entregue). Balcão: a venda já nasce "entregue" (pagou, levou), então fica na produção
   // do dia até alguém marcar "pronto" — o status no banco não muda, só preparo_em/pronto_em.
   const { results: brutos } = await db.prepare(`SELECT id, numero, origem, nome_cliente, status, total, pago_em, preparo_em, pronto_em, remessa,
