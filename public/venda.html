@@ -205,7 +205,7 @@ async function lerRetiradas() { const r = await api('/api/venda/retiradas'); agu
 function aguardandoRecargas(rs) { let el = $('#listaRec'); if (!el) { el = document.createElement('div'); el.id = 'listaRec'; $('#listaAg').after(el); }
   el.innerHTML = rs.length ? `<h3>💳 Recargas de saldo esperando Pix</h3>` + rs.map((x) => `<div class="ret"><b>${esc(x.nome)}</b> · ${R$(x.valor)}<button class="grande ok" data-rec="${x.id}">Pix recebido ✓</button></div>`).join('') : ''; }
 document.addEventListener('click', tentar(async (e) => { const b = e.target.closest('[data-rec]'); if (b) { await api(`/api/venda/recargas/${b.dataset.rec}/confirmar`, 'POST', {}); lerRetiradas(); } }));
-async function conferir(codigo, confirmar) { return api('/api/venda/retirada', 'POST', { codigo, confirmar }); }
+async function conferir(codigo, confirmar, auto = false) { return api('/api/venda/retirada', 'POST', { codigo, confirmar, auto }); }
 function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="ruim">REP ${p.remessa}</b>` : '';
   const linha = (i) => i.falta > 0 ? `<li><label><input type="checkbox" data-item="${i.id}" data-max="${i.falta}" checked> ${i.falta}× ${esc(i.nome)}${i.entregue ? ` <small class="mut">(${i.entregue} já entregue)</small>` : ''}</label>${i.falta > 1 ? ` <select data-qtd="${i.id}">${Array.from({ length: i.falta }, (_, k) => `<option value="${i.falta - k}">${i.falta - k}</option>`).join('')}</select>` : ''}</li>` : `<li class="mut"><s>${i.quantidade}× ${esc(i.nome)}</s> ✓ entregue</li>`;
   const topo = `<div class="ret"><b class="bom">✔ Pago e válido</b>${rep}<br><b>#${esc(p.numero)}</b> ${esc(p.nome)}`;
@@ -215,11 +215,13 @@ function mostrar(r, codigo) { const p = r.pedido, rep = p.remessa ? ` <b class="
   $('#bEntregar').onclick = tentar(async () => { const entrega = [...document.querySelectorAll('#confRes [data-item]')].filter((c) => c.checked).map((c) => ({ item_id: Number(c.dataset.item), qtd: Number(document.querySelector(`#confRes [data-qtd="${c.dataset.item}"]`)?.value ?? c.dataset.max) }));
     mostrar(await api('/api/venda/retirada', 'POST', { codigo, confirmar: true, entrega }), codigo); lerRetiradas(); atualizarResumo(); }); }
 // QR lido: pedido simples (uma linha, uma unidade) já dá a baixa; pedido com vários itens abre a lista para marcar o que está saindo (entrega parcial)
-const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = ''; try { const v = await conferir(codigo, false), its = v.pedido.itens.filter((i) => i.falta > 0);
-    if (its.length === 1 && its[0].falta === 1) { mostrar(await conferir(codigo, true), codigo); lerRetiradas(); atualizarResumo(); } else mostrar(v, codigo); navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${esc(e.message)}</b></div>`; navigator.vibrate?.(400); } });
-let stream = null;
+const baixar = tentar(async (codigo) => { $('#confRes').innerHTML = '<div class="ret"><b>⏳ Conferindo o QR…</b></div>'; try { const r = await conferir(codigo, false, true);
+    mostrar(r, codigo); if (r.entregue || r.parcial) { lerRetiradas(); atualizarResumo(); } navigator.vibrate?.([80, 60, 80]); } catch (e) { $('#confRes').innerHTML = `<div class="ret ruim"><b>✖ ${esc(e.message)}</b></div>`; navigator.vibrate?.([300, 100, 300]); } });
+let stream = null, lendo = false, ultimoQr = { valor: '', em: 0 }, retomarLeitura = () => {};
+// iPhone/Safari não têm leitor nativo: a biblioteca já vem baixada antes de abrir a câmera
+if (!('BarcodeDetector' in window)) (window.requestIdleCallback ?? setTimeout)(() => carregarJsQR().catch(() => {}));
 // o resultado da leitura abre em popup grande; o botão Fechar é posto aqui, em qualquer conteúdo que entrar
-new MutationObserver(() => { const r = $('#confRes').firstElementChild; if (r && !r.querySelector('#popFechar')) { const b = document.createElement('button'); b.id = 'popFechar'; b.className = 'grande sec'; b.textContent = '✖ Fechar'; b.onclick = () => { $('#confRes').innerHTML = ''; }; r.appendChild(b); } }).observe($('#confRes'), { childList: true });
+new MutationObserver(() => { const r = $('#confRes').firstElementChild; if (r && !r.querySelector('#popFechar')) { const b = document.createElement('button'); b.id = 'popFechar'; b.className = 'grande sec'; b.textContent = '✖ Fechar'; b.onclick = () => { $('#confRes').innerHTML = ''; retomarLeitura(); }; r.appendChild(b); } }).observe($('#confRes'), { childList: true });
 let carregouJsQR = null;
 const carregarJsQR = () => carregouJsQR ??= new Promise((ok, no) => { if (window.jsQR) return ok(); const t = document.createElement('script'); t.src = '/vendor/jsqr.min.js'; t.onload = ok; t.onerror = () => no(new Error('Não consegui carregar o leitor de QR.')); document.head.appendChild(t); });
 function fecharCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('#cam').style.display = 'none'; $('#bCam').textContent = '📷 Ler QR do cliente'; }
@@ -232,19 +234,21 @@ $('#bCam').onclick = tentar(async () => {
   const nativo = 'BarcodeDetector' in window ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
   if (!nativo) await carregarJsQR();
   const tela = document.createElement('canvas'), ctx = tela.getContext('2d', { willReadFrequently: true });
-  const achou = (valor) => { fecharCamera(); navigator.vibrate?.(60); return baixar(valor); };
+  // a câmera fica aberta entre um cliente e outro (abrir de novo custa ~1 s); só pausa enquanto o resultado está na tela
+  const achou = (valor) => { if (valor === ultimoQr.valor && Date.now() - ultimoQr.em < 4000) return setTimeout(laco, 150); ultimoQr = { valor, em: Date.now() }; lendo = false; navigator.vibrate?.(60); return baixar(valor); };
+  retomarLeitura = () => { if (stream && !lendo) { lendo = true; laco(); } };
   const laco = async () => {
-    if (!stream) return;
+    if (!stream || !lendo) return;
     try {
       if (nativo) { const [c] = await nativo.detect(v); if (c) return achou(c.rawValue); }
       else if (v.videoWidth) {
-        const w = Math.min(640, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth); tela.width = w; tela.height = h; ctx.drawImage(v, 0, 0, w, h);
+        const w = Math.min(480, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth); tela.width = w; tela.height = h; ctx.drawImage(v, 0, 0, w, h);
         const c = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (c?.data) return achou(c.data);
       }
     } catch {}
-    setTimeout(laco, nativo ? 250 : 200);
+    setTimeout(laco, nativo ? 60 : 90);
   };
-  laco(); });
+  lendo = true; laco(); });
 
 async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); window.Menu && Menu.barra();
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();

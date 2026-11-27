@@ -1,6 +1,6 @@
 // App do cliente: o pedido só entra na fila DEPOIS de pago. A retirada é feita por QR de uso único, conferido no balcão.
 import { json } from './api.js';
-import { diaDoTurno, lerComanda, conferirQuitacao, id8, r2, erro } from './venda.js';
+import { diaDoTurno, conferirQuitacao, id8, r2, erro } from './venda.js';
 import { conferirEstoque, modoTeste } from './trava.js';
 import { gerarPix } from './pagamentos/pix.js';
 import { cobrarPix, pixDaRef } from './pagamentos/gateways.js';
@@ -212,18 +212,22 @@ export async function validarRetirada(db, corpo, eu) {
   const partes = String(corpo?.codigo ?? '').trim().split('.');
   if ((partes.length !== 3 && partes.length !== 4) || partes[0] !== 'MKF1') return erro('Esse QR não é do Mukifo.', 400);
   const [, id, chave] = partes, remessaQr = Number(partes[3] ?? 0);
-  const p = await db.prepare("SELECT id, dia, status, token_hash, retirado_em, remessa FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first();
+  // Uma ida só ao banco (o pedido e os itens juntos): o balcão espera essa resposta com o cliente na frente.
+  const [p, { results: its }] = await Promise.all([
+    db.prepare("SELECT id, numero, nome_cliente, total, dia, status, token_hash, retirado_em, remessa FROM pedido WHERE id = ? AND origem = 'celular'").bind(id).first(),
+    db.prepare('SELECT id, nome, quantidade, entregue_qtd FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all()]);
   if (!p || !iguais(p.token_hash ?? '', await sha256(chave))) return erro('QR inválido. NÃO entregue nada.', 400);
   if (p.status === 'entregue') return erro(`QR já usado${p.retirado_em ? ` em ${p.retirado_em} (UTC)` : ''}. NÃO entregue de novo.`, 409);
   if (p.status === 'aguardando_pagamento') return erro('Pedido ainda NÃO foi pago. Não entregue.', 402);
   if (p.status === 'cancelado') return erro('Pedido cancelado ou vencido. Não entregue.', 409);
   if (p.dia !== diaDoTurno()) return erro('Esse pedido é de outro dia. Chame o gerente.', 409);
   if (remessaQr !== p.remessa) return erro('QR antigo: já houve entrega parcial deste pedido. O cliente deve mostrar o QR NOVO que aparece no app.', 409);
-  const c = await lerComanda(db, id);
-  const { results: its } = await db.prepare('SELECT id, nome, quantidade, entregue_qtd FROM item_pedido WHERE pedido_id = ? ORDER BY id').bind(id).all();
   const itens = its.map((i) => ({ id: i.id, nome: i.nome, quantidade: i.quantidade, entregue: i.entregue_qtd, falta: i.quantidade - i.entregue_qtd }));
-  const resumo = (lista, remessa = p.remessa) => ({ numero: c.numero, nome: c.nome_cliente, total: c.total, remessa, itens: lista });
-  if (corpo?.confirmar !== true) return json({ ok: true, entregue: false, pedido: resumo(itens) });
+  const resumo = (lista, remessa = p.remessa) => ({ numero: p.numero, nome: p.nome_cliente, total: p.total, remessa, itens: lista });
+  // auto: pedido de um item só (1 unidade) já sai na mesma ida, sem a segunda chamada de confirmação
+  const faltam = itens.filter((i) => i.falta > 0);
+  const auto = corpo?.auto === true && faltam.length === 1 && faltam[0].falta === 1;
+  if (corpo?.confirmar !== true && !auto) return json({ ok: true, entregue: false, pedido: resumo(itens) });
   // o que está saindo agora: a lista marcada pelo vendedor; sem lista = tudo que ainda falta
   let sai = new Map(itens.filter((i) => i.falta > 0).map((i) => [i.id, i.falta]));
   if (Array.isArray(corpo?.entrega)) {
@@ -244,9 +248,9 @@ export async function validarRetirada(db, corpo, eu) {
     const novos = itens.map((i) => ({ ...i, entregue: i.entregue + (sai.get(i.id) ?? 0), falta: i.falta - (sai.get(i.id) ?? 0) }));
     return json({ ok: true, entregue: false, parcial: true, pedido: resumo(novos, p.remessa + 1) });
   }
-  const r = await db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id, p.remessa).run();
+  // entrega total: pedido e itens num lote só (uma ida ao banco). Os itens nunca passam da quantidade, então um QR lido duas vezes não entrega em dobro.
+  const [r] = await db.batch([db.prepare("UPDATE pedido SET status = 'entregue', pronto_em = COALESCE(pronto_em, datetime('now')), retirado_em = datetime('now'), entregue_em = datetime('now'), operador = ? WHERE id = ? AND retirado_em IS NULL AND remessa = ? AND status IN ('recebido', 'preparando', 'pronto')").bind(eu.nome, id, p.remessa), ...atualizaItens]);
   if (r?.meta?.changes === 0) return erro('QR já usado. NÃO entregue de novo.', 409);
-  await db.batch(atualizaItens);
   return json({ ok: true, entregue: true, pedido: resumo(itens.map((i) => ({ ...i, entregue: i.quantidade, falta: 0 }))) });
 }
 

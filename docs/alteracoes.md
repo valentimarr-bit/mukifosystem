@@ -3,6 +3,7 @@
 Uma linha por alteração, mais recente em cima. Toda mudança entra aqui **e** no `docs/manual.md`; depois rode `npm run manual`.
 Formato: `- AAAA-MM-DD — o que mudou (onde ver no sistema)`.
 
+- 2026-11-26 — **Leitura do QR mais rápida**: a câmera fica aberta entre um cliente e outro (pausa enquanto o resultado está na tela), lê várias vezes por segundo, o leitor do iPhone já vem carregado, e pedido de 1 item sai numa ida só ao servidor (`/venda.html`, aba Retirada).
 - 2026-11-26 — **Sistema mais rápido**: servidor perto do banco de dados, acompanhamento do pedido e Produção com bem menos consultas, cardápio em paralelo, Produção sem redesenhar à toa (`/cliente.html`, `/producao.html`).
 - 2026-11-26 — **Segurança e acessos**: gestão só com login (`/entrar.html`), cargos Dono/Gerente/Atendente, tela inicial por cargo (`/inicio.html`), senha provisória obrigatória de trocar, bloqueio após 5 erros, recuperação do dono pelo código; demonstração desligada.
 - 2026-11-26 — **Cancelar pedido com histórico**: gerentes cancelam pela Produção com motivo, devolução (saldo ou balcão) e estoque; tudo fica em "📜 Cancelados" (`/producao.html`, migração 0034, permissão "Cancelar pedidos").
