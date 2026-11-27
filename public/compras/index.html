@@ -81,6 +81,7 @@
 </div>
 
 <script src="/entrar.js"></script>
+<script src="/menu.js"></script>
 
 <dialog id="dlgEditar">
   <h3 id="edNome"></h3>
@@ -175,6 +176,7 @@ async function enviarFila() {
 
 async function atualizar() {
   if (!token) return pedirSenha();
+  window.Menu && Menu.barra();
   await enviarFila();
   if (fila.length) return;
   try {
@@ -239,7 +241,8 @@ function desenhar() {
 }
 
 function aviso(texto, tipo = 'ok') {
-  $('#mensagem').innerHTML = `<div class="msg ${tipo}">${texto}</div>`;
+  const caixa = document.createElement('div'); caixa.className = `msg ${tipo}`; caixa.style.whiteSpace = 'pre-line'; caixa.textContent = texto;
+  $('#mensagem').replaceChildren(caixa);
   clearTimeout(aviso.t); aviso.t = setTimeout(() => ($('#mensagem').innerHTML = ''), 7000);
 }
 
@@ -345,8 +348,8 @@ $('#fimOk').addEventListener('click', async () => {
     const r = await api(`/api/listas/${lista.id}/finalizar`, 'POST', {});
     $('#dlgFinalizar').close(); vibrar([30, 60, 30]);
     lista = null; guardar('mukifo_lista', null); desenhar();
-    aviso(`Compra lançada no estoque ✓<br>${r.compras.map((c) => `${esc(c.fornecedor)}: ${c.itens} item(ns)${c.total ? ' · ' + brl(c.total) : ''}`).join('<br>')}`
-      + (r.faltaram.length ? `<br><br><b>Não comprados:</b> ${r.faltaram.map(esc).join(', ')}` : ''));
+    aviso(`Compra lançada no estoque ✓\n${r.compras.map((c) => `${c.fornecedor}: ${c.itens} item(ns)${c.total ? ' · ' + brl(c.total) : ''}`).join('\n')}`
+      + (r.faltaram.length ? `\n\nNão comprados: ${r.faltaram.join(', ')}` : ''));
   } catch (e) { $('#dlgFinalizar').close(); aviso(e instanceof SemInternet ? 'Precisa de internet para finalizar. As marcações estão guardadas.' : e.message, 'erro'); }
   $('#fimOk').disabled = false;
 });

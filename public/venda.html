@@ -35,7 +35,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
 #confRes>.ret input[type=checkbox]{width:30px;height:30px;vertical-align:middle;margin-right:10px}#confRes>.ret select{font-size:22px;min-height:44px}
 #confRes>.ret .grande{min-height:64px;font-size:22px;margin-top:10px}
 </style></head><body data-sem-botao-visual>
-<header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select><a href="/gestao.html">Gestão</a></header>
+<header><h1>🍸 Venda</h1><span class="mut" id="resumo"></span><select id="tema" data-seletor-tema></select></header>
 <div class="abas"><button id="aV" class="on">Vender</button><button id="aR">Retirada do app <span id="nRet"></span></button><button id="aH">Histórico</button></div>
 
 <main id="telaV">
@@ -70,7 +70,7 @@ button,.setor,.prod{touch-action:manipulation;-webkit-tap-highlight-color:transp
   </div>
   <div class="mut ruim" id="dErro"></div><button class="grande" id="dOk">Cobrar</button><button class="grande sec" id="dFecha">Voltar</button></dialog>
 <div id="msg"></div>
-<script src="/entrar.js"></script><script src="/espera.js"></script>
+<script src="/entrar.js"></script><script src="/menu.js"></script><script src="/espera.js"></script>
 <script>
 Tema.ligarSeletor(document.getElementById('tema'));
 const $ = (s) => document.querySelector(s), R$ = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
@@ -246,9 +246,10 @@ $('#bCam').onclick = tentar(async () => {
   };
   laco(); });
 
-async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); });
+async function iniciar() { if (!token) return Mukifo.pedir(() => { token = Mukifo.token(); iniciar(); }); window.Menu && Menu.barra();
   cardapio = (await (await fetch('/api/venda/cardapio', { cache: 'no-store' })).json()).categorias; desenharCardapio();
   try { maqs = (await api('/api/venda/maquininhas')).maquininhas; } catch {} await lerComandas(); atualizarResumo(); lerRetiradas().catch(() => {}); }
 iniciar().catch((e) => msg(e.message, true));
+if (location.hash === '#retirada' && token) $('#aR').click();
 setInterval(() => { if (!document.hidden && token && !$('#dCobrar').open && !emVoo && !pend.size && !atual?.provisoria) { recarregarCardapio(); lerComandas().catch(() => {}); lerRetiradas().catch(() => {}); } }, 15000);
 </script></body></html>
