@@ -16,7 +16,9 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Páginas de gestão passam pelo Worker (portaria em src/portaria.js). O resto continua estático.
+    "run_worker_first": ["/", "/index.html", "/inicio*", "/gestao*", "/manual*", "/venda*", "/canais*", "/producao*", "/pix*", "/pagamentos*", "/fiscal*", "/mesas*", "/torneio*", "/compras", "/compras/", "/compras/index.html"]
   },
 
   // Banco D1. Sem database_id, o deploy (inclusive o automático pelo GitHub) cria o banco "mukifo"

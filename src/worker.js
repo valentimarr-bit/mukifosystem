@@ -6,6 +6,7 @@ import { expirarPendentes } from './cliente.js';
 import { json, rotearApi } from './api.js';
 import { prepararBanco } from './banco/preparar.js';
 import { identificarAtor, deveRegistrar, registrar } from './auditoria.js';
+import { portaria } from './portaria.js';
 
 const VERSAO = '0.2.0';
 
@@ -55,6 +56,11 @@ export default {
         return json({ erro: 'Erro interno. Tente de novo; se continuar, avise o responsável.' }, 500);
       }
     }
+
+    // Páginas de gestão: só para quem tem login (e o módulo). O resto segue para os arquivos estáticos.
+    if (env.DB) { try { await prepararBanco(env.DB); } catch (e) { console.error('preparar banco (portaria):', e.message); } }   // se falhar, a portaria nega
+    const porta = env.DB ? await portaria(request, env, url) : null;
+    if (porta) return porta;
 
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Não encontrado', { status: 404 });
   },
